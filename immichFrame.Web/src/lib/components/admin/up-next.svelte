@@ -1,7 +1,8 @@
 <script lang="ts">
+	import Btn from './btn.svelte';
 	import { onMount } from 'svelte';
 	import { mdiShuffleVariant } from '@mdi/js';
-	import { Button, Card, CardBody, Text, Heading } from '@immich/ui';
+	import { Text, Heading } from '@immich/ui';
 	import type { AdminPreview } from './admin-preview.svelte';
 
 	interface Props {
@@ -15,11 +16,11 @@
 	});
 </script>
 
-<Card>
-	<CardBody>
+<div class="bg-group rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+	<div class="p-4">
 		<div class="mb-3 flex items-center justify-between gap-2">
 			<Heading tag="h2" size="tiny" fontWeight="semi-bold">Up next</Heading>
-			<Button
+			<Btn
 				size="small"
 				variant="outline"
 				leadingIcon={mdiShuffleVariant}
@@ -27,7 +28,7 @@
 				onclick={() => preview.load(4)}
 			>
 				Shuffle
-			</Button>
+			</Btn>
 		</div>
 		{#if preview.state === 'error'}
 			<Text class="text-danger-700 dark:text-danger-400" size="small">
@@ -50,8 +51,8 @@
 				{/each}
 			</div>
 		{/if}
-		<Text size="small" class="text-dark/70 mt-3">
+		<Text size="small" class="text-label-2 mt-3">
 			A random sample from the saved choice, so you can spot screenshots or receipts that slip in.
 		</Text>
-	</CardBody>
-</Card>
+	</div>
+</div>

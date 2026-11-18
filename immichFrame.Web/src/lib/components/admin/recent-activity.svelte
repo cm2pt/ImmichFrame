@@ -1,6 +1,7 @@
 <script lang="ts">
+	import Btn from './btn.svelte';
 	import { onMount } from 'svelte';
-	import { Button, Card, CardBody, Text, Heading } from '@immich/ui';
+	import { Text, Heading } from '@immich/ui';
 	import type { ServerAccountSettings, SettingsHistoryEntryDto } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import { relativeTime } from './admin-format';
@@ -66,14 +67,14 @@
 	}
 </script>
 
-<Card>
-	<CardBody>
+<div class="bg-group rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+	<div class="p-4">
 		<Heading tag="h2" size="tiny" fontWeight="semi-bold">Recent changes</Heading>
-		<Text size="small" class="mb-3 text-dark/70">Every save, newest first.</Text>
+		<Text size="small" class="mb-3 text-label-2">Every save, newest first.</Text>
 		{#if error}
 			<div class="flex items-center gap-2">
 				<Text size="small" class="text-danger-700 dark:text-danger-400 flex-1">{error}</Text>
-				<Button size="tiny" variant="outline" onclick={load}>Retry</Button>
+				<Btn size="tiny" variant="outline" onclick={load}>Retry</Btn>
 			</div>
 		{:else if entries === null}
 			<div class="flex flex-col gap-3" aria-busy="true">
@@ -96,17 +97,17 @@
 								{#each lines.slice(0, 3) as line (line)}<Text size="small" fontWeight="medium"
 										>{line}</Text
 									>{/each}
-								{#if lines.length > 3}<Text size="small" class="text-dark/60"
+								{#if lines.length > 3}<Text size="small" class="text-label-2"
 										>and {lines.length - 3} more</Text
 									>{/if}
-								<Text size="tiny" class="mt-0.5 text-dark/60">
+								<Text size="tiny" class="mt-0.5 text-label-2">
 									{index === 0 ? 'Current\u00a0·\u2002' : ''}{relativeTime(
 										new Date(entry.savedAtUtc!).getTime()
 									)}
 								</Text>
 							</div>
 							{#if index < entries.length - 1 && confirming !== index}
-								<Button
+								<Btn
 									id={`history-${entry.version}`}
 									size="tiny"
 									variant="outline"
@@ -115,7 +116,7 @@
 									onclick={() => (confirming = index)}
 								>
 									{index === 0 ? 'Undo' : 'Restore…'}
-								</Button>
+								</Btn>
 							{/if}
 						</div>
 						{#if confirming === index}
@@ -134,11 +135,11 @@
 				{/each}
 			</ul>
 			{#if entries.length > 6 && !showAll}
-				<Button size="tiny" variant="ghost" class="mt-1" onclick={() => (showAll = true)}
-					>Show all {entries.length}</Button
+				<Btn size="tiny" variant="ghost" class="mt-1" onclick={() => (showAll = true)}
+					>Show all {entries.length}</Btn
 				>
 			{/if}
-			<Text size="tiny" class="mt-2 text-dark/60">Restoring never changes the admin password.</Text>
+			<Text size="tiny" class="mt-2 text-label-2">Restoring never changes the admin password.</Text>
 		{/if}
-	</CardBody>
-</Card>
+	</div>
+</div>

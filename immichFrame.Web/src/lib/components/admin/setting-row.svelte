@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { Text } from '@immich/ui';
 
 	interface Props {
 		title: string;
@@ -16,8 +15,8 @@
 	let { title, description, icon, control, children, id }: Props = $props();
 </script>
 
-<div class="border-t border-light-200 py-4 first:border-t-0" {id}>
-	<div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+<div class="border-sep min-h-11 border-t py-3 first:border-t-0" {id} data-setting={title}>
+	<div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2.5">
 		<!-- A real basis (not flex-1's 0) so the row wraps the control under the title when
 		     both don't fit, instead of drawing it over the text. -->
 		<div class="flex min-w-0 flex-[1_1_12rem] items-start gap-3">
@@ -25,9 +24,9 @@
 				<div class="mt-0.5 text-primary">{@render icon()}</div>
 			{/if}
 			<div class="min-w-0">
-				<Text fontWeight="semi-bold">{title}</Text>
+				<p class="text-[0.9375rem] leading-snug font-medium">{title}</p>
 				{#if description}
-					<Text size="small" class="text-dark/70">{description}</Text>
+					<p class="text-label-2 mt-0.5 text-[0.8125rem] leading-snug">{description}</p>
 				{/if}
 			</div>
 		</div>

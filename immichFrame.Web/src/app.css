@@ -126,3 +126,83 @@ img.icon-weather {
 	margin-top: -8px; /* adjust icon top to line up with text */
 	order: 1;
 }
+
+/*
+  Admin UI look, scoped to .if-admin: the platform's own font (SF on Apple devices), grouped
+  lists on a soft background, and label colors that keep 4.5:1 contrast in both themes.
+*/
+.if-admin {
+	font-family:
+		-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+		sans-serif;
+	-webkit-font-smoothing: antialiased;
+	color: #1d1d1f;
+	background: #f5f5f7;
+}
+.dark .if-admin {
+	color: #f5f5f7;
+	background: #000;
+}
+.if-admin .text-label-2 {
+	color: #6e6e73;
+}
+.dark .if-admin .text-label-2 {
+	color: #a1a1a6;
+}
+.if-admin .bg-group {
+	background: #fff;
+}
+.dark .if-admin .bg-group {
+	background: #1c1c1e;
+}
+.if-admin .border-sep {
+	border-color: rgb(0 0 0 / 0.09);
+}
+.dark .if-admin .border-sep {
+	border-color: rgb(255 255 255 / 0.1);
+}
+.if-admin .bg-fill {
+	background: rgb(118 118 128 / 0.12);
+}
+.dark .if-admin .bg-fill {
+	background: rgb(118 118 128 / 0.24);
+}
+.if-admin .title-large {
+	font-size: 2.125rem;
+	line-height: 1.15;
+	font-weight: 700;
+	letter-spacing: -0.022em;
+}
+@media (prefers-reduced-motion: reduce) {
+	.if-admin * {
+		transition-duration: 0s !important;
+		animation-duration: 0s !important;
+	}
+}
+/* Search result: briefly highlight the row the admin jumped to. */
+@keyframes if-flash {
+	0%,
+	60% {
+		background: color-mix(in oklab, var(--color-primary) 14%, transparent);
+		box-shadow: 0 0 0 10px color-mix(in oklab, var(--color-primary) 14%, transparent);
+	}
+	100% {
+		background: transparent;
+		box-shadow: 0 0 0 10px transparent;
+	}
+}
+.if-admin .if-flash {
+	animation: if-flash 1.6s ease-out;
+	border-radius: 10px;
+}
+/* Fields and menus from @immich/ui use blue-tinted grays; inside the admin, use neutral ones. */
+.if-admin {
+	--color-gray-100: #f2f2f7;
+}
+.dark .if-admin {
+	--color-gray-700: #48484a;
+	--color-gray-800: #2c2c2e;
+	--color-gray-900: #1c1c1e;
+	--color-primary-100: #2c2c2e;
+	--color-primary-200: #3a3a3c;
+}

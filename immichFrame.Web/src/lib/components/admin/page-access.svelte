@@ -1,6 +1,8 @@
 <script lang="ts">
+	import Btn from './btn.svelte';
+	import Toggle from './toggle.svelte';
 	import { mdiChevronDown, mdiPlus } from '@mdi/js';
-	import { Button, Icon, Input, NumberInput, PasswordInput, Switch, Text } from '@immich/ui';
+	import { Icon, Input, NumberInput, PasswordInput, Text } from '@immich/ui';
 	import type { ServerSettings } from '$lib/immichFrameApi';
 	import { effective, generalDefaults } from './admin-defaults';
 	import AccountConnection from './account-connection.svelte';
@@ -54,6 +56,17 @@
 	}
 
 	let advancedOpen = $state(false);
+	// Search can jump to a setting inside Advanced: open it first.
+	$effect(() => {
+		const reveal = (e: Event) => {
+			const title = (e as CustomEvent<string>).detail;
+			if (['Keep images on disk', 'Refresh albums and people', 'Webhook'].includes(title)) {
+				advancedOpen = true;
+			}
+		};
+		window.addEventListener('if-reveal', reveal);
+		return () => window.removeEventListener('if-reveal', reveal);
+	});
 </script>
 
 <div class="flex flex-col gap-6">
@@ -69,7 +82,7 @@
 		{#if !(settings.Accounts ?? []).length}
 			<div class="my-3 rounded-2xl border border-dashed border-light-300 p-6 text-center">
 				<Text fontWeight="semi-bold">No accounts yet</Text>
-				<Text size="small" class="mt-1 text-dark/70"
+				<Text size="small" class="mt-1 text-label-2"
 					>The frame has nothing to show until you add one.</Text
 				>
 			</div>
@@ -77,11 +90,11 @@
 		<div
 			class="mt-2 flex flex-wrap items-center justify-between gap-4 border-t border-light-200 pt-4"
 		>
-			<Text size="small" class="max-w-md min-w-48 flex-1 text-dark/70">
+			<Text size="small" class="max-w-md min-w-48 flex-1 text-label-2">
 				Create a key in Immich under Account Settings → API Keys. Read access to assets, albums,
 				people, memories and tags is enough.
 			</Text>
-			<Button leadingIcon={mdiPlus} onclick={onaddaccount}>Add account</Button>
+			<Btn leadingIcon={mdiPlus} onclick={onaddaccount}>Add account</Btn>
 		</div>
 	</PageCard>
 
@@ -116,7 +129,7 @@
 			/>
 		{:else}
 			<div class="mt-2 flex flex-wrap gap-2">
-				<Button
+				<Btn
 					id="secret-new"
 					size="small"
 					variant="outline"
@@ -124,16 +137,11 @@
 					onclick={() => (secretAction = 'new')}
 				>
 					{general.authenticationSecret ? 'Create a new secret…' : 'Create a secret…'}
-				</Button>
+				</Btn>
 				{#if general.authenticationSecret}
-					<Button
-						size="small"
-						variant="ghost"
-						color="danger"
-						onclick={() => (secretAction = 'off')}
-					>
+					<Btn size="small" variant="ghost" color="danger" onclick={() => (secretAction = 'off')}>
 						Turn off secret…
-					</Button>
+					</Btn>
 				{/if}
 			</div>
 		{/if}
@@ -158,7 +166,7 @@
 					<span class="mb-1 block font-medium">New password</span>
 					<PasswordInput autocomplete="new-password" bind:value={newPassword} />
 					{#if newPassword.length > 0 && newPassword.length < 8}
-						<span class="mt-1 block text-dark/60">At least 8 characters</span>
+						<span class="mt-1 block text-label-2">At least 8 characters</span>
 					{/if}
 				</label>
 				<label class="text-sm">
@@ -168,7 +176,7 @@
 							>Passwords don't match</span
 						>{/if}
 				</label>
-				<Button
+				<Btn
 					type="submit"
 					variant="outline"
 					color="secondary"
@@ -176,7 +184,7 @@
 					disabled={!canChange}
 				>
 					Change
-				</Button>
+				</Btn>
 			</form>
 			{#if passwordReady}
 				<Text size="small" class="mt-1 text-dark/80">✓ Ready. It takes effect when you save.</Text>
@@ -193,7 +201,7 @@
 		>
 			<span>
 				<span class="block font-semibold">Advanced</span>
-				<span class="block text-sm text-dark/70">Image cache, album refresh and webhook</span>
+				<span class="block text-sm text-label-2">Image cache, album refresh and webhook</span>
 			</span>
 			<span class="transition-transform {advancedOpen ? 'rotate-180' : ''}"
 				><Icon icon={mdiChevronDown} size="22" /></span
@@ -206,7 +214,7 @@
 					description="Downloads each photo once and serves it from a local cache"
 				>
 					{#snippet control()}
-						<Switch
+						<Toggle
 							aria-label="Keep images on disk"
 							checked={get('downloadImages')}
 							onCheckedChange={(v) => (general.downloadImages = v)}

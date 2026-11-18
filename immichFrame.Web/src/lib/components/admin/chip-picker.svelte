@@ -1,6 +1,7 @@
 <script lang="ts">
+	import Btn from './btn.svelte';
 	import { mdiClose, mdiPlus } from '@mdi/js';
-	import { Button, Icon, Input, Text } from '@immich/ui';
+	import { Icon, Input, Text } from '@immich/ui';
 
 	export interface PickerItem {
 		id: string;
@@ -87,7 +88,7 @@
 			<span class="font-medium"
 				>{item?.name ?? (items ? 'Unknown (' + id.slice(0, 8) + '…)' : id)}</span
 			>
-			{#if item?.detail}<span class="text-xs text-dark/60 tabular-nums">{item.detail}</span>{/if}
+			{#if item?.detail}<span class="text-xs text-label-2 tabular-nums">{item.detail}</span>{/if}
 			<button
 				type="button"
 				class="rounded-full p-1 hover:bg-light-300"
@@ -99,7 +100,7 @@
 		</span>
 	{/each}
 
-	<Button
+	<Btn
 		size="small"
 		variant="ghost"
 		leadingIcon={mdiPlus}
@@ -108,11 +109,11 @@
 		onclick={() => (open = !open)}
 	>
 		{addLabel}
-	</Button>
+	</Btn>
 </div>
 
 {#if selected.length === 0 && emptyHint && !open}
-	<Text size="small" class="text-dark/70 mt-2">{emptyHint}</Text>
+	<Text size="small" class="text-label-2 mt-2">{emptyHint}</Text>
 {/if}
 
 {#if open}
@@ -120,10 +121,10 @@
 	<div class="mt-3 rounded-2xl border border-light-300 bg-light-50 p-3" onkeydown={onKeydown}>
 		<div class="mb-2 flex items-center justify-between">
 			<Text size="small" fontWeight="semi-bold">{addLabel}</Text>
-			<Button size="small" variant="ghost" onclick={() => (open = false)}>Done</Button>
+			<Btn size="small" variant="ghost" onclick={() => (open = false)}>Done</Btn>
 		</div>
 		{#if loading}
-			<Text class="text-dark/70" size="small">Loading from Immich…</Text>
+			<Text class="text-label-2" size="small">Loading from Immich…</Text>
 		{:else if items}
 			<Input placeholder="Search" bind:value={query} aria-label="Search {addLabel}" autofocus />
 			<ul class="mt-2 max-h-64 overflow-y-auto">
@@ -137,17 +138,17 @@
 							onclick={() => add(item.id)}
 						>
 							<span class="min-w-0 truncate">{item.name}</span>
-							<span class="shrink-0 text-xs text-dark/60 tabular-nums"
+							<span class="shrink-0 text-xs text-label-2 tabular-nums"
 								>{elsewhere ?? item.detail ?? ''}</span
 							>
 						</button>
 					</li>
 				{:else}
-					<li><Text size="small" class="text-dark/70 px-3 py-2">Nothing matches.</Text></li>
+					<li><Text size="small" class="text-label-2 px-3 py-2">Nothing matches.</Text></li>
 				{/each}
 			</ul>
 		{:else}
-			<Text size="small" class="text-dark/70 mb-2">
+			<Text size="small" class="text-label-2 mb-2">
 				The list from Immich isn't available, so paste the ID instead (it's in the address bar when
 				you open the album or person in Immich).
 			</Text>
@@ -159,7 +160,7 @@
 				}}
 			>
 				<Input placeholder={manualPlaceholder} bind:value={manual} aria-label={manualPlaceholder} />
-				<Button type="submit" size="small">Add</Button>
+				<Btn type="submit" size="small">Add</Btn>
 			</form>
 			{#if manualError}<Text size="small" class="text-danger-700 dark:text-danger-400 mt-1"
 					>{manualError}</Text

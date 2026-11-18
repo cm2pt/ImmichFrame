@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Toggle from './toggle.svelte';
 	import {
 		mdiAccountOutline,
 		mdiCalendarHeart,
@@ -8,7 +9,7 @@
 		mdiCancel,
 		mdiTagOutline
 	} from '@mdi/js';
-	import { Avatar, Card, CardBody, Checkbox, Icon, Input, Select, Switch, Text } from '@immich/ui';
+	import { Avatar, Checkbox, Icon, Input, Select, Text } from '@immich/ui';
 	import type { ServerAccountSettings } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import { accountDefaults, effective } from './admin-defaults';
@@ -119,8 +120,8 @@
 	const toIso = (raw: string) => (raw === '' ? null : new Date(raw).toISOString());
 </script>
 
-<Card>
-	<CardBody>
+<div class="bg-group rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+	<div class="p-4">
 		<button
 			type="button"
 			class="flex w-full items-center gap-4 text-left"
@@ -157,7 +158,7 @@
 
 		{#if expanded}
 			<div class="mt-4">
-				<Text size="tiny" fontWeight="bold" class="text-dark/70 tracking-widest uppercase">
+				<Text size="tiny" fontWeight="bold" class="text-label-2 tracking-widest uppercase">
 					Include
 				</Text>
 
@@ -171,7 +172,7 @@
 				>
 					{#snippet icon()}<Icon icon={mdiHeartOutline} size="20" />{/snippet}
 					{#snippet control()}
-						<Switch
+						<Toggle
 							aria-label="Favorites"
 							checked={get('showFavorites')}
 							onCheckedChange={(v) => (account.showFavorites = v)}
@@ -182,7 +183,7 @@
 				<SettingRow title="Memories" description="“On this day” from past years, refreshed daily">
 					{#snippet icon()}<Icon icon={mdiCalendarHeart} size="20" />{/snippet}
 					{#snippet control()}
-						<Switch
+						<Toggle
 							aria-label="Memories"
 							checked={get('showMemories')}
 							onCheckedChange={(v) => (account.showMemories = v)}
@@ -252,14 +253,14 @@
 				</SettingRow>
 
 				{#if !hasSource}
-					<Text size="small" class="text-dark/70 mb-2 pl-8">
+					<Text size="small" class="text-label-2 mb-2 pl-8">
 						{get('showMemories')
 							? 'Only memories: nothing else is picked.'
 							: 'Nothing picked, so the frame shows the whole library.'}
 					</Text>
 				{/if}
 
-				<Text size="tiny" fontWeight="bold" class="text-dark/70 mt-6 tracking-widest uppercase">
+				<Text size="tiny" fontWeight="bold" class="text-label-2 mt-6 tracking-widest uppercase">
 					Never show
 				</Text>
 				<SettingRow
@@ -280,10 +281,10 @@
 					</div>
 				</SettingRow>
 
-				<Text size="tiny" fontWeight="bold" class="text-dark/70 mt-6 tracking-widest uppercase">
+				<Text size="tiny" fontWeight="bold" class="text-label-2 mt-6 tracking-widest uppercase">
 					Narrow down
 				</Text>
-				<Text class="text-dark/70" size="small"
+				<Text class="text-label-2" size="small"
 					>These apply to everything above except memories.</Text
 				>
 
@@ -334,7 +335,7 @@
 							</label>
 						</div>
 						{#if account.imagesFromDate && account.imagesFromDays != null}
-							<Text size="small" class="text-dark/70 mt-1"
+							<Text size="small" class="text-label-2 mt-1"
 								>A From date wins over “last … days”.</Text
 							>
 						{/if}
@@ -362,7 +363,7 @@
 
 				<SettingRow title="Videos" description="Play them, then move on">
 					{#snippet control()}
-						<Switch
+						<Toggle
 							aria-label="Videos"
 							checked={get('showVideos')}
 							onCheckedChange={(v) => (account.showVideos = v)}
@@ -372,7 +373,7 @@
 
 				<SettingRow title="Archived photos" description="Photos hidden from the Immich timeline">
 					{#snippet control()}
-						<Switch
+						<Toggle
 							aria-label="Archived photos"
 							checked={get('showArchived')}
 							onCheckedChange={(v) => (account.showArchived = v)}
@@ -381,5 +382,5 @@
 				</SettingRow>
 			</div>
 		{/if}
-	</CardBody>
-</Card>
+	</div>
+</div>

@@ -1,5 +1,6 @@
 <script lang="ts" generics="T extends string | number">
 	import { Select } from '@immich/ui';
+
 	interface Option {
 		value: T;
 		label: string;
@@ -15,14 +16,25 @@
 	let { options, value, label, onchange }: Props = $props();
 
 	let buttons: HTMLButtonElement[] = $state([]);
+	let selectedIndex = $derived(options.findIndex((o) => o.value === value));
 	// One tab stop for the group (the selected option, or the first); arrows move and select,
 	// like a native radio group.
-	let focusIndex = $derived(
-		Math.max(
-			0,
-			options.findIndex((o) => o.value === value)
-		)
-	);
+	let focusIndex = $derived(Math.max(0, selectedIndex));
+
+	// The highlight slides to the selected option.
+	let thumb = $state({ left: 0, width: 0, ready: false });
+	$effect(() => {
+		const el = buttons[selectedIndex];
+		if (!el) {
+			thumb = { ...thumb, width: 0 };
+			return;
+		}
+		const update = () => (thumb = { left: el.offsetLeft, width: el.offsetWidth, ready: true });
+		update();
+		const observer = new ResizeObserver(update);
+		observer.observe(el);
+		return () => observer.disconnect();
+	});
 
 	function onKeydown(event: KeyboardEvent, index: number) {
 		const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
@@ -54,8 +66,17 @@
 	aria-label={label}
 	class="{options.length > 3
 		? 'hidden sm:inline-flex'
-		: 'inline-flex'} max-w-full flex-wrap gap-1 rounded-[1.25rem] bg-subtle/60 p-1 dark:bg-light-200"
+		: 'inline-flex'} bg-fill relative max-w-full rounded-[9px] p-[2px]"
 >
+	{#if thumb.width}
+		<span
+			aria-hidden="true"
+			class="absolute top-[2px] bottom-[2px] rounded-[7px] bg-white shadow-[0_3px_8px_rgba(0,0,0,0.12),0_3px_1px_rgba(0,0,0,0.04)] dark:bg-[#636366] {thumb.ready
+				? 'transition-all duration-200 ease-out'
+				: ''}"
+			style="left:{thumb.left}px;width:{thumb.width}px"
+		></span>
+	{/if}
 	{#each options as option, index (option.value)}
 		{@const selected = option.value === value}
 		<button
@@ -64,9 +85,9 @@
 			aria-checked={selected}
 			tabindex={index === focusIndex ? 0 : -1}
 			bind:this={buttons[index]}
-			class="rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary {selected
-				? 'bg-light text-primary shadow-sm dark:bg-light-50'
-				: 'text-dark/75 hover:text-dark'}"
+			class="relative z-[1] rounded-[7px] px-3.5 py-[5px] text-[0.8125rem] whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-primary {selected
+				? 'font-semibold'
+				: 'font-medium opacity-80 hover:opacity-100'}"
 			onclick={() => onchange(option.value)}
 			onkeydown={(e) => onKeydown(e, index)}
 		>

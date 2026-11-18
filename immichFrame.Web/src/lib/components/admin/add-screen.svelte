@@ -58,7 +58,7 @@
 				class="-mb-px border-b-2 px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-primary {device ===
 				tab.value
 					? 'border-primary text-primary'
-					: 'border-transparent text-dark/70 hover:text-dark'}"
+					: 'border-transparent text-label-2 hover:text-dark'}"
 				onclick={() => (device = tab.value)}
 			>
 				{tab.label}
@@ -112,9 +112,9 @@
 						{usesApp ? 'Server address' : 'Link'}
 					</Text>
 					<div class="rounded-xl border border-dashed border-light-300 px-4 py-2.5">
-						<code class="text-sm break-all text-dark/70">{origin}</code>
+						<code class="text-sm break-all text-label-2">{origin}</code>
 					</div>
-					<Text size="small" class="mt-1 text-dark/60">Only works on this computer.</Text>
+					<Text size="small" class="mt-1 text-label-2">Only works on this computer.</Text>
 				</div>
 			{:else if usesApp}
 				<CopyField label="Server address" value={origin} />
@@ -138,7 +138,7 @@
 				<div class="w-40 rounded-2xl border border-light-300 bg-white p-3">
 					<QrCode data={frameUrl} isResponsive />
 				</div>
-				<Text size="small" class="max-w-48 text-center text-dark/70">
+				<Text size="small" class="max-w-48 text-center text-label-2">
 					Scan with a phone or tablet to open the frame{secret ? ', already signed in' : ''}.
 				</Text>
 			</div>

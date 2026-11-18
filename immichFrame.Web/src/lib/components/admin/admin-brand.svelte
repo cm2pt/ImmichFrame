@@ -12,6 +12,6 @@
 	<img src="/logo.svg" alt="" class="h-9 w-9 shrink-0" />
 	<div class="flex flex-col">
 		<Heading tag="h1" size="medium" class="leading-tight">ImmichFrame</Heading>
-		<Text class="text-dark/70" size="small">{subtitle}</Text>
+		<Text class="text-label-2" size="small">{subtitle}</Text>
 	</div>
 </div>

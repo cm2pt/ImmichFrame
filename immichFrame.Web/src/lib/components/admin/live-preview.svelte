@@ -1,7 +1,8 @@
 <script lang="ts">
+	import Btn from './btn.svelte';
 	import { onMount } from 'svelte';
 	import { mdiArrowExpand } from '@mdi/js';
-	import { Button, Card, CardBody, Heading, IconButton, Text } from '@immich/ui';
+	import { Heading, IconButton, Text } from '@immich/ui';
 	import type { GeneralSettings } from '$lib/immichFrameApi';
 	import { effective, generalDefaults } from './admin-defaults';
 	import { formatExample } from './format-presets';
@@ -24,9 +25,16 @@
 	let scale = $derived(width / STAGE_W);
 	let expanded = $state(false);
 	let bigWidth = $state(1280);
-	let closeButton: HTMLElement | null = $state(null);
 	$effect(() => {
-		if (expanded) closeButton?.focus();
+		if (!expanded) return;
+		// After the portal has moved the overlay (moving an element drops its focus).
+		const frame = window.setTimeout(() => document.getElementById('preview-close')?.focus(), 50);
+		const onKey = (e: KeyboardEvent) => e.key === 'Escape' && (expanded = false);
+		window.addEventListener('keydown', onKey);
+		return () => {
+			clearTimeout(frame);
+			window.removeEventListener('keydown', onKey);
+		};
 	});
 
 	// The side column is sticky, which traps fixed children under the header; render the
@@ -144,8 +152,8 @@
 	);
 </script>
 
-<Card>
-	<CardBody>
+<div class="bg-group rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+	<div class="p-4">
 		<div class="mb-3 flex items-center justify-between">
 			<Heading tag="h2" size="tiny" fontWeight="semi-bold">Live preview</Heading>
 			<IconButton
@@ -154,7 +162,6 @@
 				variant="ghost"
 				color="secondary"
 				aria-label="Show the preview larger"
-				title="Larger"
 				onclick={() => (expanded = true)}
 			/>
 		</div>
@@ -168,11 +175,11 @@
 		>
 			{@render stage(scale)}
 		</button>
-		<Text size="small" class="mt-3 text-dark/70">
+		<Text size="small" class="mt-3 text-label-2">
 			{summary} A sample of your saved photos, with your unsaved changes.
 		</Text>
-	</CardBody>
-</Card>
+	</div>
+</div>
 
 {#if expanded}
 	<div
@@ -195,11 +202,8 @@
 			</div>
 			<div class="mt-3 flex items-center justify-between gap-3 text-sm text-white/80">
 				<span>{summary}</span>
-				<Button
-					size="small"
-					color="secondary"
-					bind:ref={closeButton}
-					onclick={() => (expanded = false)}>Close</Button
+				<Btn size="small" color="secondary" id="preview-close" onclick={() => (expanded = false)}
+					>Close</Btn
 				>
 			</div>
 		</div>

@@ -1,7 +1,8 @@
 <script lang="ts">
+	import Btn from './btn.svelte';
 	import { onMount, untrack } from 'svelte';
 	import { mdiConnection, mdiDeleteOutline } from '@mdi/js';
-	import { Avatar, Button, Input, PasswordInput, Text } from '@immich/ui';
+	import { Avatar, Input, PasswordInput, Text } from '@immich/ui';
 	import type { ServerAccountSettings } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import { relativeTime } from './admin-format';
@@ -76,7 +77,7 @@
 			<Text fontWeight="semi-bold">{name}</Text>
 			<Text
 				size="small"
-				class={result && !result.success ? 'text-danger-700 dark:text-danger-400' : 'text-dark/70'}
+				class={result && !result.success ? 'text-danger-700 dark:text-danger-400' : 'text-label-2'}
 			>
 				{#if testing}
 					Checking the connection…
@@ -130,8 +131,8 @@
 				<div
 					class="flex items-center justify-between rounded-lg bg-subtle/50 px-4 py-2.5 dark:bg-light-200"
 				>
-					<span class="text-dark/70">Saved key</span>
-					<Button size="tiny" variant="ghost" onclick={() => (editingKey = true)}>Replace</Button>
+					<span class="text-label-2">Saved key</span>
+					<Btn size="tiny" variant="ghost" onclick={() => (editingKey = true)}>Replace</Btn>
 				</div>
 			{:else}
 				<PasswordInput
@@ -156,7 +157,7 @@
 		/>
 	{:else}
 		<div class="mt-4 flex justify-end gap-2">
-			<Button
+			<Btn
 				size="small"
 				variant="ghost"
 				color="secondary"
@@ -165,8 +166,8 @@
 				onclick={() => (confirmRemove = true)}
 			>
 				Remove…
-			</Button>
-			<Button
+			</Btn>
+			<Btn
 				size="small"
 				variant="outline"
 				color="secondary"
@@ -175,7 +176,7 @@
 				onclick={test}
 			>
 				Test connection
-			</Button>
+			</Btn>
 		</div>
 	{/if}
 </div>

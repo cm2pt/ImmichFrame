@@ -1,6 +1,7 @@
 <script lang="ts">
+	import Btn from './btn.svelte';
 	import { onMount } from 'svelte';
-	import { Button, Text } from '@immich/ui';
+	import { Text } from '@immich/ui';
 
 	interface Props {
 		message: string;
@@ -50,10 +51,8 @@
 	<Text size="small">{message}</Text>
 	<div class="mt-3 flex justify-end gap-2">
 		<span bind:this={cancelButton}>
-			<Button size="small" variant="ghost" color="secondary" onclick={oncancel}>Cancel</Button>
+			<Btn size="small" variant="ghost" color="secondary" onclick={oncancel}>Cancel</Btn>
 		</span>
-		<Button size="small" color={danger ? 'danger' : 'primary'} onclick={onconfirm}
-			>{confirmLabel}</Button
-		>
+		<Btn size="small" color={danger ? 'danger' : 'primary'} onclick={onconfirm}>{confirmLabel}</Btn>
 	</div>
 </div>

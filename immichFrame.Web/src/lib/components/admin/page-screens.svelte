@@ -1,7 +1,8 @@
 <script lang="ts">
+	import Btn from './btn.svelte';
 	import { onMount } from 'svelte';
 	import { mdiCellphone, mdiMonitor, mdiRefresh, mdiTablet, mdiTelevision } from '@mdi/js';
-	import { Button, Card, CardBody, Icon, IconButton, Input, Text } from '@immich/ui';
+	import { Icon, IconButton, Input, Text } from '@immich/ui';
 	import type { ScreenDto } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import AddScreen from './add-screen.svelte';
@@ -70,10 +71,10 @@
 </script>
 
 <div class="flex flex-col gap-6">
-	<Card>
-		<CardBody>
+	<div class="bg-group rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+		<div class="p-4">
 			<div class="mb-3 flex items-center justify-between gap-3">
-				<Text class="text-dark/70" size="small">
+				<Text class="text-label-2" size="small">
 					{screens?.length
 						? `${screens.length} ${screens.length === 1 ? 'screen' : 'screens'}\u00a0·\u2002updated ${relativeTime(now)}`
 						: 'Screens appear here after they first open the frame.'}
@@ -93,7 +94,7 @@
 			{#if error}
 				<div class="flex items-center gap-3 rounded-xl bg-danger/10 p-4">
 					<Text size="small" class="text-danger-700 dark:text-danger-400 flex-1">{error}</Text>
-					<Button size="small" variant="outline" onclick={load}>Retry</Button>
+					<Btn size="small" variant="outline" onclick={load}>Retry</Btn>
 				</div>
 			{:else if screens === null}
 				<ul class="grid gap-4 sm:grid-cols-2" aria-busy="true">
@@ -104,7 +105,7 @@
 			{:else if screens.length === 0}
 				<div class="rounded-2xl border border-dashed border-light-300 p-8 text-center">
 					<Text fontWeight="semi-bold">No screens yet</Text>
-					<Text size="small" class="text-dark/70 mt-1"
+					<Text size="small" class="text-label-2 mt-1"
 						>Add one below. It shows up here once it opens the frame.</Text
 					>
 				</div>
@@ -129,18 +130,18 @@
 											}}
 										>
 											<Input bind:value={renameValue} aria-label="Screen name" />
-											<Button type="submit" size="small">Save</Button>
-											<Button
+											<Btn type="submit" size="small">Save</Btn>
+											<Btn
 												size="small"
 												variant="ghost"
 												color="secondary"
-												onclick={() => (renaming = null)}>Cancel</Button
+												onclick={() => (renaming = null)}>Cancel</Btn
 											>
 										</form>
 									{:else}
 										<Text fontWeight="semi-bold" class="truncate">{screenName(screen)}</Text>
 									{/if}
-									<Text class="text-dark/70" size="small">{device.label}</Text>
+									<Text class="text-label-2" size="small">{device.label}</Text>
 									<span
 										class="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium {live
 											? 'bg-success/15 text-dark'
@@ -164,7 +165,7 @@
 								/>
 							{:else if renaming !== screen.clientIdentifier}
 								<div class="mt-auto flex justify-end gap-2 pt-4">
-									<Button
+									<Btn
 										id={`forget-${screen.clientIdentifier}`}
 										size="small"
 										variant="ghost"
@@ -172,8 +173,8 @@
 										onclick={() => (confirmForget = screen.clientIdentifier!)}
 									>
 										Forget…
-									</Button>
-									<Button
+									</Btn>
+									<Btn
 										size="small"
 										variant="outline"
 										onclick={() => {
@@ -182,15 +183,15 @@
 										}}
 									>
 										Rename
-									</Button>
+									</Btn>
 								</div>
 							{/if}
 						</li>
 					{/each}
 				</ul>
 			{/if}
-		</CardBody>
-	</Card>
+		</div>
+	</div>
 
 	<AddScreen {secret} {ongotoaccess} />
 </div>

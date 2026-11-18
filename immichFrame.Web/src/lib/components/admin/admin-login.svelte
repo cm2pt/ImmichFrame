@@ -1,6 +1,7 @@
 <script lang="ts">
+	import Btn from './btn.svelte';
 	import { mdiLogin } from '@mdi/js';
-	import { Alert, Button, Card, CardBody, Field, PasswordInput, Text } from '@immich/ui';
+	import { Alert, Card, CardBody, Field, PasswordInput, Text } from '@immich/ui';
 	import AdminBrand from './admin-brand.svelte';
 
 	interface Props {
@@ -39,8 +40,8 @@
 				>
 			{/if}
 
-			<Button type="submit" leadingIcon={mdiLogin} fullWidth>Sign in</Button>
-			<Text size="small" class="text-center text-dark/60">
+			<Btn type="submit" leadingIcon={mdiLogin} fullWidth>Sign in</Btn>
+			<Text size="small" class="text-center text-label-2">
 				Forgot it? Set <code>IMMICHFRAME_ADMIN_PASSWORD</code> on the server and restart.
 			</Text>
 		</form>

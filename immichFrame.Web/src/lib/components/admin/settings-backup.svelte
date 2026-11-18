@@ -1,6 +1,7 @@
 <script lang="ts">
+	import Btn from './btn.svelte';
 	import { mdiDownload, mdiUpload } from '@mdi/js';
-	import { Button, Card, CardBody, Text, Heading } from '@immich/ui';
+	import { Text, Heading } from '@immich/ui';
 	import type { ServerSettings } from '$lib/immichFrameApi';
 	import { accountSecrets, generalSecrets } from './admin-defaults';
 
@@ -69,26 +70,26 @@
 	}
 </script>
 
-<Card>
-	<CardBody>
+<div class="bg-group rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+	<div class="p-4">
 		<Heading tag="h2" size="tiny" fontWeight="semi-bold">Backup</Heading>
-		<Text size="small" class="text-dark/70 mb-3">
+		<Text size="small" class="text-label-2 mb-3">
 			Download every setting as one file (secrets left out), or restore one.
 		</Text>
 		<div class="flex flex-wrap gap-2">
-			<Button
+			<Btn
 				size="small"
 				variant="outline"
 				color="secondary"
 				leadingIcon={mdiDownload}
-				onclick={download}>Download settings</Button
+				onclick={download}>Download settings</Btn
 			>
-			<Button
+			<Btn
 				size="small"
 				variant="outline"
 				color="secondary"
 				leadingIcon={mdiUpload}
-				onclick={() => input?.click()}>Restore…</Button
+				onclick={() => input?.click()}>Restore…</Btn
 			>
 			<input
 				bind:this={input}
@@ -104,5 +105,5 @@
 		{#if message}<Text size="small" color={failed ? 'danger' : 'success'} class="mt-2"
 				>{message}</Text
 			>{/if}
-	</CardBody>
-</Card>
+	</div>
+</div>

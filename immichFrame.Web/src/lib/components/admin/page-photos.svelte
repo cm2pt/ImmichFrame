@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { mdiPlus } from '@mdi/js';
-	import { Card, CardBody, Icon, Text } from '@immich/ui';
+	import { Icon, Text } from '@immich/ui';
 	import type { ServerSettings } from '$lib/immichFrameApi';
 	import { formatCount, libraryFor } from './admin-library.svelte';
 	import AccountPhotos from './account-photos.svelte';
@@ -25,28 +25,28 @@
 
 <div class="flex flex-col gap-6">
 	{#if accounts.length}
-		<Card>
-			<CardBody>
+		<div class="bg-group rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+			<div class="p-4">
 				<div class="flex flex-wrap items-end gap-x-10 gap-y-4">
 					<div class="border-light-200 pr-10 sm:border-r">
 						<Text class="text-4xl font-bold text-primary"
 							>{total != null ? formatCount(total) : '…'}</Text
 						>
-						<Text class="text-dark/70" size="small">photos in rotation, plus memories</Text>
+						<Text class="text-label-2" size="small">photos in rotation, plus memories</Text>
 					</div>
 					{#each libraries as library, i (i)}
 						<div>
 							<Text size="large" fontWeight="bold">
 								{matching[i] != null ? formatCount(matching[i]) : '–'}
 							</Text>
-							<Text class="text-dark/70" size="small"
+							<Text class="text-label-2" size="small"
 								>from {library.userName || `Account ${i + 1}`}</Text
 							>
 						</div>
 					{/each}
 				</div>
-			</CardBody>
-		</Card>
+			</div>
+		</div>
 	{/if}
 
 	{#key version}

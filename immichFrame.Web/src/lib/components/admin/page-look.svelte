@@ -1,6 +1,8 @@
 <script lang="ts">
+	import Btn from './btn.svelte';
+	import Toggle from './toggle.svelte';
 	import { mdiAlertOutline, mdiCheckCircle, mdiCrosshairsGps, mdiDelete, mdiPlus } from '@mdi/js';
-	import { Button, Icon, IconButton, Input, PasswordInput, Select, Switch, Text } from '@immich/ui';
+	import { Icon, IconButton, Input, PasswordInput, Select, Text } from '@immich/ui';
 	import * as locales from 'date-fns/locale';
 	import type { GeneralSettings } from '$lib/immichFrameApi';
 	import { effective, generalDefaults } from './admin-defaults';
@@ -220,7 +222,7 @@
 		</SettingRow>
 		<SettingRow title="Progress bar" description="A thin line counting down to the next photo">
 			{#snippet control()}
-				<Switch
+				<Toggle
 					aria-label="Progress bar"
 					checked={get('showProgressBar')}
 					onCheckedChange={(v) => (general.showProgressBar = v)}
@@ -257,7 +259,7 @@
 						{#if selected}<span class="text-primary"><Icon icon={mdiCheckCircle} size="20" /></span
 							>{/if}
 					</div>
-					<Text size="small" class="text-dark/70">{option.text}</Text>
+					<Text size="small" class="text-label-2">{option.text}</Text>
 				</button>
 			{/each}
 		</div>
@@ -291,7 +293,7 @@
 		</SettingRow>
 		<SettingRow title="Video sound" description="Most screens start videos muted anyway">
 			{#snippet control()}
-				<Switch
+				<Toggle
 					aria-label="Video sound"
 					checked={get('playAudio')}
 					onCheckedChange={(v) => (general.playAudio = v)}
@@ -303,7 +305,7 @@
 	<PageCard title="On the photo" description="Shown in the corners of every slide.">
 		<SettingRow title="Clock" description="With today's date, and the weather when it's set up">
 			{#snippet control()}
-				<Switch
+				<Toggle
 					aria-label="Clock"
 					checked={get('showClock')}
 					onCheckedChange={(v) => (general.showClock = v)}
@@ -318,7 +320,7 @@
 		</SettingRow>
 		<SettingRow title="Date taken" description="When the photo was taken">
 			{#snippet control()}
-				<Switch
+				<Toggle
 					aria-label="Date taken"
 					checked={get('showPhotoDate')}
 					onCheckedChange={(v) => (general.showPhotoDate = v)}
@@ -332,7 +334,7 @@
 		</SettingRow>
 		<SettingRow title="Place" description="Phone photos usually have one">
 			{#snippet control()}
-				<Switch
+				<Toggle
 					aria-label="Place"
 					checked={get('showImageLocation')}
 					onCheckedChange={(v) => (general.showImageLocation = v)}
@@ -359,7 +361,7 @@
 		</SettingRow>
 		<SettingRow title="People" description="Names of the people Immich recognized">
 			{#snippet control()}
-				<Switch
+				<Toggle
 					aria-label="People"
 					checked={get('showPeopleDesc')}
 					onCheckedChange={(v) => (general.showPeopleDesc = v)}
@@ -368,7 +370,7 @@
 		</SettingRow>
 		<SettingRow title="Album name" description="The album the photo is in">
 			{#snippet control()}
-				<Switch
+				<Toggle
 					aria-label="Album name"
 					checked={get('showAlbumName')}
 					onCheckedChange={(v) => (general.showAlbumName = v)}
@@ -377,7 +379,7 @@
 		</SettingRow>
 		<SettingRow title="Tags" description="Tags added to the photo in Immich">
 			{#snippet control()}
-				<Switch
+				<Toggle
 					aria-label="Tags"
 					checked={get('showTagsDesc')}
 					onCheckedChange={(v) => (general.showTagsDesc = v)}
@@ -386,7 +388,7 @@
 		</SettingRow>
 		<SettingRow title="Description" description="The photo's description in Immich">
 			{#snippet control()}
-				<Switch
+				<Toggle
 					aria-label="Description"
 					checked={get('showImageDesc')}
 					onCheckedChange={(v) => (general.showImageDesc = v)}
@@ -395,7 +397,7 @@
 			{#if get('showImageDesc')}
 				<div class="flex items-center gap-2">
 					<Icon icon={mdiAlertOutline} size="16" class="shrink-0 text-warning" />
-					<Text size="small" class="text-dark/70"
+					<Text size="small" class="text-label-2"
 						>Cameras often fill it with text like “DJI_0073.JPG”.</Text
 					>
 				</div>
@@ -496,7 +498,7 @@
 						{#if canLocate}
 							<IconButton
 								icon={mdiCrosshairsGps}
-								variant="outline"
+								variant="ghost"
 								color="secondary"
 								aria-label="Use my location"
 								title="Use my location"
@@ -511,7 +513,7 @@
 				</div>
 			</div>
 			{#if !general.weatherApiKey}
-				<Text size="small" class="mt-2 text-dark/60">No key, so the weather is hidden.</Text>
+				<Text size="small" class="mt-2 text-label-2">No key, so the weather is hidden.</Text>
 			{/if}
 		</SettingRow>
 		{#if general.weatherApiKey}
@@ -530,7 +532,7 @@
 			</SettingRow>
 			<SettingRow title="Weather description" description="e.g. “light rain” under the temperature">
 				{#snippet control()}
-					<Switch
+					<Toggle
 						aria-label="Weather description"
 						checked={get('showWeatherDescription')}
 						onCheckedChange={(v) => (general.showWeatherDescription = v)}
@@ -570,7 +572,7 @@
 				}}
 			>
 				<Input placeholder="https://… .ics" bind:value={newCalendar} aria-label="Calendar link" />
-				<Button
+				<Btn
 					type="submit"
 					variant="outline"
 					color="secondary"
@@ -578,7 +580,7 @@
 					disabled={!newCalendar.trim()}
 				>
 					Add
-				</Button>
+				</Btn>
 			</form>
 		</SettingRow>
 	</PageCard>

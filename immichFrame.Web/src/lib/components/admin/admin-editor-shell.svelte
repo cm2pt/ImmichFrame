@@ -1,7 +1,13 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import Btn from './btn.svelte';
+	import { onMount, tick } from 'svelte';
+	import { resolve } from '$app/paths';
+	import { fly } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 	import {
 		mdiCheckCircle,
+		mdiClose,
+		mdiMagnify,
 		mdiImageMultipleOutline,
 		mdiLockOutline,
 		mdiMonitorDashboard,
@@ -9,7 +15,7 @@
 		mdiPlayBoxOutline,
 		mdiShieldAccountOutline
 	} from '@mdi/js';
-	import { Button, Heading, Icon, Text } from '@immich/ui';
+	import { Icon, Text } from '@immich/ui';
 	import type { ScreenDto, ServerSettings } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import { invalidFormats } from './format-presets';
@@ -23,6 +29,7 @@
 	import RecentActivity from './recent-activity.svelte';
 	import SettingsBackup from './settings-backup.svelte';
 	import UpNext from './up-next.svelte';
+	import SettingsSearch, { type SearchHit } from './settings-search.svelte';
 
 	interface Props {
 		editor: AdminEditor;
@@ -45,27 +52,31 @@
 		screens: 'Screens',
 		access: 'Access'
 	};
-	const pages: { id: PageId; title: string; icon: string; intro: string }[] = [
+	const pages: { id: PageId; title: string; icon: string; intro: string; tile: string }[] = [
 		{
 			id: 'photos',
+			tile: '#0a84ff',
 			title: 'Photos',
 			icon: mdiImageMultipleOutline,
 			intro: 'Choose which photos the frame shows.'
 		},
 		{
 			id: 'look',
+			tile: '#bf5af2',
 			title: 'Slideshow & look',
 			icon: mdiPlayBoxOutline,
 			intro: 'How photos appear on every screen.'
 		},
 		{
 			id: 'screens',
+			tile: '#ff9f0a',
 			title: 'Screens',
 			icon: mdiMonitorDashboard,
 			intro: 'The devices showing the frame, and how to add another.'
 		},
 		{
 			id: 'access',
+			tile: '#8e8e93',
 			title: 'Access & accounts',
 			icon: mdiShieldAccountOutline,
 			intro: 'The Immich accounts the frame reads from, and who can see and change it.'
@@ -85,6 +96,22 @@
 		window.scrollTo({ top: 0 });
 	}
 
+	// Search: switch page, then scroll to the row and flash it, like System Settings.
+	async function jumpTo(hit: SearchHit) {
+		go(hit.page as PageId);
+		await tick();
+		window.dispatchEvent(new CustomEvent('if-reveal', { detail: hit.title }));
+		await new Promise((r) => setTimeout(r, 260));
+		const target =
+			document.querySelector<HTMLElement>(`[data-setting="${CSS.escape(hit.title)}"]`) ??
+			document.querySelector<HTMLElement>(`section[aria-label="${CSS.escape(hit.title)}"]`);
+		if (!target) return;
+		target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+		target.classList.add('if-flash');
+		setTimeout(() => target.classList.remove('if-flash'), 1600);
+	}
+
+	let mobileSearch = $state(false);
 	const preview = new AdminPreview();
 	let liveScreens: number | null = $state(null);
 	let frameVersion = $state('');
@@ -168,54 +195,68 @@
 	const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 </script>
 
-<div class="min-h-dvh bg-light">
-	<header class="sticky top-0 z-30 border-b border-light-200 bg-light/85 backdrop-blur-md">
-		<div class="flex items-center justify-between gap-4 px-4 py-2.5 md:px-6">
+<div class="min-h-dvh">
+	<header
+		class="border-sep sticky top-0 z-30 border-b bg-[#f5f5f7]/80 backdrop-blur-xl backdrop-saturate-150 dark:bg-black/70"
+	>
+		<div class="flex items-center justify-between gap-4 px-4 py-2 md:px-5">
 			<div class="flex items-center gap-2.5">
-				<img src="/logo.svg" alt="" class="h-7 w-7" />
-				<span class="text-[17px] font-semibold tracking-tight">ImmichFrame</span>
-				<span class="hidden text-sm text-dark/60 sm:inline">Admin</span>
+				<img src="/logo.svg" alt="" class="h-6 w-6" />
+				<span class="text-[0.9375rem] font-semibold tracking-tight">ImmichFrame</span>
 			</div>
-			<div class="flex items-center gap-2">
+			<div class="flex items-center gap-1.5">
 				{#if liveScreens !== null}
 					<button
 						type="button"
-						class="hidden items-center gap-2 rounded-full px-2 py-1 text-sm text-dark/70 hover:text-dark focus-visible:outline-2 focus-visible:outline-primary sm:flex"
+						class="text-label-2 hidden items-center gap-2 rounded-full px-2.5 py-1 text-[0.8125rem] hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-primary sm:flex dark:hover:bg-white/10"
 						onclick={() => go('screens')}
 					>
-						<span class="h-2 w-2 rounded-full {liveScreens ? 'bg-success' : 'bg-light-400'}"></span>
+						<span class="h-2 w-2 rounded-full {liveScreens ? 'bg-[#30d158]' : 'bg-[#8e8e93]'}"
+						></span>
 						{liveScreens
 							? `${plural(liveScreens, 'screen')} showing photos`
 							: 'No screen showing photos'}
 					</button>
 				{/if}
-				<Button
-					size="small"
-					variant="outline"
-					color="secondary"
-					trailingIcon={mdiOpenInNew}
-					href="/"
+				<a
+					href={resolve('/')}
 					target="_blank"
-					aria-label="Open frame"><span class="hidden sm:inline">Open frame</span></Button
+					class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.8125rem] font-medium text-primary hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-primary"
+					aria-label="Open frame in a new tab"
 				>
-				<Button
-					size="small"
-					variant="outline"
-					color="secondary"
-					leadingIcon={mdiLockOutline}
+					<span class="hidden sm:inline">Open frame</span>
+					<Icon icon={mdiOpenInNew} size="15" />
+				</a>
+				<button
+					type="button"
+					class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.8125rem] font-medium hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-primary dark:hover:bg-white/10"
 					aria-label="Lock"
-					onclick={onlogout}><span class="hidden sm:inline">Lock</span></Button
+					onclick={onlogout}
 				>
+					<Icon icon={mdiLockOutline} size="15" />
+					<span class="hidden sm:inline">Lock</span>
+				</button>
 			</div>
 		</div>
-		<nav class="flex gap-1 overflow-x-auto px-3 pb-2 md:hidden" aria-label="Sections">
+		{#if mobileSearch}
+			<div class="px-3 pb-2 md:hidden">
+				<SettingsSearch
+					autofocus
+					onpick={(hit) => {
+						mobileSearch = false;
+						jumpTo(hit);
+					}}
+				/>
+			</div>
+		{/if}
+		<nav class="flex items-center gap-1 overflow-x-auto px-3 pb-2 md:hidden" aria-label="Sections">
 			{#each pages as p (p.id)}
 				<a
 					href="#{p.id}"
-					class="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-primary {page ===
+					class="shrink-0 rounded-full px-3.5 py-1.5 text-[0.875rem] font-medium focus-visible:outline-2 focus-visible:outline-primary {page ===
 					p.id
-						? 'bg-primary/10 text-primary'
-						: 'text-dark/70'}"
+						? 'bg-primary text-white dark:text-black'
+						: 'text-label-2'}"
 					aria-current={page === p.id ? 'page' : undefined}
 					onclick={(e) => {
 						e.preventDefault();
@@ -225,96 +266,118 @@
 					{shortTitles[p.id]}
 				</a>
 			{/each}
+			<button
+				type="button"
+				class="text-label-2 ml-auto shrink-0 rounded-full p-1.5 focus-visible:outline-2 focus-visible:outline-primary"
+				aria-label={mobileSearch ? 'Close search' : 'Search settings'}
+				aria-expanded={mobileSearch}
+				onclick={() => (mobileSearch = !mobileSearch)}
+			>
+				<Icon icon={mobileSearch ? mdiClose : mdiMagnify} size="20" />
+			</button>
 		</nav>
 	</header>
 
-	<div class="mx-auto flex max-w-[90rem]">
-		<div class="hidden w-60 shrink-0 border-r border-light-200 md:block">
-			<aside class="sticky top-[53px] flex h-[calc(100dvh-53px)] flex-col justify-between p-3">
-				<nav class="flex flex-col gap-0.5" aria-label="Sections">
-					{#each pages as p (p.id)}
-						<a
-							href="#{p.id}"
-							class="flex items-center gap-3 rounded-full px-4 py-2.5 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary {page ===
-							p.id
-								? 'bg-primary/10 text-primary'
-								: 'text-dark/80 hover:bg-subtle/60'}"
-							aria-current={page === p.id ? 'page' : undefined}
-							onclick={(e) => {
-								e.preventDefault();
-								go(p.id);
-							}}
-						>
-							<Icon icon={p.icon} size="20" />
-							{p.title}
-						</a>
-					{/each}
-				</nav>
+	<div class="mx-auto flex max-w-[84rem]">
+		<div class="hidden w-64 shrink-0 md:block">
+			<aside
+				class="sticky top-[49px] flex h-[calc(100dvh-49px)] flex-col justify-between px-3 py-4"
+			>
+				<div>
+					<SettingsSearch onpick={jumpTo} />
+					<nav class="mt-3 flex flex-col gap-0.5" aria-label="Sections">
+						{#each pages as p (p.id)}
+							{@const selected = page === p.id}
+							<a
+								href="#{p.id}"
+								class="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[0.9375rem] transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary {selected
+									? 'bg-primary font-medium text-white dark:text-black'
+									: 'hover:bg-black/5 dark:hover:bg-white/10'}"
+								aria-current={selected ? 'page' : undefined}
+								onclick={(e) => {
+									e.preventDefault();
+									go(p.id);
+								}}
+							>
+								<span
+									class="flex h-[26px] w-[26px] items-center justify-center rounded-[7px] text-white shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.1)]"
+									style="background:{p.tile}"
+								>
+									<Icon icon={p.icon} size="17" />
+								</span>
+								{p.title}
+							</a>
+						{/each}
+					</nav>
+				</div>
 				{#if frameVersion}
-					<Text size="small" class="px-4 pb-2 text-dark/60">ImmichFrame {frameVersion}</Text>
+					<p class="text-label-2 px-2 text-[0.75rem]">ImmichFrame {frameVersion}</p>
 				{/if}
 			</aside>
 		</div>
 
-		<main class="relative min-w-0 flex-1 px-4 pt-7 pb-36 md:px-8">
-			<Heading tag="h1" size="large">{current.title}</Heading>
-			<Text class="mt-2 mb-7 text-dark/70">{current.intro}</Text>
+		<main class="relative min-w-0 flex-1 px-4 pt-6 pb-36 md:px-8 md:pt-8">
+			{#key page}
+				<div in:fly={{ y: 6, duration: 220, easing: cubicOut }}>
+					<h1 class="title-large">{current.title}</h1>
+					<p class="text-label-2 mt-1.5 mb-8 text-[1.0625rem]">{current.intro}</p>
+					<div class="flex flex-col gap-6 xl:flex-row xl:items-start">
+						<div class="min-w-0 flex-1">
+							{#if page === 'photos'}
+								<PagePhotos
+									settings={editor.settings}
+									version={editor.version}
+									onaddaccount={addAccount}
+								/>
+							{:else if page === 'look'}
+								{#key editor.version}
+									<PageLook general={editor.settings.General ?? (editor.settings.General = {})} />
+								{/key}
+							{:else if page === 'screens'}
+								<PageScreens
+									secret={savedSettings.General?.authenticationSecret}
+									ongotoaccess={() => go('access')}
+									onscreens={countLive}
+								/>
+							{:else}
+								{#key editor.version}
+									<PageAccess
+										settings={editor.settings}
+										version={editor.version}
+										onaddaccount={() =>
+											(editor.settings.Accounts = [...(editor.settings.Accounts ?? []), {}])}
+										onremoveaccount={removeAccount}
+										{passwordFromEnvironment}
+									/>
+								{/key}
+							{/if}
+						</div>
 
-			<div class="flex flex-col gap-6 xl:flex-row xl:items-start">
-				<div class="min-w-0 flex-1">
-					{#if page === 'photos'}
-						<PagePhotos
-							settings={editor.settings}
-							version={editor.version}
-							onaddaccount={addAccount}
-						/>
-					{:else if page === 'look'}
-						{#key editor.version}
-							<PageLook general={editor.settings.General ?? (editor.settings.General = {})} />
-						{/key}
-					{:else if page === 'screens'}
-						<PageScreens
-							secret={savedSettings.General?.authenticationSecret}
-							ongotoaccess={() => go('access')}
-							onscreens={countLive}
-						/>
-					{:else}
-						{#key editor.version}
-							<PageAccess
-								settings={editor.settings}
-								version={editor.version}
-								onaddaccount={() =>
-									(editor.settings.Accounts = [...(editor.settings.Accounts ?? []), {}])}
-								onremoveaccount={removeAccount}
-								{passwordFromEnvironment}
-							/>
-						{/key}
-					{/if}
+						{#if page === 'photos' || page === 'look'}
+							<!-- On narrow screens the Look page shows the preview first, so changes are in view. -->
+							<aside
+								class="flex flex-col gap-4 xl:sticky xl:top-20 xl:w-96 {page === 'look'
+									? 'order-first xl:order-none'
+									: ''}"
+								aria-label="Preview"
+							>
+								<LivePreview general={editor.settings.General ?? {}} {preview} />
+								<div class={page === 'look' ? 'hidden xl:block' : ''}><UpNext {preview} /></div>
+							</aside>
+						{:else if page === 'access'}
+							<aside class="flex flex-col gap-4 xl:sticky xl:top-20 xl:w-96">
+								<RecentActivity
+									refreshKey={savedAt}
+									dirty={editor.dirty}
+									accounts={editor.settings.Accounts ?? []}
+									onrestored={onreload}
+								/>
+								<SettingsBackup saved={savedSettings} onrestore={restoreFromFile} />
+							</aside>
+						{/if}
+					</div>
 				</div>
-
-				{#if page === 'photos' || page === 'look'}
-					<!-- On narrow screens the Look page shows the preview first, so changes are in view. -->
-					<aside
-						class="flex flex-col gap-4 xl:sticky xl:top-20 xl:w-96 {page === 'look'
-							? 'order-first xl:order-none'
-							: ''}"
-						aria-label="Preview"
-					>
-						<LivePreview general={editor.settings.General ?? {}} {preview} />
-						<div class={page === 'look' ? 'hidden xl:block' : ''}><UpNext {preview} /></div>
-					</aside>
-				{:else if page === 'access'}
-					<aside class="flex flex-col gap-4 xl:sticky xl:top-20 xl:w-96">
-						<RecentActivity
-							refreshKey={savedAt}
-							dirty={editor.dirty}
-							accounts={editor.settings.Accounts ?? []}
-							onrestored={onreload}
-						/>
-						<SettingsBackup saved={savedSettings} onrestore={restoreFromFile} />
-					</aside>
-				{/if}
-			</div>
+			{/key}
 
 			<!-- The save bar floats over the content column, not the sidebar. -->
 			{#if barVisible}
@@ -351,7 +414,7 @@
 										/>
 										{saveWarnings.length ? 'Saved, with a warning' : 'Saved'}
 									</span>
-									<Text size="small" class="text-dark/70">
+									<Text size="small" class="text-label-2">
 										{saveWarnings.length
 											? saveWarnings.join(' ')
 											: 'Screens update on their next reload; weather and calendars within 15 minutes.'}
@@ -360,27 +423,27 @@
 							{/if}
 							{#if editor.dirty}
 								<div class="flex gap-2">
-									<Button
+									<Btn
 										variant="ghost"
 										color="secondary"
 										disabled={saving}
 										onclick={() => editor.discard()}
 									>
 										Discard
-									</Button>
-									<Button loading={saving} disabled={!canSave} onclick={onsave} title="Save (⌘S)">
+									</Btn>
+									<Btn loading={saving} disabled={!canSave} onclick={onsave} title="Save (⌘S)">
 										{saving ? 'Saving…' : 'Save'}
-									</Button>
+									</Btn>
 								</div>
 							{:else}
-								<Button
+								<Btn
 									variant="ghost"
 									color="secondary"
 									size="small"
 									onclick={() => (justSaved = false)}
 								>
 									Dismiss
-								</Button>
+								</Btn>
 							{/if}
 						</div>
 					</div>

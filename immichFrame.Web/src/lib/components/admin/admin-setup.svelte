@@ -37,7 +37,7 @@
 		<form class="flex flex-col gap-4" onsubmit={submit}>
 			<AdminBrand subtitle="Welcome" />
 
-			<Text class="text-dark/70" size="small">
+			<Text class="text-label-2" size="small">
 				Choose a password for the admin UI. You will use it to sign in from now on, and you can
 				configure your Immich accounts right after.
 			</Text>
