@@ -1,4 +1,5 @@
 import type { ServerSettings } from '$lib/immichFrameApi';
+import { clearFormatDrafts } from './format-presets';
 
 /**
  * The settings being edited, plus the last saved copy. Dirty is a structural comparison,
@@ -24,6 +25,8 @@ export class AdminEditor {
 	});
 
 	load(settings: ServerSettings) {
+		// Unfinished format drafts belong to the document being replaced (reload, discard, restore).
+		clearFormatDrafts();
 		const copy: ServerSettings = {
 			General: settings.General ?? {},
 			Accounts: settings.Accounts ?? []
