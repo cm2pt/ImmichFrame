@@ -1,43 +1,25 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { mdiContentSave, mdiLogout, mdiPlus } from '@mdi/js';
-	import {
-		Alert,
-		AppShell,
-		AppShellHeader,
-		Button,
-		Card,
-		CardBody,
-		Code,
-		Heading,
-		IconButton,
-		Text
-	} from '@immich/ui';
+	import { AppShell, Card, CardBody, Code, Heading, Text } from '@immich/ui';
 	import * as adminApi from '$lib/services/admin';
 	import { AdminUiState, type ServerSettings } from '$lib/immichFrameApi';
 	import { adminPasswordStore } from '$lib/stores/admin.store';
-	import { generalSections } from './admin-fields';
-	import AdminBrand from './admin-brand.svelte';
+	import { AdminEditor } from './admin-editor.svelte';
+	import AdminEditorShell from './admin-editor-shell.svelte';
 	import AdminLogin from './admin-login.svelte';
 	import AdminSetup from './admin-setup.svelte';
-	import SettingsSection from './settings-section.svelte';
-	import SettingField from './setting-field.svelte';
-	import AccountEditor from './account-editor.svelte';
 
 	type PageState = 'loading' | 'setup' | 'disabled' | 'file' | 'login' | 'editor' | 'error';
 
 	let pageState: PageState = $state('loading');
-	let settings: ServerSettings = $state({ General: {}, Accounts: [] });
+	const editor = new AdminEditor();
 	let loginError = $state('');
 	let setupError = $state('');
 	let saving = $state(false);
 	let saveError = $state('');
-	let saveSuccess = $state(false);
 	let saveWarnings: string[] = $state([]);
-
-	// Remount account editors after (re)loading settings so their local list texts reset
-	let accountsVersion = $state(0);
+	let savedAt = $state(0);
 
 	onMount(loadStatus);
 
@@ -91,8 +73,7 @@
 		try {
 			const res = await adminApi.getSettings();
 			if (res.status == 200) {
-				settings = { General: res.data.General ?? {}, Accounts: res.data.Accounts ?? [] };
-				accountsVersion++;
+				editor.load(res.data);
 				pageState = 'editor';
 				loginError = '';
 			} else {
@@ -116,25 +97,21 @@
 		pageState = 'login';
 	}
 
-	function addAccount() {
-		settings.Accounts = [...(settings.Accounts ?? []), {}];
-	}
-
-	function removeAccount(index: number) {
-		settings.Accounts = (settings.Accounts ?? []).filter((_, i) => i != index);
-		accountsVersion++;
-	}
-
 	async function save() {
 		saving = true;
 		saveError = '';
-		saveSuccess = false;
 		saveWarnings = [];
 		try {
-			const res = await adminApi.updateSettings($state.snapshot(settings) as ServerSettings);
+			const sent = editor.snapshot();
+			const res = await adminApi.updateSettings(sent as ServerSettings);
 			if (res.status == 200) {
-				saveSuccess = true;
 				saveWarnings = res.data.warnings ?? [];
+				// A new admin password signs this browser in with it.
+				if (sent.General?.adminPassword && sent.General.adminPassword !== get(adminPasswordStore)) {
+					adminPasswordStore.set(sent.General.adminPassword);
+				}
+				editor.markSaved();
+				savedAt = Date.now();
 			} else if (res.status == 401) {
 				adminPasswordStore.set(null);
 				loginError = 'Session expired. Sign in again.';
@@ -154,120 +131,53 @@
 	}
 </script>
 
-<AppShell class="bg-light px-4">
-	{#if pageState === 'editor'}
-		<AppShellHeader>
-			<div class="w-full p-4">
-				<div class="mx-auto flex w-full max-w-3xl items-center justify-between gap-4">
-					<AdminBrand subtitle="Server settings" />
-
-					<div class="flex items-center gap-2">
-						<Button leadingIcon={mdiContentSave} loading={saving} onclick={save}>
-							{saving ? 'Saving…' : 'Save'}
-						</Button>
-						<IconButton
-							icon={mdiLogout}
-							variant="outline"
-							color="secondary"
-							aria-label="Sign out"
-							title="Sign out"
-							onclick={logout}
-						/>
-					</div>
-				</div>
-			</div>
-		</AppShellHeader>
-	{/if}
-	<div class="p-4 pb-24">
-		{#if pageState === 'loading'}
-			<Text color="muted" class="block pt-24 text-center">Loading…</Text>
-		{:else if pageState === 'error'}
-			<Text color="muted" class="block pt-24 text-center">
-				Could not reach the ImmichFrame server. Check the container logs and reload this page.
-			</Text>
-		{:else if pageState === 'setup'}
-			<AdminSetup error={setupError} onsetup={setup} />
-		{:else if pageState === 'disabled'}
-			<Card class="mx-auto mt-24 max-w-lg">
-				<CardBody class="text-center">
-					<Heading size="large" class="mb-4">Admin UI is disabled</Heading>
-					<Text color="muted">
-						This instance is already configured but has no admin password. Set the
-						<Code>IMMICHFRAME_ADMIN_PASSWORD</Code> environment variable and restart the container to
-						get in.
-					</Text>
-				</CardBody>
-			</Card>
-		{:else if pageState === 'file'}
-			<Card class="mx-auto mt-24 max-w-lg">
-				<CardBody class="text-center">
-					<Heading size="large" class="mb-4">Settings come from a config file</Heading>
-					<Text color="muted">
-						This instance is configured declaratively. The admin UI is disabled. Edit
-						<Code>Settings.yml</Code> or <Code>Settings.json</Code> and restart ImmichFrame to apply
-						changes.
-					</Text>
-				</CardBody>
-			</Card>
-		{:else if pageState === 'login'}
-			<AdminLogin error={loginError} onlogin={login} />
-		{:else}
-			<div class="mx-auto max-w-3xl">
-				{#if saveSuccess}
-					<Alert color="success" title="Saved" class="mb-4">
-						Changes are applied live. Slideshow devices pick up display changes on their next
-						reload; weather and calendars refresh within ~15 minutes.
-						{#if saveWarnings.length}
-							<ul class="mt-2 list-disc pl-5">
-								{#each saveWarnings as warning (warning)}
-									<li>{warning}</li>
-								{/each}
-							</ul>
-						{/if}
-					</Alert>
-				{/if}
-				{#if saveError}
-					<Alert color="danger" class="mb-4">{saveError}</Alert>
-				{/if}
-
-				<div class="flex flex-col gap-4">
-					{#each generalSections as section (section.title)}
-						<SettingsSection title={section.title} open={section.title === 'Display'}>
-							<div class="grid gap-x-8 sm:grid-cols-2">
-								{#each section.fields as field (field.key)}
-									<SettingField {field} target={settings.General ?? {}} />
-								{/each}
-							</div>
-						</SettingsSection>
-					{/each}
-
-					<SettingsSection title="Accounts">
-						<div class="flex flex-col gap-4">
-							{#key accountsVersion}
-								{#each settings.Accounts ?? [] as account, index (index)}
-									<AccountEditor {account} {index} onremove={() => removeAccount(index)} />
-								{/each}
-							{/key}
-							{#if !(settings.Accounts ?? []).length}
-								<Text color="muted" size="small">
-									No accounts configured yet — the slideshow has nothing to show. Add your first
-									Immich account below.
-								</Text>
-							{/if}
-							<Button
-								leadingIcon={mdiPlus}
-								variant="outline"
-								color="secondary"
-								size="small"
-								class="w-fit"
-								onclick={addAccount}
-							>
-								Add account
-							</Button>
-						</div>
-					</SettingsSection>
-				</div>
-			</div>
-		{/if}
-	</div>
-</AppShell>
+{#if pageState === 'editor'}
+	<AdminEditorShell
+		{editor}
+		{saving}
+		{saveError}
+		{saveWarnings}
+		{savedAt}
+		onsave={save}
+		onreload={loadSettings}
+		onlogout={logout}
+	/>
+{:else}
+	<AppShell class="bg-light px-4">
+		<div class="p-4 pb-24">
+			{#if pageState === 'loading'}
+				<Text color="muted" class="block pt-24 text-center">Loading…</Text>
+			{:else if pageState === 'error'}
+				<Text color="muted" class="block pt-24 text-center">
+					Could not reach the ImmichFrame server. Check the container logs and reload this page.
+				</Text>
+			{:else if pageState === 'setup'}
+				<AdminSetup error={setupError} onsetup={setup} />
+			{:else if pageState === 'disabled'}
+				<Card class="mx-auto mt-24 max-w-lg">
+					<CardBody class="text-center">
+						<Heading size="large" class="mb-4">Admin UI is disabled</Heading>
+						<Text color="muted">
+							This instance is already configured but has no admin password. Set the
+							<Code>IMMICHFRAME_ADMIN_PASSWORD</Code> environment variable and restart the container to
+							get in.
+						</Text>
+					</CardBody>
+				</Card>
+			{:else if pageState === 'file'}
+				<Card class="mx-auto mt-24 max-w-lg">
+					<CardBody class="text-center">
+						<Heading size="large" class="mb-4">Settings come from a config file</Heading>
+						<Text color="muted">
+							This instance is configured declaratively. The admin UI is disabled. Edit
+							<Code>Settings.yml</Code> or <Code>Settings.json</Code> and restart ImmichFrame to apply
+							changes.
+						</Text>
+					</CardBody>
+				</Card>
+			{:else if pageState === 'login'}
+				<AdminLogin error={loginError} onlogin={login} />
+			{/if}
+		</div>
+	</AppShell>
+{/if}
