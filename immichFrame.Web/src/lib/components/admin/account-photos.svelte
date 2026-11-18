@@ -182,40 +182,40 @@
 				onchange={setTaken}
 			/>
 		{/snippet}
-		{#if taken === 'custom'}
-			<div class="grid gap-3 sm:grid-cols-3">
-				<label class="text-[0.8125rem]">
-					<span class="mb-1 block font-medium">Last … days</span>
-					<Input
-						type="number"
-						min="1"
-						value={account.imagesFromDays?.toString() ?? ''}
-						disabled={!!account.imagesFromDate}
-						oninput={(e) => {
-							const v = e.currentTarget.value;
-							account.imagesFromDays = v === '' ? null : Number(v);
-						}}
-					/>
-				</label>
-				<label class="text-[0.8125rem]">
-					<span class="mb-1 block font-medium">From</span>
-					<Input
-						type="date"
-						value={dateOnly(account.imagesFromDate)}
-						oninput={(e) => (account.imagesFromDate = toIso(e.currentTarget.value))}
-					/>
-				</label>
-				<label class="text-[0.8125rem]">
-					<span class="mb-1 block font-medium">Until</span>
-					<Input
-						type="date"
-						value={dateOnly(account.imagesUntilDate)}
-						oninput={(e) => (account.imagesUntilDate = toIso(e.currentTarget.value))}
-					/>
-				</label>
-			</div>
-		{/if}
 	</SettingRow>
+	{#if taken === 'custom'}
+		<div class="border-sep ml-6 grid gap-3 border-t py-2.5 sm:grid-cols-3">
+			<label class="text-[0.8125rem]">
+				<span class="mb-1 block font-medium">Last … days</span>
+				<Input
+					type="number"
+					min="1"
+					value={account.imagesFromDays?.toString() ?? ''}
+					disabled={!!account.imagesFromDate}
+					oninput={(e) => {
+						const v = e.currentTarget.value;
+						account.imagesFromDays = v === '' ? null : Number(v);
+					}}
+				/>
+			</label>
+			<label class="text-[0.8125rem]">
+				<span class="mb-1 block font-medium">From</span>
+				<Input
+					type="date"
+					value={dateOnly(account.imagesFromDate)}
+					oninput={(e) => (account.imagesFromDate = toIso(e.currentTarget.value))}
+				/>
+			</label>
+			<label class="text-[0.8125rem]">
+				<span class="mb-1 block font-medium">Until</span>
+				<Input
+					type="date"
+					value={dateOnly(account.imagesUntilDate)}
+					oninput={(e) => (account.imagesUntilDate = toIso(e.currentTarget.value))}
+				/>
+			</label>
+		</div>
+	{/if}
 	<SettingRow title="Minimum rating">
 		{#snippet control()}
 			<PopupSelect
