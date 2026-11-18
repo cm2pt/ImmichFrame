@@ -1,4 +1,6 @@
+using ImmichFrame.Core.Api;
 using ImmichFrame.Core.Exceptions;
+using ImmichFrame.Core.Interfaces;
 using ImmichFrame.WebApi.Helpers;
 using ImmichFrame.WebApi.Models;
 using ImmichFrame.WebApi.Services;
@@ -30,6 +32,27 @@ namespace ImmichFrame.WebApi.Controllers
         public string? Version { get; set; }
     }
 
+    public class AdminInfoDto
+    {
+        public string Version { get; set; } = string.Empty;
+    }
+
+    public class ScreenRenameDto
+    {
+        public string? Name { get; set; }
+    }
+
+    public class AdminPreviewAssetDto
+    {
+        public Guid Id { get; set; }
+        public string? FileName { get; set; }
+        public DateTime? TakenAt { get; set; }
+        public string? City { get; set; }
+        public string? Country { get; set; }
+        public List<string> People { get; set; } = new();
+        public string Type { get; set; } = string.Empty;
+    }
+
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(AuthenticationSchemes = ImmichFrameAdminAuthenticationHandler.SchemeName)]
@@ -39,14 +62,22 @@ namespace ImmichFrame.WebApi.Controllers
         private readonly SettingsService _settingsService;
         private readonly AdminAuthService _adminAuthService;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ScreenRegistry _screenRegistry;
+        private readonly IImmichFrameLogic _logic;
+
+        /// <summary>Most assets the "Up next" preview returns.</summary>
+        public const int MaxPreviewCount = 12;
 
         public AdminController(ILogger<AdminController> logger, SettingsService settingsService,
-            AdminAuthService adminAuthService, IHttpClientFactory httpClientFactory)
+            AdminAuthService adminAuthService, IHttpClientFactory httpClientFactory,
+            ScreenRegistry screenRegistry, IImmichFrameLogic logic)
         {
             _logger = logger;
             _settingsService = settingsService;
             _adminAuthService = adminAuthService;
             _httpClientFactory = httpClientFactory;
+            _screenRegistry = screenRegistry;
+            _logic = logic;
         }
 
         [HttpGet("Status", Name = "GetAdminStatus")]
@@ -150,6 +181,142 @@ namespace ImmichFrame.WebApi.Controllers
 
             var check = await ImmichServerVersionChecker.CheckAccount(account, _httpClientFactory);
             return new AccountTestResultDto { Success = check.Success, Message = check.Message, Version = check.Version };
+        }
+            [HttpGet("Info", Name = "GetAdminInfo")]
+        public AdminInfoDto GetInfo()
+        {
+            return new AdminInfoDto
+            {
+                Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown"
+            };
+        }
+
+        /// <summary>
+        /// What an account can pick from: albums, named people and tags, plus photo counts. Takes
+        /// the account settings in the body, so it works for an account that isn't saved yet.
+        /// </summary>
+        [HttpPost("Library", Name = "GetAccountLibrary")]
+        public async Task<AccountLibraryDto> GetAccountLibrary([FromBody] ServerAccountSettings account)
+        {
+            try
+            {
+                account.ValidateAndInitialize(); // resolves ApiKeyFile if given
+            }
+            catch (Exception ex)
+            {
+                return new AccountLibraryDto { Success = false, Message = ex.Message };
+            }
+
+            return await ImmichAccountLibrary.Load(account, _httpClientFactory);
+        }
+
+        [HttpGet("Screens", Name = "GetScreens")]
+        public async Task<IReadOnlyList<ScreenDto>> GetScreens()
+        {
+            return await _screenRegistry.GetScreensAsync();
+        }
+
+        [HttpPut("Screens/{clientIdentifier}/Name", Name = "RenameScreen")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RenameScreen(string clientIdentifier, [FromBody] ScreenRenameDto rename)
+        {
+            return await _screenRegistry.RenameAsync(clientIdentifier, rename.Name) ? NoContent() : NotFound();
+        }
+
+        [HttpDelete("Screens/{clientIdentifier}", Name = "ForgetScreen")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ForgetScreen(string clientIdentifier)
+        {
+            return await _screenRegistry.ForgetAsync(clientIdentifier) ? NoContent() : NotFound();
+        }
+
+        /// <summary>The current settings version and the kept previous ones, newest first.</summary>
+        [HttpGet("Settings/History", Name = "GetSettingsHistory")]
+        public async Task<List<SettingsHistoryEntryDto>> GetSettingsHistory()
+        {
+            return await _settingsService.GetHistoryAsync();
+        }
+
+        /// <summary>
+        /// Makes a previous version current again. This is a new save, so it can be undone in turn.
+        /// The admin password is kept as it is now.
+        /// </summary>
+        [HttpPost("Settings/History/{version:long}/Restore", Name = "RestoreSettingsVersion")]
+        [ProducesResponseType(typeof(SettingsUpdateResultDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<SettingsUpdateResultDto>> RestoreSettingsVersion(long version)
+        {
+            Core.Interfaces.IServerSettings? restored;
+            try
+            {
+                restored = await _settingsService.RestoreAsync(version);
+            }
+            catch (SettingsNotValidException ex)
+            {
+                _logger.LogWarning("Rejected restoring settings version {version}: {message}", version, ex.Message);
+                return Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
+            }
+
+            if (restored == null)
+            {
+                return Problem(detail: $"Settings version {version} is not in the history.", statusCode: StatusCodes.Status404NotFound);
+            }
+
+            var checks = await Task.WhenAll(restored.Accounts
+                .Select(account => ImmichServerVersionChecker.CheckAccount(account, _httpClientFactory)));
+            return Ok(new SettingsUpdateResultDto
+            {
+                Warnings = checks.Where(c => !c.Success).Select(c => c.Message).ToList()
+            });
+        }
+
+        /// <summary>
+        /// A sample of what the frame shows next, drawn from the same pool as the slideshow (one
+        /// pool request, like a screen asking for its next batch).
+        /// </summary>
+        [HttpGet("Preview", Name = "GetAdminPreview")]
+        public async Task<List<AdminPreviewAssetDto>> GetAdminPreview(int count = 4)
+        {
+            count = ClampPreviewCount(count);
+            var assets = (await _logic.GetAssets()).ToList();
+            return assets
+                .DistinctBy(a => a.Id)
+                .Take(count)
+                .Select(a => new AdminPreviewAssetDto
+                {
+                    Id = a.Id,
+                    FileName = a.OriginalFileName,
+                    TakenAt = a.LocalDateTime == default ? null : a.LocalDateTime.DateTime,
+                    City = a.ExifInfo?.City,
+                    Country = a.ExifInfo?.Country,
+                    People = (a.People ?? new List<PersonResponseDto>())
+                        .Select(p => p.Name)
+                        .Where(n => !string.IsNullOrWhiteSpace(n))
+                        .ToList(),
+                    Type = a.Type.ToString()
+                })
+                .ToList();
+        }
+
+        internal static int ClampPreviewCount(int count) => Math.Clamp(count, 1, MaxPreviewCount);
+
+        /// <summary>The image of a preview asset. Fetched with the admin password, so the UI loads it as a blob.</summary>
+        [HttpGet("Preview/{id}/Image", Name = "GetAdminPreviewImage")]
+        [Produces("image/jpeg", "image/webp")]
+        [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAdminPreviewImage(Guid id)
+        {
+            var asset = await _logic.GetAsset(id, AssetTypeEnum.IMAGE);
+            if (asset.Owner != null)
+            {
+                HttpContext.Response.RegisterForDispose(asset.Owner);
+            }
+
+            Response.Headers.CacheControl = "private, max-age=300";
+            return File(asset.FileStream, asset.ContentType, asset.FileName);
         }
     }
 }

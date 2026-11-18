@@ -9,6 +9,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ImmichFrame.WebApi.Services;
 
+public class SettingsHistoryEntryDto
+{
+    public long Version { get; set; }
+    public DateTime SavedAtUtc { get; set; }
+
+    /// <summary>What this save changed compared with the version before it. Secret values never appear.</summary>
+    public List<string> Changes { get; set; } = new();
+}
+
 public record SettingsServiceOptions(string ConfigPath, SettingsSource Source = SettingsSource.Database);
 
 /// <summary>Outcome of an anonymous onboarding attempt.</summary>
@@ -35,6 +44,9 @@ public class SettingsService : ISettingsProvider
     private readonly ILogger<SettingsService> _logger;
     private readonly SettingsServiceOptions _options;
     private readonly SemaphoreSlim _updateLock = new(1, 1);
+
+    /// <summary>How many previous settings documents are kept for undo.</summary>
+    public const int HistoryLimit = 50;
 
     /// <summary>SQLITE_CANTOPEN: the database file could not be opened, almost always a permission problem.</summary>
     private const int SQLITE_CANTOPEN = 14;
@@ -311,7 +323,7 @@ public class SettingsService : ISettingsProvider
     }
 
     /// <summary>Writes the settings and publishes them. Caller must hold <see cref="_updateLock"/>.</summary>
-    private async Task<IServerSettings> PersistAsync(ServerSettings raw, ServerSettings validated)
+    private async Task<IServerSettings> PersistAsync(ServerSettings raw, ServerSettings validated, long? restoredFrom = null)
     {
         await using var db = await RequireDbFactory().CreateDbContextAsync();
         var row = await db.SettingsDocuments.FindAsync(1);
@@ -321,10 +333,26 @@ public class SettingsService : ISettingsProvider
             db.SettingsDocuments.Add(row);
         }
 
+        var now = DateTime.UtcNow;
+        if (row.Version > 0)
+        {
+            // Keep the document being replaced, so this save can be undone.
+            db.SettingsHistory.Add(new SettingsHistoryEntry
+            {
+                Version = row.Version,
+                Json = row.Json,
+                SavedAtUtc = row.UpdatedAtUtc,
+                CreatedAtUtc = now,
+                RestoredFromVersion = row.RestoredFromVersion
+            });
+        }
+
         row.Json = Serialize(raw);
-        row.UpdatedAtUtc = DateTime.UtcNow;
+        row.UpdatedAtUtc = now;
+        row.RestoredFromVersion = restoredFrom;
         row.Version++;
         await db.SaveChangesAsync();
+        await TrimHistoryAsync(db);
 
         var old = _raw;
         var accountsChanged = Serialize(old.AccountsImpl) != Serialize(raw.AccountsImpl)
@@ -344,6 +372,111 @@ public class SettingsService : ISettingsProvider
         });
 
         return validated;
+    }
+
+    private static async Task TrimHistoryAsync(SettingsDbContext db)
+    {
+        var stale = await db.SettingsHistory
+            .OrderByDescending(h => h.Version)
+            .Skip(HistoryLimit)
+            .Select(h => h.Id)
+            .ToListAsync();
+        if (stale.Count > 0)
+        {
+            await db.SettingsHistory.Where(h => stale.Contains(h.Id)).ExecuteDeleteAsync();
+        }
+    }
+
+    /// <summary>
+    /// The current version followed by the kept previous versions, newest first, each with a
+    /// summary of what that save changed.
+    /// </summary>
+    public async Task<List<SettingsHistoryEntryDto>> GetHistoryAsync()
+    {
+        EnsureMutable();
+        await using var db = await RequireDbFactory().CreateDbContextAsync();
+        var versions = new List<(long Version, DateTime SavedAtUtc, string Json, long? RestoredFrom)>();
+        var row = await db.SettingsDocuments.AsNoTracking().FirstOrDefaultAsync(d => d.Id == 1);
+        if (row != null)
+        {
+            versions.Add((row.Version, row.UpdatedAtUtc, row.Json, row.RestoredFromVersion));
+        }
+
+        versions.AddRange((await db.SettingsHistory.AsNoTracking()
+                .OrderByDescending(h => h.Version)
+                .ToListAsync())
+            .Select(h => (h.Version, h.SavedAtUtc, h.Json, h.RestoredFromVersion)));
+
+        var result = new List<SettingsHistoryEntryDto>();
+        for (var i = 0; i < versions.Count; i++)
+        {
+            var (version, savedAt, json, restoredFrom) = versions[i];
+            var previous = i + 1 < versions.Count ? versions[i + 1].Json : null;
+            List<string> changes;
+            if (previous != null)
+            {
+                changes = SettingsDiff.Describe(previous, json);
+            }
+            else if (version <= 1)
+            {
+                changes = new List<string> { row?.ImportedFrom != null ? $"Imported from {row.ImportedFrom}" : "First settings" };
+            }
+            else
+            {
+                // Older versions were trimmed: there is nothing left to compare against.
+                changes = new List<string> { "Oldest kept version" };
+            }
+
+            if (restoredFrom is long from)
+            {
+                changes.Insert(0, $"Restored version {from}");
+            }
+
+            result.Add(new SettingsHistoryEntryDto
+            {
+                Version = version,
+                SavedAtUtc = DateTime.SpecifyKind(savedAt, DateTimeKind.Utc),
+                Changes = changes
+            });
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Makes a previous version current again, as a new save (so the restore can be undone too).
+    /// The admin password is not rolled back, so restoring cannot lock the admin out.
+    /// Returns null when the version is unknown.
+    /// </summary>
+    public async Task<IServerSettings?> RestoreAsync(long version)
+    {
+        EnsureMutable();
+        await _updateLock.WaitAsync();
+        try
+        {
+            await using var db = await RequireDbFactory().CreateDbContextAsync();
+            var current = await db.SettingsDocuments.AsNoTracking().FirstOrDefaultAsync(d => d.Id == 1);
+            if (current?.Version == version)
+            {
+                return _current;
+            }
+
+            var entry = await db.SettingsHistory.AsNoTracking().FirstOrDefaultAsync(h => h.Version == version);
+            if (entry == null)
+            {
+                return null;
+            }
+
+            var raw = Deserialize(entry.Json);
+            raw.GeneralSettingsImpl!.AdminPassword = _raw.GeneralSettingsImpl?.AdminPassword;
+            var validated = NormalizeAndValidate(raw);
+            _logger.LogInformation("Restoring settings version {version}", version);
+            return await PersistAsync(raw, validated, restoredFrom: version);
+        }
+        finally
+        {
+            _updateLock.Release();
+        }
     }
 
     /// <summary>The raw settings for editing: secrets included, ApiKeyFile unresolved.</summary>
