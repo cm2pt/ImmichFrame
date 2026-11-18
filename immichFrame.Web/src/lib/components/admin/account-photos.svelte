@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Input, Select } from '@immich/ui';
+	import PopupSelect from './popup-select.svelte';
+	import { Input } from '@immich/ui';
 	import type { ServerAccountSettings } from '$lib/immichFrameApi';
 	import { accountDefaults, effective } from './admin-defaults';
 	import { formatCount, libraryFor } from './admin-library.svelte';
@@ -36,7 +37,7 @@
 	let excludedMap = $derived(
 		new Map(
 			(account.excludedAlbums ?? []).map(
-				(id) => [String(id).toLowerCase(), 'In Never Show'] as const
+				(id) => [String(id).toLowerCase(), 'In Never show'] as const
 			)
 		)
 	);
@@ -96,7 +97,7 @@
 		{/snippet}
 	</SettingRow>
 	{#if get('showMemories')}
-		<SettingRow title="On This Day" nested>
+		<SettingRow title="On this day" nested>
 			{#snippet control()}
 				<Toggle
 					aria-label="On this day"
@@ -152,7 +153,7 @@
 </PageCard>
 
 <PageCard
-	title="Never Show"
+	title="Never show"
 	footer="Add a photo to one of these albums in Immich to keep it off the frame. Memories ignore this."
 >
 	<ItemList
@@ -166,7 +167,7 @@
 	/>
 </PageCard>
 
-<PageCard title="Narrow Down" footer="These apply to everything above except memories.">
+<PageCard title="Narrow down" footer="These apply to everything above except memories.">
 	<SettingRow title="Taken">
 		{#snippet control()}
 			<Segmented
@@ -215,23 +216,21 @@
 			</div>
 		{/if}
 	</SettingRow>
-	<SettingRow title="Minimum Rating">
+	<SettingRow title="Minimum rating">
 		{#snippet control()}
-			<div class="w-40">
-				<Select
-					size="small"
-					options={[
-						{ value: '0', label: 'Any' },
-						{ value: '1', label: '★ and up' },
-						{ value: '2', label: '★★ and up' },
-						{ value: '3', label: '★★★ and up' },
-						{ value: '4', label: '★★★★ and up' },
-						{ value: '5', label: '★★★★★' }
-					]}
-					value={String(account.rating ?? 0)}
-					onChange={(v) => (account.rating = v === '0' ? null : Number(v))}
-				/>
-			</div>
+			<PopupSelect
+				label="Minimum rating"
+				options={[
+					{ value: '0', label: 'Any' },
+					{ value: '1', label: '★ and up' },
+					{ value: '2', label: '★★ and up' },
+					{ value: '3', label: '★★★ and up' },
+					{ value: '4', label: '★★★★ and up' },
+					{ value: '5', label: '★★★★★' }
+				]}
+				value={String(account.rating ?? 0)}
+				onchange={(v) => (account.rating = v === '0' ? null : Number(v))}
+			/>
 		{/snippet}
 	</SettingRow>
 	<SettingRow title="Videos" description="Play them, then move on">
@@ -243,7 +242,7 @@
 			/>
 		{/snippet}
 	</SettingRow>
-	<SettingRow title="Archived Photos" description="Photos hidden from the Immich timeline">
+	<SettingRow title="Archived photos" description="Photos hidden from the Immich timeline">
 		{#snippet control()}
 			<Toggle
 				aria-label="Archived photos"

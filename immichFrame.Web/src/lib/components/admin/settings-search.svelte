@@ -12,11 +12,11 @@
 		{ title: 'Albums', page: 'photos' },
 		{ title: 'People', page: 'photos', words: 'faces persons' },
 		{ title: 'Tags', page: 'photos' },
-		{ title: 'Never Show', page: 'photos', words: 'hide exclude albums' },
+		{ title: 'Never show', page: 'photos', words: 'hide exclude albums' },
 		{ title: 'Taken', page: 'photos', words: 'date range year' },
-		{ title: 'Minimum Rating', page: 'photos', words: 'stars' },
+		{ title: 'Minimum rating', page: 'photos', words: 'stars' },
 		{ title: 'Videos', page: 'photos' },
-		{ title: 'Archived Photos', page: 'photos', words: 'archive' },
+		{ title: 'Archived photos', page: 'photos', words: 'archive' },
 		{ title: 'Time on each photo', page: 'look', words: 'interval seconds duration speed' },
 		{ title: 'Change between photos', page: 'look', words: 'transition fade' },
 		{ title: 'Progress bar', page: 'look' },
@@ -40,17 +40,17 @@
 		{ title: 'Language', page: 'look', words: 'locale' },
 		{ title: 'Weather', page: 'look', words: 'openweathermap temperature' },
 		{ title: 'Calendars', page: 'look', words: 'ics events appointments' },
-		{ title: 'Add a Screen', page: 'screens', words: 'device apple tv ipad qr code new' },
-		{ title: 'Immich Accounts', page: 'access', words: 'api key server account connection' },
-		{ title: 'Frame Secret', page: 'access', words: 'authentication password screens' },
-		{ title: 'Admin Password', page: 'access', words: 'login sign in' },
+		{ title: 'Add a screen', page: 'screens', words: 'device apple tv ipad qr code new' },
+		{ title: 'Immich accounts', page: 'access', words: 'api key server account connection' },
+		{ title: 'Frame secret', page: 'access', words: 'authentication password screens' },
+		{ title: 'Admin password', page: 'access', words: 'login sign in' },
 		{ title: 'Keep images on disk', page: 'access', words: 'cache download' },
 		{ title: 'Refresh albums and people', page: 'access', words: 'interval' },
 		{ title: 'Webhook', page: 'access', words: 'home assistant automation' },
-		{ title: 'Recent Changes', page: 'access', words: 'history undo restore' },
+		{ title: 'Recent changes', page: 'access', words: 'history undo restore' },
 		{ title: 'Backup', page: 'access', words: 'download export import restore' },
 		{ title: 'Preview', page: 'look', words: 'live preview' },
-		{ title: 'Up Next', page: 'photos', words: 'sample shuffle' }
+		{ title: 'Up next', page: 'photos', words: 'sample shuffle' }
 	];
 
 	const pageTitles: Record<string, string> = {

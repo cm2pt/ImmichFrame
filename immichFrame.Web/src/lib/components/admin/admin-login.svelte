@@ -34,7 +34,7 @@
 
 	<form class="mt-7 w-full" onsubmit={submit}>
 		<div
-			class="bg-group flex items-center rounded-[12px] p-1 pl-4 shadow-[0_0_0_1px_rgb(0_0_0/0.12)] focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--if-accent-fill)_35%,transparent),0_0_0_1px_var(--if-accent-fill)] dark:shadow-[0_0_0_1px_rgb(255_255_255/0.16)]"
+			class="bg-group flex items-center rounded-[12px] p-1 pl-4 shadow-[0_0_0_1px_rgb(0_0_0/0.12)] focus-within:shadow-[0_0_0_1px_color-mix(in_oklab,var(--if-accent-fill)_70%,transparent)] dark:shadow-[0_0_0_1px_rgb(255_255_255/0.16)]"
 		>
 			<input
 				use:focusOnMount

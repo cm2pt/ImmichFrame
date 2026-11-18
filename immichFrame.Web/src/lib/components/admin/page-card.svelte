@@ -23,7 +23,12 @@
 	{#if title || actions}
 		<div class="mb-1.5 flex min-h-6 items-end justify-between gap-3 px-4">
 			{#if title}
-				<h2 class="text-label-2 text-[0.8125rem] tracking-[0.02em] uppercase">{title}</h2>
+				<!-- iOS: small capitals in secondary gray. macOS: sentence case, semibold, label color. -->
+				<h2
+					class="text-label-2 text-[0.8125rem] tracking-[0.02em] uppercase sm:font-semibold sm:tracking-normal sm:!text-current sm:normal-case"
+				>
+					{title}
+				</h2>
 			{/if}
 			{#if actions}<div class="flex items-center gap-1">{@render actions()}</div>{/if}
 		</div>

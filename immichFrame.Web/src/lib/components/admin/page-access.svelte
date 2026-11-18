@@ -1,12 +1,19 @@
 <script lang="ts">
 	import Btn from './btn.svelte';
 	import Toggle from './toggle.svelte';
-	import { Input, NumberInput, PasswordInput } from '@immich/ui';
+	import { Input, NumberInput } from '@immich/ui';
 	import Glyph from './glyph.svelte';
 	import type { ServerSettings } from '$lib/immichFrameApi';
 	import { effective, generalDefaults } from './admin-defaults';
-	import AccountConnection from './account-connection.svelte';
-	import CopyField from './copy-field.svelte';
+	import { onMount } from 'svelte';
+	import type { ServerAccountSettings } from '$lib/immichFrameApi';
+	import * as adminApi from '$lib/services/admin';
+	import AccountDetail, { type AccountStatus } from './account-detail.svelte';
+	import { libraryFor } from './admin-library.svelte';
+	import Monogram from './monogram.svelte';
+	import Sheet from './sheet.svelte';
+	import ValueRow from './value-row.svelte';
+	import FieldRow from './field-row.svelte';
 	import InlineConfirm from './inline-confirm.svelte';
 	import PageCard from './page-card.svelte';
 	import SettingRow from './setting-row.svelte';
@@ -52,6 +59,51 @@
 		general.adminPassword = newPassword;
 		newPassword = confirmPassword = '';
 		passwordReady = true;
+		passwordSheet = false;
+	}
+	let passwordSheet = $state(false);
+
+	// Accounts: a list of rows; each opens its details in a sheet.
+	let openAccount: number | null = $state(null);
+	let statuses: AccountStatus[] = $state([]);
+	// Each account's Immich user name labels it (loaded once with its library).
+	let libraries = $derived((settings.Accounts ?? []).map((account) => libraryFor(account)));
+	const accountName = (_account: ServerAccountSettings, i: number) =>
+		libraries[i]?.userName || `Account ${i + 1}`;
+
+	async function test(i: number) {
+		const account = settings.Accounts?.[i];
+		if (!account) return;
+		statuses[i] = { testing: true };
+		try {
+			const res = await adminApi.testAccount(JSON.parse(JSON.stringify(account)));
+			statuses[i] =
+				res.status === 200
+					? {
+							testing: false,
+							success: !!res.data.success,
+							message: res.data.message ?? '',
+							version: res.data.version
+						}
+					: { testing: false, success: false, message: 'The test request failed.' };
+		} catch {
+			statuses[i] = {
+				testing: false,
+				success: false,
+				message: 'Couldn’t reach the ImmichFrame server.'
+			};
+		}
+	}
+
+	onMount(() => {
+		(settings.Accounts ?? []).forEach((account, i) => {
+			if (account.immichServerUrl && (account.apiKey || account.apiKeyFile)) test(i);
+		});
+	});
+
+	function addAndOpen() {
+		onaddaccount();
+		openAccount = (settings.Accounts?.length ?? 1) - 1;
 	}
 
 	let advancedOpen = $state(false);
@@ -70,38 +122,80 @@
 
 <div class="flex flex-col gap-7">
 	<PageCard
-		title="Immich Accounts"
-		footer="The frame only reads from Immich. Create a key under Account Settings → API Keys; read access to assets, albums, people, memories and tags is enough."
+		title="Immich accounts"
+		footer="The frame only reads from Immich. Each account's key stays on the server."
 	>
-		{#key version}
-			{#each settings.Accounts ?? [] as account, index (index)}
-				<AccountConnection {account} {index} onremove={() => onremoveaccount(index)} />
-			{/each}
-		{/key}
-		{#if !(settings.Accounts ?? []).length}
-			<p class="text-label-2 py-3 text-[0.875rem]">
-				No accounts yet, so the frame has nothing to show.
-			</p>
-		{/if}
+		{#each settings.Accounts ?? [] as account, index (index)}
+			{@const status = statuses[index]}
+			<button
+				id={`account-row-${index}`}
+				type="button"
+				class="border-sep flex min-h-14 w-full items-center gap-3 border-t py-2 text-left first:border-t-0 focus-visible:outline-2 focus-visible:outline-primary"
+				onclick={() => (openAccount = index)}
+			>
+				<Monogram name={libraries[index]?.userName || String(index + 1)} />
+				<span class="min-w-0 flex-1">
+					<span class="block text-[0.9375rem] md:text-[0.875rem]"
+						>{accountName(account, index)}</span
+					>
+					<span
+						class="text-label-2 flex items-center gap-1.5 truncate text-[0.8125rem] md:text-[0.75rem]"
+					>
+						{#if status?.testing}
+							Checking…
+						{:else if status?.success}
+							<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-[#30d158]"></span>
+							Connected&nbsp;·&ensp;Immich {status.version}
+						{:else if status}
+							<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-[#ff3b30]"></span> Not connected
+						{:else}
+							{account.immichServerUrl || 'Not set up'}
+						{/if}
+					</span>
+				</span>
+				<span class="text-label-3"><Glyph name="chevronRight" size={16} stroke={2} /></span>
+			</button>
+		{/each}
 		<button
 			type="button"
 			class="border-sep flex min-h-11 w-full items-center border-t py-2 text-left text-[0.9375rem] text-primary first:border-t-0 md:text-[0.875rem]"
-			onclick={onaddaccount}
+			onclick={addAndOpen}
 		>
 			Add Immich Account…
 		</button>
 	</PageCard>
 
+	{#if openAccount !== null && settings.Accounts?.[openAccount]}
+		{#key `${version}-${openAccount}`}
+			<Sheet
+				title={accountName(settings.Accounts[openAccount], openAccount)}
+				returnFocusTo={`account-row-${openAccount}`}
+				onclose={() => (openAccount = null)}
+			>
+				<AccountDetail
+					account={settings.Accounts[openAccount]}
+					name={accountName(settings.Accounts[openAccount], openAccount)}
+					status={statuses[openAccount]}
+					ontest={() => openAccount !== null && test(openAccount)}
+					onremove={() => {
+						const i = openAccount!;
+						openAccount = null;
+						statuses = statuses.filter((_, j) => j !== i);
+						onremoveaccount(i);
+					}}
+				/>
+			</Sheet>
+		{/key}
+	{/if}
+
 	<PageCard
-		title="Frame Secret"
+		title="Frame secret"
 		footer={general.authenticationSecret
 			? 'Screens send this to show photos.'
 			: 'There’s no secret, so anyone who can reach the frame can see the photos.'}
 	>
 		{#if general.authenticationSecret}
-			<div class="py-3">
-				<CopyField label="Secret" value={general.authenticationSecret} secret />
-			</div>
+			<ValueRow title="Secret" value={general.authenticationSecret} secret />
 		{/if}
 		{#if secretAction}
 			<div class="pb-3">
@@ -147,52 +241,70 @@
 	</PageCard>
 
 	<PageCard
-		title="Admin Password"
+		title="Admin password"
 		footer={passwordFromEnvironment
 			? 'Set by IMMICHFRAME_ADMIN_PASSWORD on the server. Change it there and restart ImmichFrame.'
-			: 'For this page only. Screens never need it.'}
+			: passwordReady
+				? 'The new password takes effect when you save.'
+				: 'For this page only. Screens never need it.'}
 	>
 		{#if passwordFromEnvironment}
 			<div class="flex min-h-11 items-center justify-between py-2">
-				<span class="text-[0.875rem]">Password</span>
-				<span class="text-label-2 text-[0.875rem]">Set on the server</span>
+				<span class="text-[0.9375rem] md:text-[0.875rem]">Password</span>
+				<span class="text-label-2 text-[0.9375rem] md:text-[0.875rem]">Set on the server</span>
 			</div>
 		{:else}
+			<button
+				id="change-password"
+				type="button"
+				class="flex min-h-11 w-full items-center py-2 text-left text-[0.9375rem] text-primary md:text-[0.875rem]"
+				onclick={() => (passwordSheet = true)}
+			>
+				Change Password…
+			</button>
+		{/if}
+	</PageCard>
+
+	{#if passwordSheet}
+		<Sheet
+			title="Change Password"
+			returnFocusTo="change-password"
+			onclose={() => (passwordSheet = false)}
+		>
 			<form
-				class="grid items-start gap-3 py-3 sm:grid-cols-[1fr_1fr_auto]"
 				onsubmit={(e) => {
 					e.preventDefault();
 					setPassword();
 				}}
 			>
-				<label class="text-[0.8125rem]">
-					<span class="mb-1 block font-medium">New Password</span>
-					<PasswordInput autocomplete="new-password" bind:value={newPassword} />
-					{#if newPassword.length > 0 && newPassword.length < 8}
-						<span class="text-label-2 mt-1 block text-[0.75rem]">At least 8 characters</span>
-					{/if}
-				</label>
-				<label class="text-[0.8125rem]">
-					<span class="mb-1 block font-medium">Confirm Password</span>
-					<PasswordInput autocomplete="new-password" bind:value={confirmPassword} />
-					{#if mismatch}<span class="mt-1 block text-[0.75rem] text-[#d70015] dark:text-[#ff6961]"
-							>Passwords don't match</span
-						>{/if}
-				</label>
-				<Btn
-					type="submit"
-					size="small"
-					variant="outline"
-					color="secondary"
-					class="sm:mt-6"
-					disabled={!canChange}>Change</Btn
+				<PageCard
+					footer={mismatch
+						? 'The passwords don’t match.'
+						: 'At least 8 characters. Screens never need it.'}
 				>
+					<FieldRow
+						title="New password"
+						type="password"
+						autocomplete="new-password"
+						placeholder="Required"
+						value={newPassword}
+						oninput={(v) => (newPassword = v)}
+					/>
+					<FieldRow
+						title="Confirm"
+						type="password"
+						autocomplete="new-password"
+						placeholder="Required"
+						value={confirmPassword}
+						oninput={(v) => (confirmPassword = v)}
+					/>
+				</PageCard>
+				<div class="mt-5 flex justify-end">
+					<Btn type="submit" disabled={!canChange}>Change Password</Btn>
+				</div>
 			</form>
-			{#if passwordReady}
-				<p class="text-label-2 pb-3 text-[0.8125rem]">Ready. It takes effect when you save.</p>
-			{/if}
-		{/if}
-	</PageCard>
+		</Sheet>
+	{/if}
 
 	<PageCard title="Advanced">
 		<button
@@ -202,7 +314,7 @@
 			onclick={() => (advancedOpen = !advancedOpen)}
 		>
 			<span>
-				<span class="block text-[0.9375rem] md:text-[0.875rem]">Cache, Refresh and Webhook</span>
+				<span class="block text-[0.9375rem] md:text-[0.875rem]">Cache, refresh and webhook</span>
 			</span>
 			<span class="text-label-3 transition-transform duration-200 {advancedOpen ? 'rotate-90' : ''}"
 				><Glyph name="chevronRight" size={16} stroke={2} /></span

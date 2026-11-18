@@ -1,5 +1,5 @@
 <script lang="ts" generics="T extends string | number">
-	import { Select } from '@immich/ui';
+	import PopupSelect from './popup-select.svelte';
 
 	interface Option {
 		value: T;
@@ -51,10 +51,11 @@
      so the row never wraps onto two lines. -->
 {#if options.length > 3}
 	<div class="w-full sm:hidden" role="group" aria-label={label}>
-		<Select
+		<PopupSelect
+			{label}
 			options={options.map((o) => ({ value: String(o.value), label: o.label }))}
 			value={value === undefined ? undefined : String(value)}
-			onChange={(v) => {
+			onchange={(v) => {
 				const match = options.find((o) => String(o.value) === v);
 				if (match) onchange(match.value);
 			}}

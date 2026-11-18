@@ -16,7 +16,7 @@
 </script>
 
 <PageCard
-	title="Up Next"
+	title="Up next"
 	footer="A sample of what will show next, to spot screenshots or receipts that slip in."
 >
 	{#snippet actions()}

@@ -57,6 +57,12 @@
 		query = '';
 	}
 
+	// Picking from the popover commits and closes it, like a macOS popover menu.
+	function pick(id: string) {
+		add(id);
+		close();
+	}
+
 	function remove(id: string) {
 		onchange(selected.filter((s) => s !== id));
 	}
@@ -70,7 +76,7 @@
 		}
 		manualError = '';
 		manual = '';
-		if (!selected.includes(value)) add(value);
+		if (!selected.includes(value)) pick(value);
 	}
 
 	function close() {
@@ -145,10 +151,15 @@
 	{#if open}
 		<div
 			bind:this={popover}
-			class="bg-group border-sep absolute top-full left-0 z-30 w-[min(22rem,calc(100vw-3rem))] rounded-xl border p-2 shadow-[0_12px_32px_rgb(0_0_0/0.18)]"
+			class="absolute top-full left-0 z-30 mt-1.5 w-[min(22rem,calc(100vw-3rem))] rounded-[10px] bg-white/85 p-2 shadow-[0_10px_30px_rgb(0_0_0/0.18),0_0_0_0.5px_rgb(0_0_0/0.12)] backdrop-blur-[30px] backdrop-saturate-[180%] dark:bg-[rgb(44_44_46/0.85)] dark:shadow-[0_10px_30px_rgb(0_0_0/0.5),0_0_0_0.5px_rgb(255_255_255/0.12)]"
 			role="dialog"
 			aria-label="Add {noun.toLowerCase()}"
 		>
+			<!-- The popover's arrow, pointing at "Add …". -->
+			<span
+				aria-hidden="true"
+				class="absolute -top-[6px] left-6 h-3 w-3 rotate-45 bg-white/85 shadow-[-0.5px_-0.5px_0_rgb(0_0_0/0.12)] dark:bg-[rgb(44_44_46/0.85)]"
+			></span>
 			{#if loading}
 				<p class="text-label-2 px-2 py-3 text-[0.8125rem]">Loading from Immich…</p>
 			{:else if items}
@@ -170,7 +181,7 @@
 								type="button"
 								class="flex w-full items-center justify-between gap-3 rounded-md px-2.5 py-1.5 text-left text-[0.875rem] hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent dark:hover:bg-white/10"
 								disabled={!!elsewhere}
-								onclick={() => add(item.id)}
+								onclick={() => pick(item.id)}
 							>
 								<span class="min-w-0 truncate">{item.name}</span>
 								<span class="text-label-2 shrink-0 text-[0.75rem] tabular-nums"
@@ -207,9 +218,6 @@
 						{manualError}
 					</p>{/if}
 			{/if}
-			<div class="mt-1.5 flex justify-end">
-				<Btn variant="ghost" color="primary" size="small" onclick={close}>Done</Btn>
-			</div>
 		</div>
 	{/if}
 </div>

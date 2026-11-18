@@ -15,14 +15,15 @@ explains that, and edits apply on restart.
 
 | Page | What it does |
 | --- | --- |
-| **Photos** | One card per Immich account: what to *include* (favorites, memories, albums, people, tags), what to *never show* (albums), and how to *narrow it down* (date taken, minimum rating, videos, archived). Albums, people and tags are picked by name from the account's library, with photo counts. The top shows how many photos the current choices match. |
-| **Slideshow & look** | Timing, layout, photo size, movement, the box behind the clock and captions, what appears on the photo (clock, date taken, place, people…), colors, text size, language, weather and calendars. Date and clock formats are picked from examples, with a *Custom* option for any [date-fns pattern](https://date-fns.org/docs/format). |
-| **Screens** | Every device that has shown the frame, with when it was last seen. Screens can be renamed or forgotten. *Add a screen* gives per-device steps, the address and secret with copy buttons, and a QR code that opens the frame already signed in. |
-| **Access & accounts** | Immich accounts (server address, API key or key file, *Test*), the frame secret, the admin password, and server options (image cache, refresh interval, webhook). *Recent changes* lists every save with what it changed and can undo it; *Backup* downloads all settings as one file (secrets left out) or restores one. |
+| **Photos** | Pick an account, then choose what to *include* (favorites, memories, albums, people, tags), what to *never show* (albums), and how to *narrow it down* (date taken, minimum rating, videos, archived). Albums, people and tags are picked by name from the account's library, with photo counts, and the page shows how many photos the current choices match. *Up Next* shows a sample from the frame's real pool, so screenshots or receipts that slip in are easy to spot. |
+| **Slideshow & Look** | A live *Preview* (click it to see it large), then timing, layout, photo size, movement, what appears on the photo (clock, date taken, place, people…), text and colors, language, weather and calendars. Date and clock formats are picked from examples, with a *Custom* option for any [date-fns pattern](https://date-fns.org/docs/format). |
+| **Screens** | Every device that has shown the frame, with when it was last seen; rename or forget one from its ⋯ menu. *Add a Screen* gives per-device steps, the address and secret with copy buttons, and a QR code that opens the frame already signed in. |
+| **Access & Accounts** | Immich accounts (server address, API key or key file, *Test Connection*), the frame secret, the admin password, and advanced options (image cache, refresh interval, webhook). *Recent Changes* lists every save with what it changed and can undo it; *Backup* downloads all settings as one file (secrets left out) or restores one. |
 
-The **Live preview** and **Up next** panels show a sample from the frame's real pool, so
-screenshots or receipts that slip in are easy to spot. Edits are collected until you press
-**Save** in the unsaved-changes bar; **Discard** goes back to the saved settings.
+Type in **Search** at the top of the sidebar (or of the list on a phone) to jump straight to
+any setting. Edits are collected until you press **Save** in the bar at the bottom (or ⌘S /
+Ctrl+S); **Discard** goes back to the saved settings. On a phone, the admin opens on a list
+of the four pages, like the Settings app.
 
 A screen appears under *Screens* once it sends a `clientIdentifier` (every web client does;
 set a readable one with `?client=Living%20room`). When a frame secret is set, only requests

@@ -157,13 +157,12 @@
 >
 	{#snippet actions()}
 		<Btn
-			glyph="maximize2"
 			variant="ghost"
 			color="primary"
 			size="small"
 			aria-label="Show the preview larger"
-			onclick={() => (expanded = true)}
-		/>
+			onclick={() => (expanded = true)}>Larger</Btn
+		>
 	{/snippet}
 	<div class="py-4">
 		<button

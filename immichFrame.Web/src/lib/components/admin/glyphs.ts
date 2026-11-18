@@ -67,7 +67,8 @@ export const glyphs = {
 	ellipsis:
 		'<circle cx="12" cy="12" r="1" /> <circle cx="19" cy="12" r="1" /> <circle cx="5" cy="12" r="1" />',
 	arrowRight: '<path d="M5 12h14" /> <path d="m12 5 7 7-7 7" />',
-	circleMinus: '<circle cx="12" cy="12" r="10" /> <path d="M8 12h8" />'
+	circleMinus: '<circle cx="12" cy="12" r="10" /> <path d="M8 12h8" />',
+	chevronsUpDown: '<path d="m7 15 5 5 5-5" /> <path d="m7 9 5-5 5 5" />'
 } as const;
 
 export type GlyphName = keyof typeof glyphs;

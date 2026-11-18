@@ -73,8 +73,10 @@
 		{@const isSelected = i === selected}
 		<button
 			type="button"
-			class="border-sep flex min-h-14 w-full items-center gap-3 border-t py-2 text-left first:border-t-0 focus-visible:outline-2 focus-visible:outline-primary"
-			aria-pressed={isSelected}
+			class="border-sep -mx-4 flex min-h-14 w-[calc(100%+2rem)] items-center gap-3 border-t px-4 py-2 text-left first:rounded-t-[var(--if-r-group)] first:border-t-0 focus-visible:outline-2 focus-visible:outline-primary {isSelected
+				? 'bg-fill'
+				: 'hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'}"
+			aria-current={isSelected ? 'true' : undefined}
 			onclick={() => (selected = i)}
 		>
 			<Monogram name={libraries[i]?.userName || String(i + 1)} />
@@ -92,9 +94,7 @@
 					title="Photos these choices match, not counting memories">{formatCount(matching[i])}</span
 				>
 			{/if}
-			<span class={isSelected ? 'text-primary' : 'text-label-3'}>
-				<Glyph name={isSelected ? 'check' : 'chevronRight'} size={16} stroke={2} />
-			</span>
+			<span class="text-label-3"><Glyph name="chevronRight" size={16} stroke={2} /></span>
 		</button>
 	{/each}
 	<button
@@ -108,11 +108,6 @@
 
 {#if accounts[selected]}
 	{#key `${version}-${selected}`}
-		{#if accounts.length > 1}
-			<h2 class="-mb-3 px-1 text-[1.0625rem] font-semibold">
-				{libraries[selected]?.userName || `Account ${selected + 1}`}
-			</h2>
-		{/if}
 		<AccountPhotos account={accounts[selected]} />
 	{/key}
 {/if}

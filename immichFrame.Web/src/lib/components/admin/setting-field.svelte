@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PopupSelect from './popup-select.svelte';
 	import { untrack } from 'svelte';
 	import type { AnyFieldDef } from './admin-fields';
 	import { CUSTOM_FORMAT, formatDrafts, formatExample, invalidFormats } from './format-presets';
@@ -149,13 +150,20 @@
 	{:else if field.type === 'date'}
 		<Input type="date" value={dateValue} oninput={(e) => updateDate(e.currentTarget.value)} />
 	{:else if field.type === 'format'}
-		<Select
-			size={field.label ? undefined : 'small'}
-			class={field.label ? undefined : 'min-w-44'}
-			options={formatOptions}
-			value={customFormat ? CUSTOM_FORMAT : textValue || field.defaultValue || ''}
-			onChange={selectFormat}
-		/>
+		{#if field.label}
+			<Select
+				options={formatOptions}
+				value={customFormat ? CUSTOM_FORMAT : textValue || field.defaultValue || ''}
+				onChange={selectFormat}
+			/>
+		{:else}
+			<PopupSelect
+				label={field.key}
+				options={formatOptions}
+				value={customFormat ? CUSTOM_FORMAT : textValue || field.defaultValue || ''}
+				onchange={selectFormat}
+			/>
+		{/if}
 		{#if customFormat}
 			<div class="mt-2">
 				<Field label="Custom pattern" invalid={formatPreview === null}>

@@ -97,6 +97,15 @@
 		setTimeout(() => target.classList.remove('if-flash'), 1100);
 	}
 
+	// Phone nav bar: becomes solid once the page's large title has scrolled under it.
+	let scrolled = $state(false);
+	$effect(() => {
+		const onScroll = () => (scrolled = window.scrollY > 44);
+		onScroll();
+		window.addEventListener('scroll', onScroll, { passive: true });
+		return () => window.removeEventListener('scroll', onScroll);
+	});
+
 	const preview = new AdminPreview();
 	let liveScreens: number | null = $state(null);
 	let frameVersion = $state('');
@@ -201,10 +210,7 @@
 	<div class="md:hidden">
 		{#if hashPage === null}
 			<div class="px-4 pt-10 pb-28" in:fade={{ duration: 150 }}>
-				<div class="mb-5 flex items-center gap-3">
-					<img src="/logo.svg" alt="" class="h-9 w-9" />
-					<h1 class="text-[1.75rem] leading-tight font-bold tracking-[-0.02em]">ImmichFrame</h1>
-				</div>
+				<h1 class="mb-4 text-[2.125rem] leading-tight font-bold tracking-[-0.02em]">ImmichFrame</h1>
 				<SettingsSearch onpick={jumpTo} />
 				<nav class="bg-group rounded-group mt-5 px-4" aria-label="Sections">
 					{#each pages as p (p.id)}
@@ -250,26 +256,36 @@
 				</p>
 			</div>
 		{:else}
+			<!-- Transparent at the top; the small title, material and hairline fade in once the
+			     large title scrolls under the bar, as in iOS. -->
 			<header
-				class="border-sep sticky top-0 z-30 grid grid-cols-[1fr_auto_1fr] items-center border-b bg-[#f5f5f7]/80 px-2 py-2.5 backdrop-blur-xl backdrop-saturate-150 dark:bg-black/70"
+				class="sticky top-0 z-30 grid grid-cols-[1fr_auto_1fr] items-center border-b px-2 py-2.5 transition-[background-color,border-color] duration-200 {scrolled
+					? 'border-sep bg-[rgb(249_249_249/0.8)] backdrop-blur-[20px] backdrop-saturate-[180%] dark:bg-[rgb(22_22_22/0.8)]'
+					: 'border-transparent'}"
 			>
 				<button
 					type="button"
 					class="flex items-center gap-0.5 justify-self-start rounded-md px-1 text-[1.0625rem] text-primary"
 					onclick={() => go(null)}
 				>
-					<Glyph name="chevronLeft" size={22} stroke={2.2} /> Settings
+					<Glyph name="chevronLeft" size={22} stroke={2.2} /> ImmichFrame
 				</button>
-				<span class="text-[1.0625rem] font-semibold">{current.title}</span>
+				<span
+					class="text-[1.0625rem] font-semibold transition-opacity duration-200 {scrolled
+						? 'opacity-100'
+						: 'opacity-0'}"
+					aria-hidden={!scrolled}>{current.title}</span
+				>
 				<span></span>
 			</header>
 		{/if}
 	</div>
 
-	<div class="mx-auto flex max-w-[72rem]">
-		<!-- Desktop sidebar: brand, search, sections; status and actions at the bottom. -->
-		<div class="hidden w-64 shrink-0 md:block">
-			<aside class="sticky top-0 flex h-dvh flex-col justify-between px-3 pt-5 pb-4">
+	<div class="flex">
+		<!-- Desktop sidebar: its own surface, flush left. Brand, search, sections; status and
+		     actions at the bottom. -->
+		<div class="bg-sidebar border-sep hidden w-60 shrink-0 border-r backdrop-blur-xl md:block">
+			<aside class="sticky top-0 flex h-dvh flex-col justify-between px-2.5 pt-5 pb-4">
 				<div>
 					<div class="mb-4 flex items-center gap-2.5 px-2">
 						<img src="/logo.svg" alt="" class="h-7 w-7" />
@@ -393,7 +409,7 @@
 					class="pointer-events-none fixed inset-x-0 bottom-0 z-40"
 					transition:fly={{ y: 16, duration: 200 }}
 				>
-					<div class="mx-auto max-w-[72rem] p-4 md:pl-[17rem]">
+					<div class="p-4 md:pl-[15rem]">
 						<div
 							class="pointer-events-auto mx-auto flex max-w-[44rem] flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/72 px-4 py-3 shadow-[0_8px_24px_rgb(0_0_0/0.12),0_0_0_0.5px_rgb(0_0_0/0.1)] backdrop-blur-[20px] backdrop-saturate-[180%] dark:bg-[rgb(30_30_30/0.72)] dark:shadow-[0_8px_24px_rgb(0_0_0/0.4),0_0_0_0.5px_rgb(255_255_255/0.12)]"
 							role="region"

@@ -68,7 +68,7 @@
 </script>
 
 <PageCard
-	title="Recent Changes"
+	title="Recent changes"
 	footer="Every save, newest first. Restoring never changes the admin password."
 >
 	{#if error}

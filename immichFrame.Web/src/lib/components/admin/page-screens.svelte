@@ -78,15 +78,8 @@
 		: 'A screen shows up here after it first opens the frame.'}
 >
 	{#snippet actions()}
-		<Btn
-			glyph="refreshCw"
-			variant="ghost"
-			color="primary"
-			size="small"
-			aria-label="Refresh"
-			disabled={loading}
-			onclick={load}
-		/>
+		<Btn variant="ghost" color="primary" size="small" disabled={loading} onclick={load}>Refresh</Btn
+		>
 	{/snippet}
 
 	{#if error}

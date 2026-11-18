@@ -1,8 +1,8 @@
 <script lang="ts">
-	import Btn from './btn.svelte';
+	import PopupSelect from './popup-select.svelte';
 	import Toggle from './toggle.svelte';
-	import { Input, PasswordInput, Select } from '@immich/ui';
 	import Glyph from './glyph.svelte';
+	import FieldRow from './field-row.svelte';
 	import * as locales from 'date-fns/locale';
 	import type { GeneralSettings } from '$lib/immichFrameApi';
 	import { effective, generalDefaults } from './admin-defaults';
@@ -107,6 +107,10 @@
 	];
 
 	let newCalendar = $state('');
+	let addingCalendar = $state(false);
+	function focusOnMount(node: HTMLInputElement) {
+		node.focus();
+	}
 	function addCalendar() {
 		const url = newCalendar.trim();
 		if (!url) return;
@@ -158,7 +162,7 @@
 				aria-label={color.name}
 				title={color.name}
 				{disabled}
-				class="h-9 w-9 rounded-full ring-1 ring-black/15 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-40 dark:ring-white/25 {selected
+				class="h-[30px] w-[30px] rounded-full shadow-[inset_0_0_0_0.5px_rgb(0_0_0/0.18)] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-40 md:h-6 md:w-6 dark:shadow-[inset_0_0_0_0.5px_rgb(255_255_255/0.25)] {selected
 					? 'outline-2 outline-offset-2 outline-primary'
 					: ''}"
 				style="background:{color.value}"
@@ -166,7 +170,7 @@
 			></button>
 		{/each}
 		<label
-			class="relative h-9 w-9 cursor-pointer rounded-full ring-1 ring-black/15 dark:ring-white/25 {custom
+			class="relative h-[30px] w-[30px] cursor-pointer rounded-full shadow-[inset_0_0_0_0.5px_rgb(0_0_0/0.18)] md:h-6 md:w-6 dark:shadow-[inset_0_0_0_0.5px_rgb(255_255_255/0.25)] {custom
 				? 'outline-2 outline-offset-2 outline-primary'
 				: ''} {disabled ? 'pointer-events-none opacity-40' : ''}"
 			style="background:{custom
@@ -258,7 +262,7 @@
 					<span
 						class="flex h-[4.5rem] w-32 items-stretch justify-center gap-1 rounded-[8px] bg-neutral-900 p-1.5 transition-shadow group-focus-visible:outline-2 group-focus-visible:outline-offset-4 group-focus-visible:outline-primary {selected
 							? 'ring-[3px] ring-[var(--if-accent-fill)] ring-offset-2 ring-offset-white dark:ring-offset-[#1c1c1e]'
-							: 'shadow-[0_0_0_0.5px_rgb(0_0_0/0.2)]'}"
+							: 'shadow-[0_0_0_0.5px_rgb(0_0_0/0.2)] dark:shadow-[0_0_0_0.5px_rgb(255_255_255/0.18)]'}"
 					>
 						{#if option.value === 'single'}
 							<span class="w-[36%] rounded-[3px] bg-gradient-to-b from-sky-300/85 to-amber-200/75"
@@ -270,7 +274,7 @@
 							></span>
 						{/if}
 					</span>
-					<span class="text-[0.8125rem] {selected ? 'font-semibold' : ''}">{option.title}</span>
+					<span class="text-[0.75rem] {selected ? 'font-semibold' : ''}">{option.title}</span>
 				</button>
 			{/each}
 		</div>
@@ -316,7 +320,7 @@
 		</SettingRow>
 	</PageCard>
 
-	<PageCard title="On the Photo" footer="Shown in the corners of every slide.">
+	<PageCard title="On the photo" footer="Shown in the corners of every slide.">
 		<SettingRow title="Clock" description="With today's date, and the weather when it's set up">
 			{#snippet control()}
 				<Toggle
@@ -368,9 +372,8 @@
 		</SettingRow>
 		{#if get('showImageLocation')}
 			<SettingRow title="Format" nested>
-				{#snippet control()}<Select
-						size="small"
-						class="min-w-44"
+				{#snippet control()}<PopupSelect
+						label="Place format"
 						options={placeFormats.some((p) => p.value === get('imageLocationFormat'))
 							? placeFormats
 							: [
@@ -381,7 +384,7 @@
 									}
 								]}
 						value={get('imageLocationFormat') ?? 'City,State,Country'}
-						onChange={(v) => (general.imageLocationFormat = v)}
+						onchange={(v) => (general.imageLocationFormat = v)}
 					/>{/snippet}
 			</SettingRow>
 		{/if}
@@ -428,7 +431,7 @@
 		</SettingRow>
 	</PageCard>
 
-	<PageCard title="Text and Colors">
+	<PageCard title="Text and colors">
 		<SettingRow
 			title="Behind the clock and captions"
 			description="Keeps text readable on bright photos"
@@ -483,62 +486,48 @@
 		</SettingRow>
 		<SettingRow title="Language" description="For dates, the clock and the weather">
 			{#snippet control()}
-				<div class="w-52">
-					<Select
-						size="small"
-						options={languageOptions}
-						value={get('language') ?? 'en'}
-						onChange={(v) => (general.language = v)}
-					/>
-				</div>
+				<PopupSelect
+					label="Language"
+					options={languageOptions}
+					value={get('language') ?? 'en'}
+					onchange={(v) => (general.language = v)}
+				/>
 			{/snippet}
 		</SettingRow>
 	</PageCard>
 
-	<PageCard title="Weather">
-		<SettingRow
-			title="Weather"
-			description="Shown under the clock. Needs a free OpenWeatherMap API key."
-		>
-			<div class="grid gap-4 sm:grid-cols-2">
-				<label class="text-sm">
-					<span class="mb-1 block font-medium">API key</span>
-					<PasswordInput
-						autocomplete="off"
-						placeholder="Paste key"
-						value={general.weatherApiKey ?? ''}
-						oninput={(e) => (general.weatherApiKey = e.currentTarget.value)}
-					/>
-				</label>
-				<div class="text-sm">
-					<span class="mb-1 block font-medium">Location (latitude, longitude)</span>
-					<div class="flex gap-2">
-						<Input
-							placeholder="38.72,-9.14"
-							aria-label="Weather location"
-							value={general.weatherLatLong ?? ''}
-							oninput={(e) => (general.weatherLatLong = e.currentTarget.value)}
-						/>
-						{#if canLocate}
-							<Btn
-								glyph="locateFixed"
-								variant="outline"
-								color="primary"
-								aria-label="Use my location"
-								loading={locating}
-								onclick={useMyLocation}
-							/>
-						{/if}
-					</div>
-					{#if locateError}<p class="mt-1 text-[0.75rem] text-[#d70015] dark:text-[#ff6961]">
-							{locateError}
-						</p>{/if}
-				</div>
-			</div>
-			{#if !general.weatherApiKey}
-				<p class="text-label-2 mt-2 text-[0.75rem]">No key, so the weather is hidden.</p>
-			{/if}
-		</SettingRow>
+	<PageCard
+		title="Weather"
+		footer={general.weatherApiKey
+			? 'Shown under the clock.'
+			: 'Shown under the clock. It needs a free OpenWeatherMap API key; without one, the weather is hidden.'}
+	>
+		<FieldRow
+			title="API key"
+			type="password"
+			placeholder="Required"
+			value={general.weatherApiKey}
+			oninput={(v) => (general.weatherApiKey = v)}
+		/>
+		<FieldRow
+			title="Location"
+			placeholder="Latitude, longitude"
+			value={general.weatherLatLong}
+			oninput={(v) => (general.weatherLatLong = v)}
+		/>
+		{#if canLocate}
+			<button
+				type="button"
+				class="border-sep flex min-h-11 w-full items-center border-t py-2 text-left text-[0.9375rem] text-primary disabled:opacity-50 md:text-[0.875rem]"
+				disabled={locating}
+				onclick={useMyLocation}
+			>
+				{locating ? 'Finding Your Location…' : 'Use Current Location'}
+			</button>
+		{/if}
+		{#if locateError}<p class="pb-2 text-[0.75rem] text-[#d70015] dark:text-[#ff6961]">
+				{locateError}
+			</p>{/if}
 		{#if general.weatherApiKey}
 			<SettingRow title="Units">
 				{#snippet control()}
@@ -584,23 +573,41 @@
 					</button>
 				</div>
 			{/each}
-			<form
-				class="border-sep flex items-center gap-2 border-t py-2 first:border-t-0"
-				onsubmit={(e) => {
-					e.preventDefault();
-					addCalendar();
-				}}
-			>
-				<input
-					bind:value={newCalendar}
-					placeholder="Add calendar link (https://… .ics)"
-					aria-label="Calendar link"
-					class="min-h-9 min-w-0 flex-1 bg-transparent text-[0.875rem] outline-none placeholder:text-primary"
-				/>
-				{#if newCalendar.trim()}
-					<Btn type="submit" size="small">Add</Btn>
-				{/if}
-			</form>
+			{#if addingCalendar}
+				<form
+					class="border-sep flex min-h-11 items-center gap-3 border-t py-1.5 first:border-t-0"
+					onsubmit={(e) => {
+						e.preventDefault();
+						addCalendar();
+						addingCalendar = false;
+					}}
+				>
+					<input
+						use:focusOnMount
+						bind:value={newCalendar}
+						placeholder="https://… .ics"
+						aria-label="Calendar link"
+						class="min-w-0 flex-1 bg-transparent py-2 text-[0.9375rem] outline-none placeholder:text-[#8e8e93] md:text-[0.875rem]"
+						onkeydown={(e) => e.key === 'Escape' && (addingCalendar = false)}
+					/>
+					<button
+						type="button"
+						class="text-label-2 text-[0.875rem]"
+						onclick={() => (addingCalendar = false)}>Cancel</button
+					>
+					<button
+						type="submit"
+						class="text-[0.875rem] font-semibold text-primary disabled:opacity-40"
+						disabled={!newCalendar.trim()}>Add</button
+					>
+				</form>
+			{:else}
+				<button
+					type="button"
+					class="border-sep flex min-h-11 w-full items-center border-t py-2 text-left text-[0.9375rem] text-primary first:border-t-0 md:text-[0.875rem]"
+					onclick={() => (addingCalendar = true)}>Add Calendar…</button
+				>
+			{/if}
 		</div>
 	</PageCard>
 </div>

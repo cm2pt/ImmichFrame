@@ -1,7 +1,7 @@
 <script lang="ts">
 	import QrCode from '@castlenine/svelte-qrcode';
-	import { Input } from '@immich/ui';
-	import CopyField from './copy-field.svelte';
+	import FieldRow from './field-row.svelte';
+	import ValueRow from './value-row.svelte';
 	import PageCard from './page-card.svelte';
 	import Segmented from './segmented.svelte';
 
@@ -33,14 +33,14 @@
 	let usesApp = $derived(device === 'appletv' || device === 'android');
 	let note = $derived(
 		isLocal
-			? 'This page is open on localhost, which other devices can’t reach. Open the admin page using this server’s IP address and port to get an address and code they can use.'
+			? 'This page is open on localhost, so the address only works on this computer. Open the admin page using this server’s IP address and port to get an address and code other devices can use.'
 			: !secret
 				? 'There’s no frame secret, so anyone who can reach this address can see the photos.'
-				: undefined
+				: 'Scan the code with a phone or tablet to open the frame, already signed in.'
 	);
 </script>
 
-<PageCard title="Add a Screen">
+<PageCard title="Add a screen" footer={note}>
 	<div class="py-3">
 		<Segmented
 			label="Device"
@@ -53,13 +53,8 @@
 			]}
 			onchange={(v) => (device = v)}
 		/>
-	</div>
-
-	<div
-		class="border-sep grid gap-6 border-t py-4 {isLocal ? '' : 'md:grid-cols-[minmax(0,1fr)_auto]'}"
-	>
-		<div class="flex min-w-0 flex-col gap-4">
-			<ol class="list-decimal space-y-1.5 pl-5 text-[0.875rem] leading-snug">
+		<div class="mt-4 flex gap-5">
+			<ol class="min-w-0 flex-1 list-decimal space-y-1 pl-5 text-[0.875rem] leading-snug">
 				{#if device === 'appletv'}
 					<li>On the Apple TV, install <strong>ImmichFrame</strong> from the App Store.</li>
 					<li>Open it and enter the server address{secret ? ' and secret' : ''} below.</li>
@@ -84,48 +79,39 @@
 				{/if}
 				<li>Give it a name so you can tell it apart above.</li>
 			</ol>
-
-			<label class="text-[0.8125rem]">
-				<span class="mb-1 block font-medium">Screen Name (optional)</span>
-				<Input placeholder="Living room" bind:value={screenName} />
-			</label>
-
-			{#if isLocal}
-				<div>
-					<p class="mb-1 text-[0.8125rem] font-medium">{usesApp ? 'Server Address' : 'Link'}</p>
-					<p class="bg-fill rounded-control text-label-2 px-3 py-2 text-[0.875rem] break-all">
-						{origin}
-					</p>
-					<p class="text-label-2 mt-1 text-[0.75rem]">Only works on this computer.</p>
+			{#if !isLocal}
+				<div class="hidden w-28 shrink-0 sm:block">
+					<div class="rounded-[8px] bg-white p-2 shadow-[0_0_0_0.5px_rgb(0_0_0/0.15)]">
+						<QrCode data={frameUrl} isResponsive />
+					</div>
 				</div>
-			{:else if usesApp}
-				<CopyField label="Server Address" value={origin} />
-				{#if secret}<CopyField label="Secret" value={secret} secret />{/if}
-			{:else}
-				<CopyField label="Link" value={frameUrl} secret={!!secret} />
 			{/if}
 		</div>
-
-		{#if !isLocal}
-			<div class="flex flex-col items-center gap-2 md:w-44">
-				<div class="w-36 rounded-[10px] bg-white p-2.5 shadow-[0_0_0_0.5px_rgb(0_0_0/0.15)]">
-					<QrCode data={frameUrl} isResponsive />
-				</div>
-				<p class="text-label-2 text-center text-[0.75rem]">
-					Scan with a phone or tablet to open the frame{secret ? ', already signed in' : ''}.
-				</p>
-			</div>
-		{/if}
 	</div>
-
-	{#snippet after()}
-		{#if note}
-			<p class="text-label-2 mt-1.5 px-4 text-[0.8125rem] leading-snug">
-				{note}
-				{#if !secret && !isLocal}
-					<button type="button" class="text-primary" onclick={ongotoaccess}>Set a Secret…</button>
-				{/if}
-			</p>
-		{/if}
-	{/snippet}
+	<FieldRow
+		title="Name"
+		placeholder="Optional"
+		value={screenName}
+		oninput={(v) => (screenName = v)}
+	/>
+	{#if usesApp}
+		<ValueRow title="Server address" value={origin} copyable={!isLocal} />
+		{#if secret && !isLocal}<ValueRow title="Secret" value={secret} secret />{/if}
+	{:else}
+		<ValueRow title="Link" value={frameUrl} secret={!!secret} copyable={!isLocal} />
+	{/if}
+	{#if !isLocal}
+		<div class="border-sep flex justify-center border-t py-4 sm:hidden">
+			<div class="w-40 rounded-[8px] bg-white p-2 shadow-[0_0_0_0.5px_rgb(0_0_0/0.15)]">
+				<QrCode data={frameUrl} isResponsive />
+			</div>
+		</div>
+	{/if}
+	{#if !secret && !isLocal}
+		<button
+			type="button"
+			class="border-sep flex min-h-11 w-full items-center border-t py-2 text-left text-[0.9375rem] text-primary md:text-[0.875rem]"
+			onclick={ongotoaccess}>Set a Frame Secret…</button
+		>
+	{/if}
 </PageCard>
