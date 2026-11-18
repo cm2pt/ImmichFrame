@@ -17,7 +17,7 @@
 	aria-label={label}
 	{disabled}
 	class="relative inline-flex h-[31px] w-[51px] shrink-0 items-center rounded-full transition-colors duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-40 {checked
-		? 'bg-primary'
+		? 'bg-accent'
 		: 'bg-fill'}"
 	onclick={() => onCheckedChange(!checked)}
 >

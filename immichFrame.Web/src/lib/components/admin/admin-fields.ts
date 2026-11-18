@@ -220,7 +220,7 @@ export function generalField(key: keyof GeneralSettings & string, label?: string
 			const fallback = generalDefaults[key];
 			return {
 				...(field as AnyFieldDef),
-				...(label ? { label } : {}),
+				...(label !== undefined ? { label } : {}),
 				...(typeof fallback === 'string' ? { defaultValue: fallback } : {})
 			};
 		}

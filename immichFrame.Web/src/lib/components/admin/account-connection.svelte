@@ -1,13 +1,12 @@
 <script lang="ts">
 	import Btn from './btn.svelte';
 	import { onMount, untrack } from 'svelte';
-	import { mdiConnection, mdiDeleteOutline } from '@mdi/js';
-	import { Avatar, Input, PasswordInput, Text } from '@immich/ui';
+	import { Input, PasswordInput } from '@immich/ui';
+	import Monogram from './monogram.svelte';
 	import type { ServerAccountSettings } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import { relativeTime } from './admin-format';
 	import { peekLibrary } from './admin-library.svelte';
-	import Callout from './callout.svelte';
 	import InlineConfirm from './inline-confirm.svelte';
 	import Segmented from './segmented.svelte';
 
@@ -19,7 +18,6 @@
 
 	let { account, index, onremove }: Props = $props();
 
-	const avatarColors = ['primary', 'orange', 'green', 'purple', 'pink', 'blue'] as const;
 	let userName = $derived(peekLibrary(account)?.userName);
 	let name = $derived(userName || `Account ${index + 1}`);
 
@@ -67,55 +65,52 @@
 	});
 </script>
 
-<div class="border-t border-light-200 py-5 first:border-t-0">
+<div class="border-sep border-t py-3.5 first:border-t-0">
 	<div class="flex items-center gap-3">
-		<Avatar
-			name={userName || String(index + 1)}
-			color={avatarColors[index % avatarColors.length]}
-		/>
+		<Monogram name={userName || String(index + 1)} />
 		<div class="min-w-0 flex-1">
-			<Text fontWeight="semi-bold">{name}</Text>
-			<Text
-				size="small"
-				class={result && !result.success ? 'text-danger-700 dark:text-danger-400' : 'text-label-2'}
+			<p class="text-[0.9375rem] font-medium md:text-[0.875rem]">{name}</p>
+			<p
+				class="flex items-center gap-1.5 text-[0.8125rem] md:text-[0.75rem] {result &&
+				!result.success
+					? 'text-[#d70015] dark:text-[#ff6961]'
+					: 'text-label-2'}"
 			>
 				{#if testing}
 					Checking the connection…
 				{:else if result?.success}
+					<span class="h-1.5 w-1.5 rounded-full bg-[#30d158]"></span>
 					Connected&nbsp;·&ensp;Immich {result.version}{checkedAt
 						? `\u00a0·\u2002checked ${relativeTime(checkedAt)}`
 						: ''}
 				{:else if result}
-					Not connected
+					<span class="h-1.5 w-1.5 rounded-full bg-[#ff3b30]"></span>
+					{result.message}
 				{:else}
 					Not checked yet
 				{/if}
-			</Text>
+			</p>
 		</div>
 	</div>
 
-	{#if result && !result.success}
-		<div class="mt-3"><Callout tone="danger">{result.message}</Callout></div>
-	{/if}
-
-	<div class="mt-4 grid gap-4 sm:grid-cols-2">
-		<label class="text-sm">
-			<span class="mb-1 block font-medium">Server address</span>
+	<div class="mt-3 grid gap-3 sm:grid-cols-2">
+		<label class="text-[0.8125rem]">
+			<span class="mb-1 block font-medium">Server Address</span>
 			<Input
 				placeholder="http://immich:2283"
 				value={account.immichServerUrl ?? ''}
 				oninput={(e) => (account.immichServerUrl = e.currentTarget.value)}
 			/>
 		</label>
-		<div class="text-sm">
+		<div class="text-[0.8125rem]">
 			<div class="mb-1 flex items-center justify-between gap-2">
-				<span class="font-medium">API key</span>
+				<span class="font-medium">API Key</span>
 				<Segmented
 					label="Where the key comes from"
 					value={keyMode}
 					options={[
 						{ value: 'paste', label: 'Paste' },
-						{ value: 'file', label: 'From file' }
+						{ value: 'file', label: 'From File' }
 					]}
 					onchange={setKeyMode}
 				/>
@@ -128,11 +123,11 @@
 					oninput={(e) => (account.apiKeyFile = e.currentTarget.value)}
 				/>
 			{:else if hasSavedKey && !editingKey}
-				<div
-					class="flex items-center justify-between rounded-lg bg-subtle/50 px-4 py-2.5 dark:bg-light-200"
-				>
-					<span class="text-label-2">Saved key</span>
-					<Btn size="tiny" variant="ghost" onclick={() => (editingKey = true)}>Replace</Btn>
+				<div class="flex min-h-10 items-center justify-between md:min-h-9">
+					<span class="text-label-2 text-[0.875rem]">Saved</span>
+					<Btn size="small" variant="ghost" color="primary" onclick={() => (editingKey = true)}
+						>Replace…</Btn
+					>
 				</div>
 			{:else}
 				<PasswordInput
@@ -156,27 +151,19 @@
 			oncancel={() => (confirmRemove = false)}
 		/>
 	{:else}
-		<div class="mt-4 flex justify-end gap-2">
+		<div class="mt-3 flex justify-end gap-2">
 			<Btn
 				size="small"
-				variant="ghost"
-				color="secondary"
+				variant="outline"
+				color="danger"
 				id={`remove-account-${index}`}
-				leadingIcon={mdiDeleteOutline}
 				onclick={() => (confirmRemove = true)}
 			>
 				Remove…
 			</Btn>
-			<Btn
-				size="small"
-				variant="outline"
-				color="secondary"
-				leadingIcon={mdiConnection}
-				loading={testing}
-				onclick={test}
+			<Btn size="small" variant="outline" color="secondary" loading={testing} onclick={test}
+				>Test Connection</Btn
 			>
-				Test connection
-			</Btn>
 		</div>
 	{/if}
 </div>

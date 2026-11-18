@@ -1,8 +1,7 @@
 <script lang="ts">
 	import Btn from './btn.svelte';
 	import { onMount } from 'svelte';
-	import { mdiShuffleVariant } from '@mdi/js';
-	import { Text, Heading } from '@immich/ui';
+	import PageCard from './page-card.svelte';
 	import type { AdminPreview } from './admin-preview.svelte';
 
 	interface Props {
@@ -16,34 +15,36 @@
 	});
 </script>
 
-<div class="bg-group rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-	<div class="p-4">
-		<div class="mb-3 flex items-center justify-between gap-2">
-			<Heading tag="h2" size="tiny" fontWeight="semi-bold">Up next</Heading>
-			<Btn
-				size="small"
-				variant="outline"
-				leadingIcon={mdiShuffleVariant}
-				loading={preview.state === 'loading'}
-				onclick={() => preview.load(4)}
-			>
-				Shuffle
-			</Btn>
-		</div>
+<PageCard
+	title="Up Next"
+	footer="A sample of what will show next, to spot screenshots or receipts that slip in."
+>
+	{#snippet actions()}
+		<Btn
+			variant="ghost"
+			color="primary"
+			size="small"
+			loading={preview.state === 'loading'}
+			onclick={() => preview.load(4)}
+		>
+			Shuffle
+		</Btn>
+	{/snippet}
+	<div class="py-4">
 		{#if preview.state === 'error'}
-			<Text class="text-danger-700 dark:text-danger-400" size="small">
+			<p class="text-[0.8125rem]">
 				{preview.message}
-				<button class="underline" onclick={() => preview.load(4)}>Retry</button>
-			</Text>
+				<button class="text-primary" onclick={() => preview.load(4)}>Try Again</button>
+			</p>
 		{:else}
 			<div class="grid grid-cols-4 gap-2">
 				{#each preview.state === 'ready' ? preview.items : [0, 1, 2, 3].map(() => null) as item, i (item?.id ?? i)}
-					<div class="aspect-[3/4] overflow-hidden rounded-lg bg-subtle">
+					<div class="bg-fill aspect-[3/4] overflow-hidden rounded-[8px]">
 						{#if item?.url}
 							<img
 								src={item.url}
 								alt={item.fileName ?? ''}
-								title={[item.fileName, item.city].filter(Boolean).join('\u00a0·\u2002')}
+								title={[item.fileName, item.city].filter(Boolean).join(', ')}
 								class="h-full w-full object-cover"
 							/>
 						{/if}
@@ -51,8 +52,5 @@
 				{/each}
 			</div>
 		{/if}
-		<Text size="small" class="text-label-2 mt-3">
-			A random sample from the saved choice, so you can spot screenshots or receipts that slip in.
-		</Text>
 	</div>
-</div>
+</PageCard>

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import Btn from './btn.svelte';
 	import { onMount } from 'svelte';
-	import { Text } from '@immich/ui';
 
 	interface Props {
 		message: string;
@@ -36,7 +35,7 @@
 </script>
 
 <div
-	class="mt-3 rounded-xl bg-subtle/60 p-4 dark:bg-light-100"
+	class="bg-fill rounded-control mt-2.5 p-3.5"
 	role="alertdialog"
 	aria-modal="false"
 	aria-label={confirmLabel}
@@ -48,10 +47,10 @@
 		}
 	}}
 >
-	<Text size="small">{message}</Text>
+	<p class="text-[0.875rem] leading-snug">{message}</p>
 	<div class="mt-3 flex justify-end gap-2">
 		<span bind:this={cancelButton}>
-			<Btn size="small" variant="ghost" color="secondary" onclick={oncancel}>Cancel</Btn>
+			<Btn size="small" variant="outline" color="secondary" onclick={oncancel}>Cancel</Btn>
 		</span>
 		<Btn size="small" color={danger ? 'danger' : 'primary'} onclick={onconfirm}>{confirmLabel}</Btn>
 	</div>

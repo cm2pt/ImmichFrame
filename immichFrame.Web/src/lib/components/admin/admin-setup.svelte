@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { mdiArrowRight } from '@mdi/js';
 	import {
 		Alert,
 		Button,
@@ -57,9 +56,7 @@
 				<Alert color="danger">{error}</Alert>
 			{/if}
 
-			<Button type="submit" trailingIcon={mdiArrowRight} fullWidth disabled={!canSubmit}>
-				Get started
-			</Button>
+			<Button type="submit" fullWidth disabled={!canSubmit}>Get started</Button>
 		</form>
 	</CardBody>
 </Card>

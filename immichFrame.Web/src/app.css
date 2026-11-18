@@ -184,16 +184,16 @@ img.icon-weather {
 	0%,
 	60% {
 		background: color-mix(in oklab, var(--color-primary) 14%, transparent);
-		box-shadow: 0 0 0 10px color-mix(in oklab, var(--color-primary) 14%, transparent);
+		box-shadow: 0 0 0 6px color-mix(in oklab, var(--color-primary) 14%, transparent);
 	}
 	100% {
 		background: transparent;
-		box-shadow: 0 0 0 10px transparent;
+		box-shadow: 0 0 0 6px transparent;
 	}
 }
 .if-admin .if-flash {
-	animation: if-flash 1.6s ease-out;
-	border-radius: 10px;
+	animation: if-flash 1s ease-out;
+	border-radius: 8px;
 }
 /* Fields and menus from @immich/ui use blue-tinted grays; inside the admin, use neutral ones. */
 .if-admin {
@@ -205,4 +205,86 @@ img.icon-weather {
 	--color-gray-900: #1c1c1e;
 	--color-primary-100: #2c2c2e;
 	--color-primary-200: #3a3a3c;
+}
+
+/* Radii, accent fill and controls for the admin's native look. */
+.if-admin {
+	--if-r-group: 12px;
+	--if-r-control: 8px;
+	--if-accent-fill: var(--color-primary);
+}
+@media (min-width: 768px) {
+	.if-admin {
+		--if-r-group: 10px;
+	}
+}
+/* Dark mode's accent is a pale tint, good for text; fills need a saturated one with white on top. */
+.dark .if-admin {
+	--if-accent-fill: #5e6ad2;
+}
+.if-admin .bg-accent {
+	background: var(--if-accent-fill);
+	color: #fff;
+}
+.if-admin .rounded-group {
+	border-radius: var(--if-r-group);
+}
+.if-admin .rounded-control {
+	border-radius: var(--if-r-control);
+}
+.if-admin .text-label-3 {
+	color: #8e8e93;
+}
+/* Slider: a 4 px track filled up to a 20 px white knob. --fill is set inline (0–100%). */
+.if-admin .if-slider {
+	-webkit-appearance: none;
+	appearance: none;
+	height: 20px;
+	background: transparent;
+	cursor: pointer;
+}
+.if-admin .if-slider::-webkit-slider-runnable-track {
+	height: 4px;
+	border-radius: 2px;
+	background: linear-gradient(
+		to right,
+		var(--if-accent-fill) var(--fill, 50%),
+		rgb(118 118 128 / 0.2) var(--fill, 50%)
+	);
+}
+.if-admin .if-slider::-moz-range-track {
+	height: 4px;
+	border-radius: 2px;
+	background: rgb(118 118 128 / 0.2);
+}
+.if-admin .if-slider::-moz-range-progress {
+	height: 4px;
+	border-radius: 2px;
+	background: var(--if-accent-fill);
+}
+.if-admin .if-slider::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	margin-top: -8px;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow:
+		0 0.5px 4px rgb(0 0 0 / 0.12),
+		0 3px 8px rgb(0 0 0 / 0.15);
+}
+.if-admin .if-slider::-moz-range-thumb {
+	width: 20px;
+	height: 20px;
+	border: 0;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow:
+		0 0.5px 4px rgb(0 0 0 / 0.12),
+		0 3px 8px rgb(0 0 0 / 0.15);
+}
+.if-admin .if-slider:focus-visible {
+	outline: 2px solid var(--color-primary);
+	outline-offset: 4px;
+	border-radius: 4px;
 }

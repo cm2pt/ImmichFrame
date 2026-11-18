@@ -125,7 +125,7 @@
 	}
 </script>
 
-<Field label={field.label} invalid={invalidGuids.length > 0}>
+<Field label={field.label || undefined} invalid={invalidGuids.length > 0}>
 	{#if field.type === 'checkbox'}
 		<Checkbox
 			checked={target[field.key] === true}
@@ -150,6 +150,8 @@
 		<Input type="date" value={dateValue} oninput={(e) => updateDate(e.currentTarget.value)} />
 	{:else if field.type === 'format'}
 		<Select
+			size={field.label ? undefined : 'small'}
+			class={field.label ? undefined : 'min-w-44'}
 			options={formatOptions}
 			value={customFormat ? CUSTOM_FORMAT : textValue || field.defaultValue || ''}
 			onChange={selectFormat}

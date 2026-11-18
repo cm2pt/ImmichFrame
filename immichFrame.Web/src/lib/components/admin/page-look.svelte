@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Btn from './btn.svelte';
 	import Toggle from './toggle.svelte';
-	import { mdiAlertOutline, mdiCheckCircle, mdiCrosshairsGps, mdiDelete, mdiPlus } from '@mdi/js';
-	import { Icon, IconButton, Input, PasswordInput, Select, Text } from '@immich/ui';
+	import { Input, PasswordInput, Select } from '@immich/ui';
+	import Glyph from './glyph.svelte';
 	import * as locales from 'date-fns/locale';
 	import type { GeneralSettings } from '$lib/immichFrameApi';
 	import { effective, generalDefaults } from './admin-defaults';
@@ -203,10 +203,13 @@
 					value={stepIndex}
 					aria-label="Time on each photo"
 					aria-valuetext={duration(steps[stepIndex])}
-					class="w-44 accent-primary sm:w-56"
+					class="if-slider w-40 sm:w-52"
+					style="--fill:{(stepIndex / (steps.length - 1)) * 100}%"
 					oninput={(e) => (general.interval = steps[Number(e.currentTarget.value)])}
 				/>
-				<span class="w-24 text-right tabular-nums">{duration(interval)}</span>
+				<span class="text-label-2 w-20 text-right text-[0.875rem] tabular-nums"
+					>{duration(interval)}</span
+				>
 			{/snippet}
 		</SettingRow>
 		<SettingRow title="Change between photos" description="How long the cross-fade takes">
@@ -231,38 +234,49 @@
 		</SettingRow>
 	</PageCard>
 
-	<PageCard title="Layout">
-		<div class="grid gap-4 py-2 sm:grid-cols-2" role="radiogroup" aria-label="Layout">
-			{#each [{ value: 'single', title: 'One photo at a time', text: 'Portrait photos get dark bars at the sides of a wide screen.' }, { value: 'splitview', title: 'Two portraits side by side', text: 'Best when most photos come from phones. Landscape photos still show alone.' }] as option (option.value)}
+	<PageCard
+		title="Layout"
+		footer={get('layout') === 'splitview'
+			? 'Best when most photos come from phones. Landscape photos still show alone.'
+			: 'Portrait photos get dark bars at the sides of a wide screen.'}
+	>
+		<!-- Like Appearance in System Settings: only the selected thumbnail gets a ring. -->
+		<div
+			class="flex justify-center gap-8 py-4 sm:justify-start sm:pl-2"
+			role="radiogroup"
+			aria-label="Layout"
+		>
+			{#each [{ value: 'single', title: 'One Photo' }, { value: 'splitview', title: 'Two Portraits' }] as option (option.value)}
 				{@const selected = get('layout') === option.value}
 				<button
 					type="button"
 					role="radio"
 					aria-checked={selected}
-					class="relative rounded-2xl border-2 p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary {selected
-						? 'border-primary bg-primary/5'
-						: 'border-light-300 hover:border-primary/50'}"
+					class="group flex flex-col items-center gap-2 focus-visible:outline-none"
 					onclick={() => (general.layout = option.value)}
 				>
-					<div
-						class="mb-3 flex aspect-[16/7] items-stretch justify-center gap-1 rounded-lg bg-neutral-900 p-2"
+					<span
+						class="flex h-[4.5rem] w-32 items-stretch justify-center gap-1 rounded-[8px] bg-neutral-900 p-1.5 transition-shadow group-focus-visible:outline-2 group-focus-visible:outline-offset-4 group-focus-visible:outline-primary {selected
+							? 'ring-[3px] ring-[var(--if-accent-fill)] ring-offset-2 ring-offset-white dark:ring-offset-[#1c1c1e]'
+							: 'shadow-[0_0_0_0.5px_rgb(0_0_0/0.2)]'}"
 					>
 						{#if option.value === 'single'}
-							<div class="w-[38%] rounded bg-gradient-to-b from-sky-300/80 to-amber-200/70"></div>
+							<span class="w-[36%] rounded-[3px] bg-gradient-to-b from-sky-300/85 to-amber-200/75"
+							></span>
 						{:else}
-							<div class="w-[38%] rounded bg-gradient-to-b from-sky-300/80 to-amber-200/70"></div>
-							<div class="w-[38%] rounded bg-gradient-to-b from-emerald-300/70 to-sky-200/70"></div>
+							<span class="w-[36%] rounded-[3px] bg-gradient-to-b from-sky-300/85 to-amber-200/75"
+							></span>
+							<span class="w-[36%] rounded-[3px] bg-gradient-to-b from-emerald-300/75 to-sky-200/75"
+							></span>
 						{/if}
-					</div>
-					<div class="flex items-center justify-between gap-2">
-						<Text fontWeight="semi-bold">{option.title}</Text>
-						{#if selected}<span class="text-primary"><Icon icon={mdiCheckCircle} size="20" /></span
-							>{/if}
-					</div>
-					<Text size="small" class="text-label-2">{option.text}</Text>
+					</span>
+					<span class="text-[0.8125rem] {selected ? 'font-semibold' : ''}">{option.title}</span>
 				</button>
 			{/each}
 		</div>
+	</PageCard>
+
+	<PageCard>
 		<SettingRow title="Photo size" description="Fit never crops; fill uses the whole screen">
 			{#snippet control()}
 				<Segmented
@@ -302,7 +316,7 @@
 		</SettingRow>
 	</PageCard>
 
-	<PageCard title="On the photo" description="Shown in the corners of every slide.">
+	<PageCard title="On the Photo" footer="Shown in the corners of every slide.">
 		<SettingRow title="Clock" description="With today's date, and the weather when it's set up">
 			{#snippet control()}
 				<Toggle
@@ -311,13 +325,21 @@
 					onCheckedChange={(v) => (general.showClock = v)}
 				/>
 			{/snippet}
-			{#if get('showClock')}
-				<div class="grid gap-x-6 sm:grid-cols-2">
-					<SettingField field={generalField('clockFormat', 'Time')} {target} />
-					<SettingField field={generalField('clockDateFormat', 'Date')} {target} />
-				</div>
-			{/if}
 		</SettingRow>
+		{#if get('showClock')}
+			<SettingRow title="Time" nested>
+				{#snippet control()}<SettingField
+						field={generalField('clockFormat', '')}
+						{target}
+					/>{/snippet}
+			</SettingRow>
+			<SettingRow title="Date" nested>
+				{#snippet control()}<SettingField
+						field={generalField('clockDateFormat', '')}
+						{target}
+					/>{/snippet}
+			</SettingRow>
+		{/if}
 		<SettingRow title="Date taken" description="When the photo was taken">
 			{#snippet control()}
 				<Toggle
@@ -326,12 +348,15 @@
 					onCheckedChange={(v) => (general.showPhotoDate = v)}
 				/>
 			{/snippet}
-			{#if get('showPhotoDate')}
-				<div class="sm:w-1/2 sm:pr-3">
-					<SettingField field={generalField('photoDateFormat', 'Format')} {target} />
-				</div>
-			{/if}
 		</SettingRow>
+		{#if get('showPhotoDate')}
+			<SettingRow title="Format" nested>
+				{#snippet control()}<SettingField
+						field={generalField('photoDateFormat', '')}
+						{target}
+					/>{/snippet}
+			</SettingRow>
+		{/if}
 		<SettingRow title="Place" description="Phone photos usually have one">
 			{#snippet control()}
 				<Toggle
@@ -340,10 +365,12 @@
 					onCheckedChange={(v) => (general.showImageLocation = v)}
 				/>
 			{/snippet}
-			{#if get('showImageLocation')}
-				<label class="block text-sm sm:w-1/2 sm:pr-3">
-					<span class="mb-1 block font-medium">Format</span>
-					<Select
+		</SettingRow>
+		{#if get('showImageLocation')}
+			<SettingRow title="Format" nested>
+				{#snippet control()}<Select
+						size="small"
+						class="min-w-44"
 						options={placeFormats.some((p) => p.value === get('imageLocationFormat'))
 							? placeFormats
 							: [
@@ -355,10 +382,9 @@
 								]}
 						value={get('imageLocationFormat') ?? 'City,State,Country'}
 						onChange={(v) => (general.imageLocationFormat = v)}
-					/>
-				</label>
-			{/if}
-		</SettingRow>
+					/>{/snippet}
+			</SettingRow>
+		{/if}
 		<SettingRow title="People" description="Names of the people Immich recognized">
 			{#snippet control()}
 				<Toggle
@@ -395,17 +421,14 @@
 				/>
 			{/snippet}
 			{#if get('showImageDesc')}
-				<div class="flex items-center gap-2">
-					<Icon icon={mdiAlertOutline} size="16" class="shrink-0 text-warning" />
-					<Text size="small" class="text-label-2"
-						>Cameras often fill it with text like “DJI_0073.JPG”.</Text
-					>
-				</div>
+				<p class="text-label-2 text-[0.75rem]">
+					Cameras often fill it with text like “DJI_0073.JPG”.
+				</p>
 			{/if}
 		</SettingRow>
 	</PageCard>
 
-	<PageCard title="Text and colors">
+	<PageCard title="Text and Colors">
 		<SettingRow
 			title="Behind the clock and captions"
 			description="Keeps text readable on bright photos"
@@ -462,6 +485,7 @@
 			{#snippet control()}
 				<div class="w-52">
 					<Select
+						size="small"
 						options={languageOptions}
 						value={get('language') ?? 'en'}
 						onChange={(v) => (general.language = v)}
@@ -471,7 +495,7 @@
 		</SettingRow>
 	</PageCard>
 
-	<PageCard title="Weather and calendars">
+	<PageCard title="Weather">
 		<SettingRow
 			title="Weather"
 			description="Shown under the clock. Needs a free OpenWeatherMap API key."
@@ -496,24 +520,23 @@
 							oninput={(e) => (general.weatherLatLong = e.currentTarget.value)}
 						/>
 						{#if canLocate}
-							<IconButton
-								icon={mdiCrosshairsGps}
-								variant="ghost"
-								color="secondary"
+							<Btn
+								glyph="locateFixed"
+								variant="outline"
+								color="primary"
 								aria-label="Use my location"
-								title="Use my location"
 								loading={locating}
 								onclick={useMyLocation}
 							/>
 						{/if}
 					</div>
-					{#if locateError}<Text size="small" class="text-danger-700 dark:text-danger-400 mt-1"
-							>{locateError}</Text
-						>{/if}
+					{#if locateError}<p class="mt-1 text-[0.75rem] text-[#d70015] dark:text-[#ff6961]">
+							{locateError}
+						</p>{/if}
 				</div>
 			</div>
 			{#if !general.weatherApiKey}
-				<Text size="small" class="mt-2 text-label-2">No key, so the weather is hidden.</Text>
+				<p class="text-label-2 mt-2 text-[0.75rem]">No key, so the weather is hidden.</p>
 			{/if}
 		</SettingRow>
 		{#if general.weatherApiKey}
@@ -540,48 +563,44 @@
 				{/snippet}
 			</SettingRow>
 		{/if}
-		<SettingRow
-			title="Calendars"
-			description="Upcoming events in the top corner. Paste a calendar's .ics link; changes show within 15 minutes."
-		>
-			{#if (general.webcalendars ?? []).length}
-				<ul class="mb-3 flex flex-col gap-2">
-					{#each general.webcalendars ?? [] as url, i (i)}
-						<li
-							class="flex items-center gap-2 rounded-xl bg-subtle/50 py-1 pr-1 pl-3 dark:bg-light-200"
-						>
-							<code class="min-w-0 flex-1 truncate text-sm">{url}</code>
-							<IconButton
-								icon={mdiDelete}
-								size="medium"
-								variant="ghost"
-								color="secondary"
-								aria-label="Remove calendar"
-								onclick={() =>
-									(general.webcalendars = (general.webcalendars ?? []).filter((_, j) => j !== i))}
-							/>
-						</li>
-					{/each}
-				</ul>
-			{/if}
+	</PageCard>
+
+	<PageCard
+		title="Calendars"
+		footer="Upcoming events in the top corner. Paste a calendar's .ics link; changes show within 15 minutes."
+	>
+		<div data-setting="Calendars">
+			{#each general.webcalendars ?? [] as url, i (i)}
+				<div class="border-sep flex min-h-11 items-center gap-3 border-t py-2 first:border-t-0">
+					<span class="min-w-0 flex-1 truncate text-[0.875rem]">{url}</span>
+					<button
+						type="button"
+						class="text-label-3 -mr-1 rounded-full p-1 hover:text-[#d70015] focus-visible:outline-2 focus-visible:outline-primary dark:hover:text-[#ff6961]"
+						aria-label="Remove calendar"
+						onclick={() =>
+							(general.webcalendars = (general.webcalendars ?? []).filter((_, j) => j !== i))}
+					>
+						<Glyph name="circleMinus" size={18} />
+					</button>
+				</div>
+			{/each}
 			<form
-				class="flex gap-2"
+				class="border-sep flex items-center gap-2 border-t py-2 first:border-t-0"
 				onsubmit={(e) => {
 					e.preventDefault();
 					addCalendar();
 				}}
 			>
-				<Input placeholder="https://… .ics" bind:value={newCalendar} aria-label="Calendar link" />
-				<Btn
-					type="submit"
-					variant="outline"
-					color="secondary"
-					leadingIcon={mdiPlus}
-					disabled={!newCalendar.trim()}
-				>
-					Add
-				</Btn>
+				<input
+					bind:value={newCalendar}
+					placeholder="Add calendar link (https://… .ics)"
+					aria-label="Calendar link"
+					class="min-h-9 min-w-0 flex-1 bg-transparent text-[0.875rem] outline-none placeholder:text-primary"
+				/>
+				{#if newCalendar.trim()}
+					<Btn type="submit" size="small">Add</Btn>
+				{/if}
 			</form>
-		</SettingRow>
+		</div>
 	</PageCard>
 </div>

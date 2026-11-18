@@ -1,13 +1,16 @@
 <script lang="ts">
-	import Btn from './btn.svelte';
 	import { onMount } from 'svelte';
-	import { mdiCellphone, mdiMonitor, mdiRefresh, mdiTablet, mdiTelevision } from '@mdi/js';
-	import { Icon, IconButton, Input, Text } from '@immich/ui';
+	import { Input } from '@immich/ui';
 	import type { ScreenDto } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import AddScreen from './add-screen.svelte';
-	import InlineConfirm from './inline-confirm.svelte';
 	import { describeDevice, relativeTime } from './admin-format';
+	import Btn from './btn.svelte';
+	import Glyph from './glyph.svelte';
+	import type { GlyphName } from './glyphs';
+	import InlineConfirm from './inline-confirm.svelte';
+	import PageCard from './page-card.svelte';
+	import RowMenu from './row-menu.svelte';
 
 	interface Props {
 		secret: string | null | undefined;
@@ -59,139 +62,124 @@
 		await load();
 	}
 
-	const deviceIcon = (kind: string) =>
-		kind === 'tv'
-			? mdiTelevision
-			: kind === 'tablet'
-				? mdiTablet
-				: kind === 'phone'
-					? mdiCellphone
-					: mdiMonitor;
+	const tiles: Record<string, { glyph: GlyphName; color: string }> = {
+		tv: { glyph: 'tv', color: '#5e5ce6' },
+		tablet: { glyph: 'tablet', color: '#ff9f0a' },
+		phone: { glyph: 'smartphone', color: '#30d158' },
+		desktop: { glyph: 'monitor', color: '#0a84ff' }
+	};
 	const screenName = (screen: ScreenDto) => screen.name || screen.clientIdentifier || 'Screen';
 </script>
 
-<div class="flex flex-col gap-6">
-	<div class="bg-group rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-		<div class="p-4">
-			<div class="mb-3 flex items-center justify-between gap-3">
-				<Text class="text-label-2" size="small">
-					{screens?.length
-						? `${screens.length} ${screens.length === 1 ? 'screen' : 'screens'}\u00a0·\u2002updated ${relativeTime(now)}`
-						: 'Screens appear here after they first open the frame.'}
-				</Text>
-				<IconButton
-					icon={mdiRefresh}
-					variant="ghost"
-					color="secondary"
-					size="small"
-					aria-label="Refresh"
-					title="Refresh"
-					disabled={loading}
-					onclick={load}
-				/>
-			</div>
+<PageCard
+	title="Screens"
+	footer={screens?.length
+		? `Updated ${relativeTime(now)}. A screen shows up after it first opens the frame.`
+		: 'A screen shows up here after it first opens the frame.'}
+>
+	{#snippet actions()}
+		<Btn
+			glyph="refreshCw"
+			variant="ghost"
+			color="primary"
+			size="small"
+			aria-label="Refresh"
+			disabled={loading}
+			onclick={load}
+		/>
+	{/snippet}
 
-			{#if error}
-				<div class="flex items-center gap-3 rounded-xl bg-danger/10 p-4">
-					<Text size="small" class="text-danger-700 dark:text-danger-400 flex-1">{error}</Text>
-					<Btn size="small" variant="outline" onclick={load}>Retry</Btn>
-				</div>
-			{:else if screens === null}
-				<ul class="grid gap-4 sm:grid-cols-2" aria-busy="true">
-					{#each [0, 1] as i (i)}
-						<li class="h-36 animate-pulse rounded-2xl bg-subtle/50 dark:bg-light-100"></li>
-					{/each}
-				</ul>
-			{:else if screens.length === 0}
-				<div class="rounded-2xl border border-dashed border-light-300 p-8 text-center">
-					<Text fontWeight="semi-bold">No screens yet</Text>
-					<Text size="small" class="text-label-2 mt-1"
-						>Add one below. It shows up here once it opens the frame.</Text
-					>
-				</div>
-			{:else}
-				<ul class="grid gap-4 sm:grid-cols-2">
-					{#each screens as screen (screen.clientIdentifier)}
-						{@const device = describeDevice(screen.userAgent)}
-						{@const seen = new Date(screen.lastSeenUtc!).getTime()}
-						{@const live = now - seen < 3 * 60_000}
-						<li class="flex flex-col rounded-2xl border border-light-300 p-4">
-							<div class="flex items-start gap-3">
-								<div class="rounded-xl bg-primary/10 p-2 text-primary">
-									<Icon icon={deviceIcon(device.kind)} size="28" />
-								</div>
-								<div class="min-w-0 flex-1">
-									{#if renaming === screen.clientIdentifier}
-										<form
-											class="flex gap-2"
-											onsubmit={(e) => {
-												e.preventDefault();
-												rename(screen);
-											}}
-										>
-											<Input bind:value={renameValue} aria-label="Screen name" />
-											<Btn type="submit" size="small">Save</Btn>
-											<Btn
-												size="small"
-												variant="ghost"
-												color="secondary"
-												onclick={() => (renaming = null)}>Cancel</Btn
-											>
-										</form>
-									{:else}
-										<Text fontWeight="semi-bold" class="truncate">{screenName(screen)}</Text>
-									{/if}
-									<Text class="text-label-2" size="small">{device.label}</Text>
-									<span
-										class="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium {live
-											? 'bg-success/15 text-dark'
-											: 'bg-warning/20 text-dark'}"
-									>
-										<span class="h-1.5 w-1.5 rounded-full {live ? 'bg-success' : 'bg-warning'}"
-										></span>
-										{live ? 'Showing now' : `Last seen ${relativeTime(seen, now)}`}
-									</span>
-								</div>
-							</div>
-
-							{#if confirmForget === screen.clientIdentifier}
-								<InlineConfirm
-									message={`Forget “${screenName(screen)}”? It comes back with no name the next time it opens the frame.`}
-									confirmLabel="Forget"
-									danger
-									returnFocusTo={`forget-${screen.clientIdentifier}`}
-									onconfirm={() => forget(screen)}
-									oncancel={() => (confirmForget = null)}
-								/>
-							{:else if renaming !== screen.clientIdentifier}
-								<div class="mt-auto flex justify-end gap-2 pt-4">
-									<Btn
-										id={`forget-${screen.clientIdentifier}`}
-										size="small"
-										variant="ghost"
-										color="secondary"
-										onclick={() => (confirmForget = screen.clientIdentifier!)}
-									>
-										Forget…
-									</Btn>
-									<Btn
-										size="small"
-										variant="outline"
-										onclick={() => {
-											renaming = screen.clientIdentifier!;
-											renameValue = screen.name ?? '';
-										}}
-									>
-										Rename
-									</Btn>
-								</div>
-							{/if}
-						</li>
-					{/each}
-				</ul>
-			{/if}
+	{#if error}
+		<div class="flex min-h-11 items-center justify-between gap-3 py-2">
+			<p class="text-[0.875rem]">{error}</p>
+			<Btn variant="ghost" color="primary" size="small" onclick={load}>Try Again</Btn>
 		</div>
-	</div>
+	{:else if screens === null}
+		{#each [0, 1] as i (i)}
+			<div
+				class="border-sep flex min-h-14 items-center gap-3 border-t py-2 first:border-t-0"
+				aria-busy="true"
+			>
+				<span class="bg-fill h-[29px] w-[29px] animate-pulse rounded-[7px]"></span>
+				<span class="bg-fill h-3 w-40 animate-pulse rounded"></span>
+			</div>
+		{/each}
+	{:else if screens.length === 0}
+		<p class="text-label-2 py-3 text-[0.875rem]">No screens yet.</p>
+	{:else}
+		{#each screens as screen (screen.clientIdentifier)}
+			{@const device = describeDevice(screen.userAgent)}
+			{@const seen = new Date(screen.lastSeenUtc!).getTime()}
+			{@const live = now - seen < 3 * 60_000}
+			{@const look = tiles[device.kind] ?? tiles.desktop}
+			<div class="border-sep border-t py-2 first:border-t-0">
+				<div class="flex min-h-11 items-center gap-3">
+					<span
+						class="flex h-[29px] w-[29px] shrink-0 items-center justify-center rounded-[7px] text-white"
+						style="background:{look.color}"
+					>
+						<Glyph name={look.glyph} size={17} stroke={2} />
+					</span>
+					<div class="min-w-0 flex-1">
+						{#if renaming === screen.clientIdentifier}
+							<form
+								class="flex items-center gap-2"
+								onsubmit={(e) => {
+									e.preventDefault();
+									rename(screen);
+								}}
+							>
+								<Input bind:value={renameValue} aria-label="Screen name" />
+								<Btn type="submit" size="small">Save</Btn>
+								<Btn variant="ghost" color="primary" size="small" onclick={() => (renaming = null)}
+									>Cancel</Btn
+								>
+							</form>
+						{:else}
+							<p class="truncate text-[0.9375rem] md:text-[0.875rem]">{screenName(screen)}</p>
+							<p class="text-label-2 flex items-center gap-1.5 text-[0.8125rem] md:text-[0.75rem]">
+								<span class="h-1.5 w-1.5 rounded-full {live ? 'bg-[#30d158]' : 'bg-[#ff9f0a]'}"
+								></span>
+								{device.label}&nbsp;·&ensp;{live
+									? 'Showing now'
+									: `Last seen ${relativeTime(seen, now)}`}
+							</p>
+						{/if}
+					</div>
+					{#if renaming !== screen.clientIdentifier}
+						<RowMenu
+							id={`screen-menu-${screen.clientIdentifier}`}
+							label="Actions for {screenName(screen)}"
+							items={[
+								{
+									label: 'Rename…',
+									onselect: () => {
+										renaming = screen.clientIdentifier!;
+										renameValue = screen.name ?? '';
+									}
+								},
+								{
+									label: 'Forget…',
+									destructive: true,
+									onselect: () => (confirmForget = screen.clientIdentifier!)
+								}
+							]}
+						/>
+					{/if}
+				</div>
+				{#if confirmForget === screen.clientIdentifier}
+					<InlineConfirm
+						message={`Forget “${screenName(screen)}”? It comes back with no name the next time it opens the frame.`}
+						confirmLabel="Forget"
+						danger
+						returnFocusTo={`screen-menu-${screen.clientIdentifier}`}
+						onconfirm={() => forget(screen)}
+						oncancel={() => (confirmForget = null)}
+					/>
+				{/if}
+			</div>
+		{/each}
+	{/if}
+</PageCard>
 
-	<AddScreen {secret} {ongotoaccess} />
-</div>
+<AddScreen {secret} {ongotoaccess} />

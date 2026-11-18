@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { Icon } from '@immich/ui';
+	import Glyph from './glyph.svelte';
+	import type { GlyphName } from './glyphs';
 
 	// The admin's button: same props as @immich/ui's Button, drawn the way Apple's settings
 	// draw them: a filled accent pill for the main action, soft gray pills for the rest.
@@ -8,8 +9,8 @@
 		variant?: 'filled' | 'outline' | 'ghost';
 		color?: 'primary' | 'secondary' | 'danger' | 'success';
 		size?: 'tiny' | 'small' | 'medium';
-		leadingIcon?: string;
-		trailingIcon?: string;
+		/** An icon-only button (e.g. refresh): pass a Glyph name and an aria-label. */
+		glyph?: GlyphName;
 		loading?: boolean;
 		disabled?: boolean;
 		fullWidth?: boolean;
@@ -31,8 +32,7 @@
 		variant = 'filled',
 		color = 'primary',
 		size = 'medium',
-		leadingIcon,
-		trailingIcon,
+		glyph,
 		loading = false,
 		disabled = false,
 		fullWidth = false,
@@ -45,10 +45,11 @@
 		...rest
 	}: Props = $props();
 
+	// Phone heights first, then the denser desktop ones (macOS push buttons are 28 px).
 	const sizes = {
-		tiny: 'h-7 gap-1 px-2.5 text-[0.75rem]',
-		small: 'h-8 gap-1.5 px-3.5 text-[0.8125rem]',
-		medium: 'h-9 gap-1.5 px-4 text-[0.875rem]'
+		tiny: 'h-7 gap-1 px-2.5 text-[0.75rem] md:h-6',
+		small: 'h-8 gap-1.5 px-3.5 text-[0.8125rem] md:h-7',
+		medium: 'h-10 gap-1.5 px-4 text-[0.9375rem] md:h-8 md:text-[0.875rem]'
 	};
 	const iconSize = { tiny: '14', small: '16', medium: '17' };
 
@@ -56,7 +57,7 @@
 		if (variant === 'filled') {
 			if (color === 'danger') return 'bg-[#ff3b30] text-white hover:brightness-110';
 			if (color === 'secondary') return 'bg-fill hover:brightness-95 dark:hover:brightness-125';
-			return 'bg-primary text-white hover:brightness-110 dark:text-black';
+			return 'bg-accent hover:brightness-110';
 		}
 		if (variant === 'outline') {
 			const text =
@@ -77,7 +78,7 @@
 	});
 
 	let classes = $derived(
-		`inline-flex shrink-0 items-center justify-center rounded-full font-medium whitespace-nowrap transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:pointer-events-none disabled:opacity-40 ${sizes[size]} ${look} ${fullWidth ? 'w-full' : ''} ${className}`
+		`inline-flex shrink-0 items-center justify-center rounded-full font-medium whitespace-nowrap transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:pointer-events-none disabled:opacity-40 ${sizes[size]} ${look} ${fullWidth ? 'w-full' : ''} ${glyph && !children ? 'aspect-square !px-0' : ''} ${className}`
 	);
 </script>
 
@@ -107,11 +108,10 @@
 				stroke-linecap="round"
 			/>
 		</svg>
-	{:else if leadingIcon}
-		<Icon icon={leadingIcon} size={iconSize[size]} />
+	{:else if glyph}
+		<Glyph name={glyph} size={Number(iconSize[size])} />
 	{/if}
 	{@render children?.()}
-	{#if trailingIcon}<Icon icon={trailingIcon} size={iconSize[size]} />{/if}
 {/snippet}
 
 {#if href}

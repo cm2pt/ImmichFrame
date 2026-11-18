@@ -1,8 +1,7 @@
 <script lang="ts">
 	import Btn from './btn.svelte';
 	import { onMount } from 'svelte';
-	import { mdiArrowExpand } from '@mdi/js';
-	import { Heading, IconButton, Text } from '@immich/ui';
+	import PageCard from './page-card.svelte';
 	import type { GeneralSettings } from '$lib/immichFrameApi';
 	import { effective, generalDefaults } from './admin-defaults';
 	import { formatExample } from './format-presets';
@@ -152,22 +151,24 @@
 	);
 </script>
 
-<div class="bg-group rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-	<div class="p-4">
-		<div class="mb-3 flex items-center justify-between">
-			<Heading tag="h2" size="tiny" fontWeight="semi-bold">Live preview</Heading>
-			<IconButton
-				icon={mdiArrowExpand}
-				size="small"
-				variant="ghost"
-				color="secondary"
-				aria-label="Show the preview larger"
-				onclick={() => (expanded = true)}
-			/>
-		</div>
+<PageCard
+	title="Preview"
+	footer="Shows your changes before you save. The photos are a sample of what's saved."
+>
+	{#snippet actions()}
+		<Btn
+			glyph="maximize2"
+			variant="ghost"
+			color="primary"
+			size="small"
+			aria-label="Show the preview larger"
+			onclick={() => (expanded = true)}
+		/>
+	{/snippet}
+	<div class="py-4">
 		<button
 			type="button"
-			class="relative block w-full cursor-zoom-in overflow-hidden rounded-lg bg-black ring-1 ring-black/10"
+			class="relative block w-full cursor-zoom-in overflow-hidden rounded-[10px] bg-black shadow-[0_0_0_0.5px_rgb(0_0_0/0.15)]"
 			style="aspect-ratio:16/9"
 			bind:clientWidth={width}
 			aria-label="Preview of the frame: {summary} Show larger."
@@ -175,11 +176,8 @@
 		>
 			{@render stage(scale)}
 		</button>
-		<Text size="small" class="mt-3 text-label-2">
-			{summary} A sample of your saved photos, with your unsaved changes.
-		</Text>
 	</div>
-</div>
+</PageCard>
 
 {#if expanded}
 	<div

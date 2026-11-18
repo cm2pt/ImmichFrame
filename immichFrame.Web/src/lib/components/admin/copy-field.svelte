@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { mdiCheck, mdiContentCopy, mdiEyeOffOutline, mdiEyeOutline } from '@mdi/js';
-	import { IconButton, Text } from '@immich/ui';
+	import Btn from './btn.svelte';
 
 	interface Props {
 		label: string;
@@ -25,33 +24,35 @@
 	}
 </script>
 
+<!-- A read-only value: the same filled field as every input, with Copy (and Show for secrets). -->
 <div class="min-w-0">
-	<Text size="small" fontWeight="medium" class="mb-1">{label}</Text>
+	<p class="mb-1 text-[0.8125rem] font-medium">{label}</p>
 	<div
-		class="flex min-w-0 items-center gap-1 rounded-xl border border-light-300 bg-light-50 py-1 pr-1 pl-4"
+		class="bg-fill rounded-control flex min-h-10 min-w-0 items-center gap-1 py-1 pr-1 pl-3 md:min-h-9"
 	>
-		<code class="min-w-0 flex-1 truncate font-mono text-sm select-all">
+		<span
+			class="min-w-0 flex-1 truncate text-[0.9375rem] select-all md:text-[0.875rem] {secret
+				? 'font-mono tracking-wider'
+				: ''}"
+		>
 			{secret && !revealed ? '•'.repeat(16) : value}
-		</code>
+		</span>
 		{#if secret}
-			<IconButton
-				icon={revealed ? mdiEyeOffOutline : mdiEyeOutline}
-				size="small"
+			<Btn
 				variant="ghost"
-				color="secondary"
+				color="primary"
+				size="small"
 				aria-label={revealed ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
-				onclick={() => (revealed = !revealed)}
-			/>
+				onclick={() => (revealed = !revealed)}>{revealed ? 'Hide' : 'Show'}</Btn
+			>
 		{/if}
-		<IconButton
-			icon={copied ? mdiCheck : mdiContentCopy}
-			size="small"
+		<Btn
 			variant="ghost"
-			color={copied ? 'success' : 'secondary'}
-			aria-label={copied ? 'Copied' : `Copy ${label.toLowerCase()}`}
-			title={copied ? 'Copied' : 'Copy'}
-			onclick={copy}
-		/>
+			color="primary"
+			size="small"
+			aria-label="Copy {label.toLowerCase()}"
+			onclick={copy}>{copied ? 'Copied' : 'Copy'}</Btn
+		>
 	</div>
 	<span class="sr-only" aria-live="polite">{copied ? `${label} copied` : ''}</span>
 </div>

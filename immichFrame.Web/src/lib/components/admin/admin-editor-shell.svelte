@@ -1,23 +1,13 @@
 <script lang="ts">
-	import Btn from './btn.svelte';
 	import { onMount, tick } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { fly } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
-	import {
-		mdiCheckCircle,
-		mdiClose,
-		mdiMagnify,
-		mdiImageMultipleOutline,
-		mdiLockOutline,
-		mdiMonitorDashboard,
-		mdiOpenInNew,
-		mdiPlayBoxOutline,
-		mdiShieldAccountOutline
-	} from '@mdi/js';
-	import { Icon, Text } from '@immich/ui';
 	import type { ScreenDto, ServerSettings } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
+	import Btn from './btn.svelte';
+	import Glyph from './glyph.svelte';
+	import type { GlyphName } from './glyphs';
 	import { invalidFormats } from './format-presets';
 	import type { AdminEditor } from './admin-editor.svelte';
 	import { AdminPreview } from './admin-preview.svelte';
@@ -46,57 +36,53 @@
 		$props();
 
 	type PageId = 'photos' | 'look' | 'screens' | 'access';
-	const shortTitles: Record<PageId, string> = {
-		photos: 'Photos',
-		look: 'Look',
-		screens: 'Screens',
-		access: 'Access'
-	};
-	const pages: { id: PageId; title: string; icon: string; intro: string; tile: string }[] = [
+	const pages: { id: PageId; title: string; glyph: GlyphName; intro: string; tile: string }[] = [
 		{
 			id: 'photos',
-			tile: '#0a84ff',
 			title: 'Photos',
-			icon: mdiImageMultipleOutline,
+			glyph: 'images',
+			tile: '#0a84ff',
 			intro: 'Choose which photos the frame shows.'
 		},
 		{
 			id: 'look',
+			title: 'Slideshow & Look',
+			glyph: 'play',
 			tile: '#bf5af2',
-			title: 'Slideshow & look',
-			icon: mdiPlayBoxOutline,
 			intro: 'How photos appear on every screen.'
 		},
 		{
 			id: 'screens',
-			tile: '#ff9f0a',
 			title: 'Screens',
-			icon: mdiMonitorDashboard,
+			glyph: 'tv',
+			tile: '#ff9f0a',
 			intro: 'The devices showing the frame, and how to add another.'
 		},
 		{
 			id: 'access',
+			title: 'Access & Accounts',
+			glyph: 'shieldCheck',
 			tile: '#8e8e93',
-			title: 'Access & accounts',
-			icon: mdiShieldAccountOutline,
 			intro: 'The Immich accounts the frame reads from, and who can see and change it.'
 		}
 	];
 
-	const readHash = (): PageId => {
+	// The page lives in the URL hash. On phones an empty hash is the root list, like iOS Settings.
+	const readHash = (): PageId | null => {
 		const hash = typeof window === 'undefined' ? '' : window.location.hash.slice(1);
-		return (pages.find((p) => p.id === hash)?.id ?? 'photos') as PageId;
+		return (pages.find((p) => p.id === hash)?.id ?? null) as PageId | null;
 	};
-	let page: PageId = $state(readHash());
+	let hashPage: PageId | null = $state(readHash());
+	let page: PageId = $derived(hashPage ?? 'photos');
 	let current = $derived(pages.find((p) => p.id === page)!);
 
-	function go(id: PageId) {
-		page = id;
-		history.replaceState(null, '', `#${id}`);
+	function go(id: PageId | null) {
+		hashPage = id;
+		history.replaceState(null, '', id ? `#${id}` : location.pathname);
 		window.scrollTo({ top: 0 });
 	}
 
-	// Search: switch page, then scroll to the row and flash it, like System Settings.
+	// Search: switch page, then scroll to the row and highlight it, like System Settings.
 	async function jumpTo(hit: SearchHit) {
 		go(hit.page as PageId);
 		await tick();
@@ -108,10 +94,9 @@
 		if (!target) return;
 		target.scrollIntoView({ block: 'center', behavior: 'smooth' });
 		target.classList.add('if-flash');
-		setTimeout(() => target.classList.remove('if-flash'), 1600);
+		setTimeout(() => target.classList.remove('if-flash'), 1100);
 	}
 
-	let mobileSearch = $state(false);
 	const preview = new AdminPreview();
 	let liveScreens: number | null = $state(null);
 	let frameVersion = $state('');
@@ -126,7 +111,7 @@
 	let canSave = $derived(editor.dirty && !saving && invalidFormats.size === 0);
 
 	onMount(() => {
-		const onHash = () => (page = readHash());
+		const onHash = () => (hashPage = readHash());
 		const onBeforeUnload = (e: BeforeUnloadEvent) => {
 			if (editor.dirty) e.preventDefault();
 		};
@@ -193,105 +178,111 @@
 
 	let barVisible = $derived(editor.dirty || justSaved || !!saveError);
 	const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+	let statusText = $derived(
+		liveScreens === null
+			? ''
+			: liveScreens
+				? `${plural(liveScreens, 'screen')} showing photos`
+				: 'No screen showing photos'
+	);
 </script>
 
-<div class="min-h-dvh">
-	<header
-		class="border-sep sticky top-0 z-30 border-b bg-[#f5f5f7]/80 backdrop-blur-xl backdrop-saturate-150 dark:bg-black/70"
+{#snippet tile(p: (typeof pages)[number], size = 26)}
+	<span
+		class="flex shrink-0 items-center justify-center rounded-[7px] text-white shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)]"
+		style="background:{p.tile};width:{size}px;height:{size}px"
 	>
-		<div class="flex items-center justify-between gap-4 px-4 py-2 md:px-5">
-			<div class="flex items-center gap-2.5">
-				<img src="/logo.svg" alt="" class="h-6 w-6" />
-				<span class="text-[0.9375rem] font-semibold tracking-tight">ImmichFrame</span>
-			</div>
-			<div class="flex items-center gap-1.5">
-				{#if liveScreens !== null}
+		<Glyph name={p.glyph} size={Math.round(size * 0.62)} stroke={2} />
+	</span>
+{/snippet}
+
+<div class="min-h-dvh">
+	<!-- Phone: the root list, then each page pushed with a back button. -->
+	<div class="md:hidden">
+		{#if hashPage === null}
+			<div class="px-4 pt-10 pb-28" in:fade={{ duration: 150 }}>
+				<div class="mb-5 flex items-center gap-3">
+					<img src="/logo.svg" alt="" class="h-9 w-9" />
+					<h1 class="text-[1.75rem] leading-tight font-bold tracking-[-0.02em]">ImmichFrame</h1>
+				</div>
+				<SettingsSearch onpick={jumpTo} />
+				<nav class="bg-group rounded-group mt-5 px-4" aria-label="Sections">
+					{#each pages as p (p.id)}
+						<!-- iOS insets the separator to where the text starts, not under the icon. -->
+						<a
+							href="#{p.id}"
+							class="group flex min-h-11 items-center gap-3"
+							onclick={(e) => {
+								e.preventDefault();
+								go(p.id);
+							}}
+						>
+							{@render tile(p, 29)}
+							<span
+								class="border-sep flex min-h-11 flex-1 items-center border-t py-2 group-first:border-t-0"
+							>
+								<span class="flex-1 text-[1.0625rem]">{p.title}</span>
+								<Glyph name="chevronRight" size={16} class="text-label-3" />
+							</span>
+						</a>
+					{/each}
+				</nav>
+				<div class="bg-group rounded-group mt-6 px-4">
+					<a
+						href={resolve('/')}
+						target="_blank"
+						class="flex min-h-11 items-center justify-between py-2 text-[1.0625rem] text-primary"
+					>
+						Open Frame <Glyph name="externalLink" size={16} />
+					</a>
 					<button
 						type="button"
-						class="text-label-2 hidden items-center gap-2 rounded-full px-2.5 py-1 text-[0.8125rem] hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-primary sm:flex dark:hover:bg-white/10"
-						onclick={() => go('screens')}
+						class="border-sep flex min-h-11 w-full items-center justify-between border-t py-2 text-left text-[1.0625rem] text-primary"
+						onclick={onlogout}
 					>
-						<span class="h-2 w-2 rounded-full {liveScreens ? 'bg-[#30d158]' : 'bg-[#8e8e93]'}"
-						></span>
-						{liveScreens
-							? `${plural(liveScreens, 'screen')} showing photos`
-							: 'No screen showing photos'}
+						Lock <Glyph name="lock" size={16} />
 					</button>
-				{/if}
-				<a
-					href={resolve('/')}
-					target="_blank"
-					class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.8125rem] font-medium text-primary hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-primary"
-					aria-label="Open frame in a new tab"
-				>
-					<span class="hidden sm:inline">Open frame</span>
-					<Icon icon={mdiOpenInNew} size="15" />
-				</a>
+				</div>
+				<p class="text-label-2 mt-3 px-4 text-[0.8125rem]">
+					{statusText}{statusText && frameVersion ? ' · ' : ''}{frameVersion
+						? `ImmichFrame ${frameVersion}`
+						: ''}
+				</p>
+			</div>
+		{:else}
+			<header
+				class="border-sep sticky top-0 z-30 grid grid-cols-[1fr_auto_1fr] items-center border-b bg-[#f5f5f7]/80 px-2 py-2.5 backdrop-blur-xl backdrop-saturate-150 dark:bg-black/70"
+			>
 				<button
 					type="button"
-					class="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.8125rem] font-medium hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-primary dark:hover:bg-white/10"
-					aria-label="Lock"
-					onclick={onlogout}
+					class="flex items-center gap-0.5 justify-self-start rounded-md px-1 text-[1.0625rem] text-primary"
+					onclick={() => go(null)}
 				>
-					<Icon icon={mdiLockOutline} size="15" />
-					<span class="hidden sm:inline">Lock</span>
+					<Glyph name="chevronLeft" size={22} stroke={2.2} /> Settings
 				</button>
-			</div>
-		</div>
-		{#if mobileSearch}
-			<div class="px-3 pb-2 md:hidden">
-				<SettingsSearch
-					autofocus
-					onpick={(hit) => {
-						mobileSearch = false;
-						jumpTo(hit);
-					}}
-				/>
-			</div>
+				<span class="text-[1.0625rem] font-semibold">{current.title}</span>
+				<span></span>
+			</header>
 		{/if}
-		<nav class="flex items-center gap-1 overflow-x-auto px-3 pb-2 md:hidden" aria-label="Sections">
-			{#each pages as p (p.id)}
-				<a
-					href="#{p.id}"
-					class="shrink-0 rounded-full px-3.5 py-1.5 text-[0.875rem] font-medium focus-visible:outline-2 focus-visible:outline-primary {page ===
-					p.id
-						? 'bg-primary text-white dark:text-black'
-						: 'text-label-2'}"
-					aria-current={page === p.id ? 'page' : undefined}
-					onclick={(e) => {
-						e.preventDefault();
-						go(p.id);
-					}}
-				>
-					{shortTitles[p.id]}
-				</a>
-			{/each}
-			<button
-				type="button"
-				class="text-label-2 ml-auto shrink-0 rounded-full p-1.5 focus-visible:outline-2 focus-visible:outline-primary"
-				aria-label={mobileSearch ? 'Close search' : 'Search settings'}
-				aria-expanded={mobileSearch}
-				onclick={() => (mobileSearch = !mobileSearch)}
-			>
-				<Icon icon={mobileSearch ? mdiClose : mdiMagnify} size="20" />
-			</button>
-		</nav>
-	</header>
+	</div>
 
-	<div class="mx-auto flex max-w-[84rem]">
+	<div class="mx-auto flex max-w-[72rem]">
+		<!-- Desktop sidebar: brand, search, sections; status and actions at the bottom. -->
 		<div class="hidden w-64 shrink-0 md:block">
-			<aside
-				class="sticky top-[49px] flex h-[calc(100dvh-49px)] flex-col justify-between px-3 py-4"
-			>
+			<aside class="sticky top-0 flex h-dvh flex-col justify-between px-3 pt-5 pb-4">
 				<div>
+					<div class="mb-4 flex items-center gap-2.5 px-2">
+						<img src="/logo.svg" alt="" class="h-7 w-7" />
+						<span class="text-[0.9375rem] font-semibold tracking-tight">ImmichFrame</span>
+					</div>
 					<SettingsSearch onpick={jumpTo} />
 					<nav class="mt-3 flex flex-col gap-0.5" aria-label="Sections">
 						{#each pages as p (p.id)}
 							{@const selected = page === p.id}
 							<a
 								href="#{p.id}"
-								class="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[0.9375rem] transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary {selected
-									? 'bg-primary font-medium text-white dark:text-black'
+								class="flex items-center gap-2.5 rounded-[6px] px-2 py-[5px] text-[0.875rem] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary {selected
+									? 'bg-accent'
 									: 'hover:bg-black/5 dark:hover:bg-white/10'}"
 								aria-current={selected ? 'page' : undefined}
 								onclick={(e) => {
@@ -299,37 +290,70 @@
 									go(p.id);
 								}}
 							>
-								<span
-									class="flex h-[26px] w-[26px] items-center justify-center rounded-[7px] text-white shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.1)]"
-									style="background:{p.tile}"
-								>
-									<Icon icon={p.icon} size="17" />
-								</span>
+								{@render tile(p, 24)}
 								{p.title}
 							</a>
 						{/each}
 					</nav>
 				</div>
-				{#if frameVersion}
-					<p class="text-label-2 px-2 text-[0.75rem]">ImmichFrame {frameVersion}</p>
-				{/if}
+				<div class="flex flex-col gap-0.5 px-2 text-[0.8125rem]">
+					{#if statusText}
+						<button
+							type="button"
+							class="text-label-2 flex items-center gap-2 py-1 text-left hover:underline"
+							onclick={() => go('screens')}
+						>
+							<span class="h-1.5 w-1.5 rounded-full {liveScreens ? 'bg-[#30d158]' : 'bg-[#8e8e93]'}"
+							></span>
+							{statusText}
+						</button>
+					{/if}
+					<a
+						href={resolve('/')}
+						target="_blank"
+						class="flex items-center gap-1.5 py-1 text-primary hover:underline"
+					>
+						Open Frame <Glyph name="externalLink" size={13} />
+					</a>
+					<button
+						type="button"
+						class="py-1 text-left text-primary hover:underline"
+						onclick={onlogout}
+					>
+						Lock
+					</button>
+					{#if frameVersion}
+						<p class="text-label-3 pt-2 text-[0.75rem]">ImmichFrame {frameVersion}</p>
+					{/if}
+				</div>
 			</aside>
 		</div>
 
-		<main class="relative min-w-0 flex-1 px-4 pt-6 pb-36 md:px-8 md:pt-8">
-			{#key page}
-				<div in:fly={{ y: 6, duration: 220, easing: cubicOut }}>
-					<h1 class="title-large">{current.title}</h1>
-					<p class="text-label-2 mt-1.5 mb-8 text-[1.0625rem]">{current.intro}</p>
-					<div class="flex flex-col gap-6 xl:flex-row xl:items-start">
-						<div class="min-w-0 flex-1">
+		<main
+			class="relative min-w-0 flex-1 px-4 pb-36 md:px-10 md:pt-10 {hashPage === null
+				? 'hidden md:block'
+				: 'pt-4'}"
+		>
+			<div class="mx-auto max-w-[44rem]">
+				{#key page}
+					<div in:fly={{ y: 6, duration: 220, easing: cubicOut }}>
+						<h1
+							class="text-[1.75rem] leading-tight font-bold tracking-[-0.02em] md:text-[2rem] md:tracking-[-0.025em]"
+						>
+							{current.title}
+						</h1>
+						<p class="text-label-2 mt-1 mb-7 text-[0.9375rem]">{current.intro}</p>
+
+						<div class="flex flex-col gap-7">
 							{#if page === 'photos'}
 								<PagePhotos
 									settings={editor.settings}
 									version={editor.version}
 									onaddaccount={addAccount}
 								/>
+								<UpNext {preview} />
 							{:else if page === 'look'}
+								<LivePreview general={editor.settings.General ?? {}} {preview} />
 								{#key editor.version}
 									<PageLook general={editor.settings.General ?? (editor.settings.General = {})} />
 								{/key}
@@ -350,22 +374,6 @@
 										{passwordFromEnvironment}
 									/>
 								{/key}
-							{/if}
-						</div>
-
-						{#if page === 'photos' || page === 'look'}
-							<!-- On narrow screens the Look page shows the preview first, so changes are in view. -->
-							<aside
-								class="flex flex-col gap-4 xl:sticky xl:top-20 xl:w-96 {page === 'look'
-									? 'order-first xl:order-none'
-									: ''}"
-								aria-label="Preview"
-							>
-								<LivePreview general={editor.settings.General ?? {}} {preview} />
-								<div class={page === 'look' ? 'hidden xl:block' : ''}><UpNext {preview} /></div>
-							</aside>
-						{:else if page === 'access'}
-							<aside class="flex flex-col gap-4 xl:sticky xl:top-20 xl:w-96">
 								<RecentActivity
 									refreshKey={savedAt}
 									dirty={editor.dirty}
@@ -373,66 +381,75 @@
 									onrestored={onreload}
 								/>
 								<SettingsBackup saved={savedSettings} onrestore={restoreFromFile} />
-							</aside>
-						{/if}
+							{/if}
+						</div>
 					</div>
-				</div>
-			{/key}
+				{/key}
+			</div>
 
-			<!-- The save bar floats over the content column, not the sidebar. -->
+			<!-- The save bar floats over the content column, in translucent material. -->
 			{#if barVisible}
-				<div class="pointer-events-none fixed inset-x-0 bottom-0 z-40">
-					<div class="mx-auto max-w-[90rem] p-4 md:pl-64">
+				<div
+					class="pointer-events-none fixed inset-x-0 bottom-0 z-40"
+					transition:fly={{ y: 16, duration: 200 }}
+				>
+					<div class="mx-auto max-w-[72rem] p-4 md:pl-[17rem]">
 						<div
-							class="pointer-events-auto mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-light-300 bg-light-50/95 px-5 py-3 shadow-xl backdrop-blur dark:bg-light-100/95"
+							class="pointer-events-auto mx-auto flex max-w-[44rem] flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/72 px-4 py-3 shadow-[0_8px_24px_rgb(0_0_0/0.12),0_0_0_0.5px_rgb(0_0_0/0.1)] backdrop-blur-[20px] backdrop-saturate-[180%] dark:bg-[rgb(30_30_30/0.72)] dark:shadow-[0_8px_24px_rgb(0_0_0/0.4),0_0_0_0.5px_rgb(255_255_255/0.12)]"
 							role="region"
 							aria-label="Unsaved changes"
 							aria-live="polite"
 						>
 							{#if saveError}
-								<Text
-									fontWeight="medium"
-									class="text-danger-700 dark:text-danger-400 min-w-0 flex-1">{saveError}</Text
+								<p
+									class="min-w-0 flex-1 text-[0.875rem] font-medium text-[#d70015] dark:text-[#ff6961]"
 								>
+									{saveError}
+								</p>
 							{:else if editor.dirty}
-								<Text fontWeight="medium" class="min-w-0 flex-1">
+								<p class="min-w-0 flex-1 text-[0.875rem] font-medium">
 									{invalidFormats.size > 0
 										? 'Fix the invalid date or clock pattern to save'
 										: plural(Math.max(editor.changeCount, 1), 'unsaved change')}
-								</Text>
+								</p>
 							{:else}
 								<div class="flex min-w-0 flex-1 flex-col">
-									<span
-										class="flex items-center gap-2 font-medium {saveWarnings.length
-											? 'text-dark'
-											: 'text-dark'}"
-									>
-										<Icon
-											icon={mdiCheckCircle}
-											size="20"
-											class={saveWarnings.length ? 'text-warning' : 'text-success'}
-										/>
+									<span class="flex items-center gap-1.5 text-[0.875rem] font-medium">
+										<span class={saveWarnings.length ? 'text-[#ff9f0a]' : 'text-[#30d158]'}>
+											<Glyph
+												name={saveWarnings.length ? 'triangleAlert' : 'circleCheck'}
+												size={17}
+												stroke={2}
+											/>
+										</span>
 										{saveWarnings.length ? 'Saved, with a warning' : 'Saved'}
 									</span>
-									<Text size="small" class="text-label-2">
+									<p class="text-label-2 text-[0.8125rem]">
 										{saveWarnings.length
 											? saveWarnings.join(' ')
-											: 'Screens update on their next reload; weather and calendars within 15 minutes.'}
-									</Text>
+											: 'Screens update on their next reload.'}
+									</p>
 								</div>
 							{/if}
 							{#if editor.dirty}
 								<div class="flex gap-2">
 									<Btn
-										variant="ghost"
+										variant="outline"
 										color="secondary"
+										size="small"
 										disabled={saving}
 										onclick={() => editor.discard()}
 									>
 										Discard
 									</Btn>
-									<Btn loading={saving} disabled={!canSave} onclick={onsave} title="Save (⌘S)">
-										{saving ? 'Saving…' : 'Save'}
+									<Btn
+										size="small"
+										loading={saving}
+										disabled={!canSave}
+										onclick={onsave}
+										title="Save (⌘S)"
+									>
+										Save
 									</Btn>
 								</div>
 							{:else}
@@ -440,10 +457,8 @@
 									variant="ghost"
 									color="secondary"
 									size="small"
-									onclick={() => (justSaved = false)}
+									onclick={() => (justSaved = false)}>Dismiss</Btn
 								>
-									Dismiss
-								</Btn>
 							{/if}
 						</div>
 					</div>
