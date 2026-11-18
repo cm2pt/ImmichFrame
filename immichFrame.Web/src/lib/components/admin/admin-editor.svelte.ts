@@ -12,6 +12,17 @@ export class AdminEditor {
 
 	dirty = $derived(normalize(this.settings) !== this.saved);
 
+	/** How many individual settings differ from the saved copy (for "3 unsaved changes"). */
+	changeCount = $derived.by(() => {
+		if (!this.dirty) return 0;
+		const before = flatten(JSON.parse(this.saved));
+		const after = flatten(JSON.parse(normalize(this.settings)));
+		const keys = [...Object.keys(before), ...Object.keys(after)].filter(
+			(k, i, all) => all.indexOf(k) === i
+		);
+		return keys.filter((key) => before[key] !== after[key]).length;
+	});
+
 	load(settings: ServerSettings) {
 		const copy: ServerSettings = {
 			General: settings.General ?? {},
@@ -46,4 +57,20 @@ function normalize(settings: ServerSettings): string {
 		}
 		return value;
 	});
+}
+
+// General.layout, Accounts.0.albums, …: one entry per setting, with arrays compared whole.
+function flatten(settings: ServerSettings): Record<string, string> {
+	const out: Record<string, string> = {};
+	for (const [key, value] of Object.entries(settings.General ?? {})) {
+		out[`General.${key}`] = JSON.stringify(value);
+	}
+	const accounts = settings.Accounts ?? [];
+	out['Accounts.length'] = String(accounts.length);
+	accounts.forEach((account, i) => {
+		for (const [key, value] of Object.entries(account)) {
+			out[`Accounts.${i}.${key}`] = JSON.stringify(value);
+		}
+	});
+	return out;
 }

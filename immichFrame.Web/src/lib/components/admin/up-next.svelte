@@ -26,7 +26,7 @@
 				loading={preview.state === 'loading'}
 				onclick={() => preview.load(4)}
 			>
-				Shuffle sample
+				Shuffle
 			</Button>
 		</div>
 		{#if preview.state === 'error'}
@@ -50,7 +50,7 @@
 				{/each}
 			</div>
 		{/if}
-		<Text size="small" color="muted" class="mt-3">
+		<Text size="small" class="text-dark/70 mt-3">
 			A random sample from the saved choice, so you can spot screenshots or receipts that slip in.
 		</Text>
 	</CardBody>

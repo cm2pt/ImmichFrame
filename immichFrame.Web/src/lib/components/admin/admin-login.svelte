@@ -18,7 +18,7 @@
 	}
 </script>
 
-<Card class="mx-auto mt-24 max-w-sm">
+<Card class="mx-auto mt-[18vh] max-w-sm shadow-xl">
 	<CardBody>
 		<form class="flex flex-col gap-4" onsubmit={submit}>
 			<AdminBrand subtitle="Admin sign-in" />
@@ -31,7 +31,7 @@
 				<Alert color="danger">{error}</Alert>
 			{/if}
 
-			<Button type="submit" leadingIcon={mdiLogin} fullWidth>Sign in</Button>
+			<Button type="submit" leadingIcon={mdiLogin} fullWidth disabled={!password}>Sign in</Button>
 		</form>
 	</CardBody>
 </Card>

@@ -25,12 +25,15 @@
 			<div class="min-w-48">
 				<Text fontWeight="semi-bold">{title}</Text>
 				{#if description}
-					<Text size="small" color="muted">{description}</Text>
+					<Text size="small" class="text-dark/70">{description}</Text>
 				{/if}
 			</div>
 		</div>
 		{#if control}
-			<div class="flex shrink-0 flex-wrap items-center justify-end gap-3">{@render control()}</div>
+			<!-- Shrinks and wraps under the title on narrow screens instead of overflowing. -->
+			<div class="flex max-w-full min-w-0 flex-wrap items-center gap-3 sm:justify-end">
+				{@render control()}
+			</div>
 		{/if}
 	</div>
 	{#if children}

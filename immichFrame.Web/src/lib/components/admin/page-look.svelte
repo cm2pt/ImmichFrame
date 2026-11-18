@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { mdiAlertOutline, mdiDelete, mdiPlus } from '@mdi/js';
+	import { mdiAlertOutline, mdiCheckCircle, mdiCrosshairsGps, mdiDelete, mdiPlus } from '@mdi/js';
 	import { Button, Icon, IconButton, Input, PasswordInput, Select, Switch, Text } from '@immich/ui';
 	import * as locales from 'date-fns/locale';
 	import type { GeneralSettings } from '$lib/immichFrameApi';
@@ -19,8 +19,22 @@
 	const get = <K extends keyof GeneralSettings>(key: K) => effective(general, generalDefaults, key);
 	const target = $derived(general as Record<string, unknown>);
 
-	// Timing
+	// Timing: the slider snaps to useful steps rather than a linear 5–300 s.
+	const steps = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 300];
 	let interval = $derived(get('interval') ?? 45);
+	let stepIndex = $derived.by(() => {
+		let best = 0;
+		steps.forEach((s, i) => {
+			if (Math.abs(s - interval) < Math.abs(steps[best] - interval)) best = i;
+		});
+		return best;
+	});
+	const duration = (s: number) =>
+		s < 60
+			? `${s} seconds`
+			: s % 60 === 0
+				? `${s / 60} min`
+				: `${Math.floor(s / 60)} min ${s % 60} s`;
 	let perHour = $derived(
 		Math.round(3600 / Math.max(interval, 1)) * (get('layout') === 'splitview' ? 2 : 1)
 	);
@@ -44,7 +58,6 @@
 		general.imagePan = value === 'pan' || value === 'both';
 	}
 
-	// Place
 	const placeFormats = [
 		{ value: 'City,State,Country', label: 'City, region, country' },
 		{ value: 'City,Country', label: 'City, country' },
@@ -52,11 +65,20 @@
 		{ value: 'Country', label: 'Country' }
 	];
 
-	// Colours: the text colour, and the box behind it.
-	const textColours = ['#f5deb3', '#ffffff', '#1f2937'];
-	const boxColours = ['#000000', '#1f2937', '#ffffff'];
+	// Named swatches: screen readers say the name, not a hex code.
+	const textColors = [
+		{ value: '#f5deb3', name: 'Wheat' },
+		{ value: '#ffffff', name: 'White' },
+		{ value: '#1f2937', name: 'Charcoal' }
+	];
+	const boxColors = [
+		{ value: '#000000', name: 'Black' },
+		{ value: '#1f2937', name: 'Charcoal' },
+		{ value: '#ffffff', name: 'White' }
+	];
+	const usesBox = $derived(get('style') === 'solid' || get('style') === 'transition');
 
-	// Languages: plain language codes that both date-fns and .NET understand.
+	// Languages: plain codes that both date-fns and .NET understand.
 	const names = new Intl.DisplayNames(['en'], { type: 'language' });
 	const languageOptions = $derived.by(() => {
 		const codes = Object.keys(locales).filter((code) => /^[a-z]{2,3}$/.test(code));
@@ -70,19 +92,18 @@
 				} catch {
 					// keep the code
 				}
-				return { value: code, label: `${label} (${code})` };
+				return { value: code, label };
 			})
 			.sort((a, b) => a.label.localeCompare(b.label));
 	});
 
 	const fontSizes = [
 		{ value: '14px', label: 'Small' },
-		{ value: '17px', label: 'Normal' },
+		{ value: '17px', label: 'Default' },
 		{ value: '21px', label: 'Large' },
-		{ value: '26px', label: 'Extra large' }
+		{ value: '26px', label: 'Largest' }
 	];
 
-	// Calendars
 	let newCalendar = $state('');
 	function addCalendar() {
 		const url = newCalendar.trim();
@@ -90,31 +111,100 @@
 		general.webcalendars = [...(general.webcalendars ?? []), url];
 		newCalendar = '';
 	}
+
+	let locating = $state(false);
+	let locateError = $state('');
+	function useMyLocation() {
+		locateError = '';
+		if (!navigator.geolocation) {
+			locateError = 'This browser can’t share its location.';
+			return;
+		}
+		locating = true;
+		navigator.geolocation.getCurrentPosition(
+			(pos) => {
+				locating = false;
+				general.weatherLatLong = `${pos.coords.latitude.toFixed(3)},${pos.coords.longitude.toFixed(3)}`;
+			},
+			() => {
+				locating = false;
+				locateError = 'Location wasn’t shared. Type the coordinates instead.';
+			},
+			{ timeout: 10_000 }
+		);
+	}
 </script>
 
+{#snippet swatches(
+	label: string,
+	colors: { value: string; name: string }[],
+	current: string,
+	set: (v: string) => void,
+	disabled = false
+)}
+	{@const custom = !colors.some((c) => c.value === current.toLowerCase())}
+	<div class="flex items-center gap-2" role="radiogroup" aria-label={label}>
+		{#each colors as color (color.value)}
+			{@const selected = current.toLowerCase() === color.value}
+			<button
+				type="button"
+				role="radio"
+				aria-checked={selected}
+				aria-label={color.name}
+				title={color.name}
+				{disabled}
+				class="h-9 w-9 rounded-full ring-1 ring-black/15 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-40 dark:ring-white/25 {selected
+					? 'outline-2 outline-offset-2 outline-primary'
+					: ''}"
+				style="background:{color.value}"
+				onclick={() => set(color.value)}
+			></button>
+		{/each}
+		<label
+			class="relative h-9 w-9 cursor-pointer rounded-full ring-1 ring-black/15 dark:ring-white/25 {custom
+				? 'outline-2 outline-offset-2 outline-primary'
+				: ''} {disabled ? 'pointer-events-none opacity-40' : ''}"
+			style="background:{custom
+				? current
+				: 'conic-gradient(#f87171,#fbbf24,#34d399,#60a5fa,#a78bfa,#f87171)'}"
+			title="Custom color"
+		>
+			<span class="sr-only">Custom {label.toLowerCase()}</span>
+			<input
+				type="color"
+				class="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+				value={current}
+				{disabled}
+				oninput={(e) => set(e.currentTarget.value)}
+			/>
+		</label>
+	</div>
+{/snippet}
+
 <div class="flex flex-col gap-6">
-	<PageCard title="Timing" id="timing">
+	<PageCard title="Timing">
 		<SettingRow
 			title="Time on each photo"
 			description="About {perHour} photos an hour{get('layout') === 'splitview'
-				? ' (two per slide)'
+				? ', two at a time'
 				: ''}"
 		>
 			{#snippet control()}
 				<input
 					type="range"
-					min="5"
-					max="300"
-					step="5"
-					value={interval}
-					aria-label="Seconds on each photo"
-					class="w-48 accent-primary sm:w-64"
-					oninput={(e) => (general.interval = Number(e.currentTarget.value))}
+					min="0"
+					max={steps.length - 1}
+					step="1"
+					value={stepIndex}
+					aria-label="Time on each photo"
+					aria-valuetext={duration(steps[stepIndex])}
+					class="w-44 accent-primary sm:w-56"
+					oninput={(e) => (general.interval = steps[Number(e.currentTarget.value)])}
 				/>
-				<span class="w-14 text-right font-mono">{interval} s</span>
+				<span class="w-24 text-right tabular-nums">{duration(interval)}</span>
 			{/snippet}
 		</SettingRow>
-		<SettingRow title="Change between photos" description="A cross-fade between slides">
+		<SettingRow title="Change between photos" description="How long the cross-fade takes">
 			{#snippet control()}
 				<Segmented
 					label="Change between photos"
@@ -122,7 +212,7 @@
 					options={transitions}
 					onchange={(v) => (general.transitionDuration = v)}
 				/>
-				{#if !transitionIsPreset}<span class="font-mono text-sm">{transitionValue} s</span>{/if}
+				{#if !transitionIsPreset}<span class="text-sm tabular-nums">{transitionValue} s</span>{/if}
 			{/snippet}
 		</SettingRow>
 		<SettingRow title="Progress bar" description="A thin line counting down to the next photo">
@@ -136,29 +226,35 @@
 		</SettingRow>
 	</PageCard>
 
-	<PageCard title="Layout" id="layout">
+	<PageCard title="Layout">
 		<div class="grid gap-4 py-2 sm:grid-cols-2" role="radiogroup" aria-label="Layout">
-			{#each [{ value: 'single', title: 'One photo at a time', text: 'Portrait photos get dark side bars on a wide screen.' }, { value: 'splitview', title: 'Two portraits side by side', text: 'Best when most photos come from phones. Landscape photos still show alone.' }] as option (option.value)}
+			{#each [{ value: 'single', title: 'One photo at a time', text: 'Portrait photos get dark bars at the sides of a wide screen.' }, { value: 'splitview', title: 'Two portraits side by side', text: 'Best when most photos come from phones. Landscape photos still show alone.' }] as option (option.value)}
 				{@const selected = get('layout') === option.value}
 				<button
 					type="button"
 					role="radio"
 					aria-checked={selected}
-					class="rounded-2xl border-2 p-4 text-left transition-colors {selected
+					class="relative rounded-2xl border-2 p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary {selected
 						? 'border-primary bg-primary/5'
 						: 'border-light-300 hover:border-primary/50'}"
 					onclick={() => (general.layout = option.value)}
 				>
-					<div class="mb-3 flex aspect-[16/7] gap-1 rounded-lg bg-dark-900 p-2 dark:bg-black">
+					<div
+						class="mb-3 flex aspect-[16/7] items-stretch justify-center gap-1 rounded-lg bg-neutral-900 p-2"
+					>
 						{#if option.value === 'single'}
-							<div class="mx-auto h-full w-3/5 rounded bg-light-500/70"></div>
+							<div class="w-[38%] rounded bg-gradient-to-b from-sky-300/80 to-amber-200/70"></div>
 						{:else}
-							<div class="h-full flex-1 rounded bg-light-500/70"></div>
-							<div class="h-full flex-1 rounded bg-light-400/70"></div>
+							<div class="w-[38%] rounded bg-gradient-to-b from-sky-300/80 to-amber-200/70"></div>
+							<div class="w-[38%] rounded bg-gradient-to-b from-emerald-300/70 to-sky-200/70"></div>
 						{/if}
 					</div>
-					<Text fontWeight="semi-bold">{option.title}</Text>
-					<Text size="small" color="muted">{option.text}</Text>
+					<div class="flex items-center justify-between gap-2">
+						<Text fontWeight="semi-bold">{option.title}</Text>
+						{#if selected}<span class="text-primary"><Icon icon={mdiCheckCircle} size="20" /></span
+							>{/if}
+					</div>
+					<Text size="small" class="text-dark/70">{option.text}</Text>
 				</button>
 			{/each}
 		</div>
@@ -168,8 +264,8 @@
 					label="Photo size"
 					value={get('imageFill') ? 'fill' : 'fit'}
 					options={[
-						{ value: 'fit', label: 'Fit whole photo' },
-						{ value: 'fill', label: 'Fill screen' }
+						{ value: 'fit', label: 'Fit' },
+						{ value: 'fill', label: 'Fill' }
 					]}
 					onchange={(v) => (general.imageFill = v === 'fill')}
 				/>
@@ -181,15 +277,130 @@
 					label="Movement"
 					value={movement}
 					options={[
-						{ value: 'zoom', label: 'Slow zoom' },
+						{ value: 'zoom', label: 'Zoom' },
 						{ value: 'pan', label: 'Pan' },
-						{ value: 'both', label: 'Zoom & pan' },
+						{ value: 'both', label: 'Both' },
 						{ value: 'still', label: 'Still' }
 					]}
 					onchange={setMovement}
 				/>
 			{/snippet}
 		</SettingRow>
+		<SettingRow title="Video sound" description="Most screens start videos muted anyway">
+			{#snippet control()}
+				<Switch
+					aria-label="Video sound"
+					checked={get('playAudio')}
+					onCheckedChange={(v) => (general.playAudio = v)}
+				/>
+			{/snippet}
+		</SettingRow>
+	</PageCard>
+
+	<PageCard title="On the photo" description="Shown in the corners of every slide.">
+		<SettingRow title="Clock" description="With today's date, and the weather when it's set up">
+			{#snippet control()}
+				<Switch
+					aria-label="Clock"
+					checked={get('showClock')}
+					onCheckedChange={(v) => (general.showClock = v)}
+				/>
+			{/snippet}
+			{#if get('showClock')}
+				<div class="grid gap-x-6 sm:grid-cols-2">
+					<SettingField field={generalField('clockFormat', 'Time')} {target} />
+					<SettingField field={generalField('clockDateFormat', 'Date')} {target} />
+				</div>
+			{/if}
+		</SettingRow>
+		<SettingRow title="Date taken" description="When the photo was taken">
+			{#snippet control()}
+				<Switch
+					aria-label="Date taken"
+					checked={get('showPhotoDate')}
+					onCheckedChange={(v) => (general.showPhotoDate = v)}
+				/>
+			{/snippet}
+			{#if get('showPhotoDate')}
+				<div class="sm:w-1/2 sm:pr-3">
+					<SettingField field={generalField('photoDateFormat', 'Format')} {target} />
+				</div>
+			{/if}
+		</SettingRow>
+		<SettingRow title="Place" description="Phone photos usually have one">
+			{#snippet control()}
+				<Switch
+					aria-label="Place"
+					checked={get('showImageLocation')}
+					onCheckedChange={(v) => (general.showImageLocation = v)}
+				/>
+			{/snippet}
+			{#if get('showImageLocation')}
+				<label class="block text-sm sm:w-1/2 sm:pr-3">
+					<span class="mb-1 block font-medium">Format</span>
+					<Select
+						options={placeFormats.some((p) => p.value === get('imageLocationFormat'))
+							? placeFormats
+							: [
+									...placeFormats,
+									{
+										value: get('imageLocationFormat') ?? '',
+										label: get('imageLocationFormat') ?? ''
+									}
+								]}
+						value={get('imageLocationFormat') ?? 'City,State,Country'}
+						onChange={(v) => (general.imageLocationFormat = v)}
+					/>
+				</label>
+			{/if}
+		</SettingRow>
+		<SettingRow title="People" description="Names of the people Immich recognized">
+			{#snippet control()}
+				<Switch
+					aria-label="People"
+					checked={get('showPeopleDesc')}
+					onCheckedChange={(v) => (general.showPeopleDesc = v)}
+				/>
+			{/snippet}
+		</SettingRow>
+		<SettingRow title="Album name" description="The album the photo is in">
+			{#snippet control()}
+				<Switch
+					aria-label="Album name"
+					checked={get('showAlbumName')}
+					onCheckedChange={(v) => (general.showAlbumName = v)}
+				/>
+			{/snippet}
+		</SettingRow>
+		<SettingRow title="Tags" description="Tags added to the photo in Immich">
+			{#snippet control()}
+				<Switch
+					aria-label="Tags"
+					checked={get('showTagsDesc')}
+					onCheckedChange={(v) => (general.showTagsDesc = v)}
+				/>
+			{/snippet}
+		</SettingRow>
+		<SettingRow title="Description" description="The photo's description in Immich">
+			{#snippet control()}
+				<Switch
+					aria-label="Description"
+					checked={get('showImageDesc')}
+					onCheckedChange={(v) => (general.showImageDesc = v)}
+				/>
+			{/snippet}
+			{#if get('showImageDesc')}
+				<div class="flex items-center gap-2">
+					<Icon icon={mdiAlertOutline} size="16" class="shrink-0 text-warning" />
+					<Text size="small" class="text-dark/70"
+						>Cameras often fill it with text like “DJI_0073.JPG”.</Text
+					>
+				</div>
+			{/if}
+		</SettingRow>
+	</PageCard>
+
+	<PageCard title="Text and colors">
 		<SettingRow
 			title="Behind the clock and captions"
 			description="Keeps text readable on bright photos"
@@ -209,161 +420,27 @@
 			{/snippet}
 		</SettingRow>
 		<SettingRow
-			title="Video sound"
-			description="Play the sound of videos (most screens start muted)"
+			title="Box color"
+			description={usesBox ? 'The solid or faded box behind the text' : 'Used with Solid or Fade'}
 		>
 			{#snippet control()}
-				<Switch
-					aria-label="Video sound"
-					checked={get('playAudio')}
-					onCheckedChange={(v) => (general.playAudio = v)}
-				/>
+				{@render swatches(
+					'Box color',
+					boxColors,
+					general.secondaryColor || '#000000',
+					(v) => (general.secondaryColor = v),
+					!usesBox
+				)}
 			{/snippet}
 		</SettingRow>
-	</PageCard>
-
-	<PageCard title="On the photo" description="What's shown in the corners." id="overlay">
-		<SettingRow title="Clock" description="With today's date under it">
+		<SettingRow title="Text color" description="The clock and the captions">
 			{#snippet control()}
-				<Switch
-					aria-label="Clock"
-					checked={get('showClock')}
-					onCheckedChange={(v) => (general.showClock = v)}
-				/>
-			{/snippet}
-			{#if get('showClock')}
-				<div class="grid gap-x-6 sm:grid-cols-2">
-					<SettingField field={generalField('clockFormat', 'Time')} {target} />
-					<SettingField field={generalField('clockDateFormat', 'Date under the clock')} {target} />
-				</div>
-			{/if}
-		</SettingRow>
-		<SettingRow title="Date taken" description="Pick a look, not a format code">
-			{#snippet control()}
-				<Switch
-					aria-label="Date taken"
-					checked={get('showPhotoDate')}
-					onCheckedChange={(v) => (general.showPhotoDate = v)}
-				/>
-			{/snippet}
-			{#if get('showPhotoDate')}
-				<div class="sm:w-1/2 sm:pr-3">
-					<SettingField field={generalField('photoDateFormat', 'Look')} {target} />
-				</div>
-			{/if}
-		</SettingRow>
-		<SettingRow title="Place" description="Phone photos usually have one">
-			{#snippet control()}
-				{#if get('showImageLocation')}
-					<div class="w-52">
-						<Select
-							options={placeFormats.some((p) => p.value === get('imageLocationFormat'))
-								? placeFormats
-								: [
-										...placeFormats,
-										{
-											value: get('imageLocationFormat') ?? '',
-											label: get('imageLocationFormat') ?? ''
-										}
-									]}
-							value={get('imageLocationFormat') ?? 'City,State,Country'}
-							onChange={(v) => (general.imageLocationFormat = v)}
-						/>
-					</div>
-				{/if}
-				<Switch
-					aria-label="Place"
-					checked={get('showImageLocation')}
-					onCheckedChange={(v) => (general.showImageLocation = v)}
-				/>
-			{/snippet}
-		</SettingRow>
-		<SettingRow title="People" description="Names of the people Immich recognised">
-			{#snippet control()}
-				<Switch
-					aria-label="People"
-					checked={get('showPeopleDesc')}
-					onCheckedChange={(v) => (general.showPeopleDesc = v)}
-				/>
-			{/snippet}
-		</SettingRow>
-		<SettingRow title="Description">
-			{#snippet control()}
-				<Switch
-					aria-label="Description"
-					checked={get('showImageDesc')}
-					onCheckedChange={(v) => (general.showImageDesc = v)}
-				/>
-			{/snippet}
-			<div class="flex items-center gap-2 text-muted">
-				<Icon icon={mdiAlertOutline} size="16" class="shrink-0 text-warning" />
-				<Text size="small" color="muted">Cameras often fill this with text like DJI_0073.JPG.</Text>
-			</div>
-		</SettingRow>
-		<SettingRow title="Album name">
-			{#snippet control()}
-				<Switch
-					aria-label="Album name"
-					checked={get('showAlbumName')}
-					onCheckedChange={(v) => (general.showAlbumName = v)}
-				/>
-			{/snippet}
-		</SettingRow>
-		<SettingRow title="Tags">
-			{#snippet control()}
-				<Switch
-					aria-label="Tags"
-					checked={get('showTagsDesc')}
-					onCheckedChange={(v) => (general.showTagsDesc = v)}
-				/>
-			{/snippet}
-		</SettingRow>
-		<SettingRow title="Text colour" description="Clock and captions">
-			{#snippet control()}
-				{#each textColours as colour (colour)}
-					{@const selected = (general.primaryColor || '#f5deb3').toLowerCase() === colour}
-					<button
-						type="button"
-						class="h-9 w-9 rounded-full border-2 {selected
-							? 'border-primary ring-2 ring-primary/40'
-							: 'border-light-300'}"
-						style="background: {colour}"
-						aria-label="Text colour {colour}"
-						aria-pressed={selected}
-						onclick={() => (general.primaryColor = colour)}
-					></button>
-				{/each}
-				<input
-					type="color"
-					class="h-9 w-12 cursor-pointer rounded-lg"
-					aria-label="Custom text colour"
-					value={general.primaryColor || '#f5deb3'}
-					oninput={(e) => (general.primaryColor = e.currentTarget.value)}
-				/>
-			{/snippet}
-		</SettingRow>
-		<SettingRow title="Box colour" description="Behind the text, when Solid or Fade is on">
-			{#snippet control()}
-				{#each boxColours as colour (colour)}
-					{@const selected = (general.secondaryColor || '#000000').toLowerCase() === colour}
-					<button
-						type="button"
-						class="h-9 w-9 rounded-full border-2 {selected
-							? 'border-primary ring-2 ring-primary/40'
-							: 'border-light-300'}"
-						style="background: {colour}"
-						aria-label="Box colour {colour}"
-						aria-pressed={selected}
-						onclick={() => (general.secondaryColor = colour)}
-					></button>
-				{/each}
-				<input
-					type="color"
-					class="h-9 w-12 cursor-pointer rounded-lg"
-					aria-label="Custom box colour"
-					value={general.secondaryColor || '#000000'}
-					oninput={(e) => (general.secondaryColor = e.currentTarget.value)}
-				/>
+				{@render swatches(
+					'Text color',
+					textColors,
+					general.primaryColor || '#f5deb3',
+					(v) => (general.primaryColor = v)
+				)}
 			{/snippet}
 		</SettingRow>
 		<SettingRow title="Text size">
@@ -378,19 +455,21 @@
 		</SettingRow>
 		<SettingRow title="Language" description="For dates, the clock and the weather">
 			{#snippet control()}
-				<Select
-					options={languageOptions}
-					value={get('language') ?? 'en'}
-					onChange={(v) => (general.language = v)}
-				/>
+				<div class="w-52">
+					<Select
+						options={languageOptions}
+						value={get('language') ?? 'en'}
+						onChange={(v) => (general.language = v)}
+					/>
+				</div>
 			{/snippet}
 		</SettingRow>
 	</PageCard>
 
-	<PageCard title="Weather & calendar" id="weather">
+	<PageCard title="Weather and calendars">
 		<SettingRow
 			title="Weather"
-			description="Needs a free OpenWeatherMap key. Leave it empty to hide the weather."
+			description="Shown under the clock. Needs a free OpenWeatherMap API key."
 		>
 			<div class="grid gap-4 sm:grid-cols-2">
 				<label class="text-sm">
@@ -402,60 +481,80 @@
 						oninput={(e) => (general.weatherApiKey = e.currentTarget.value)}
 					/>
 				</label>
-				<label class="text-sm">
-					<span class="mb-1 block font-medium">Where (latitude,longitude)</span>
-					<Input
-						placeholder="38.72,-9.14"
-						value={general.weatherLatLong ?? ''}
-						oninput={(e) => (general.weatherLatLong = e.currentTarget.value)}
-					/>
-				</label>
+				<div class="text-sm">
+					<span class="mb-1 block font-medium">Location (latitude, longitude)</span>
+					<div class="flex gap-2">
+						<Input
+							placeholder="38.72,-9.14"
+							aria-label="Weather location"
+							value={general.weatherLatLong ?? ''}
+							oninput={(e) => (general.weatherLatLong = e.currentTarget.value)}
+						/>
+						<IconButton
+							icon={mdiCrosshairsGps}
+							variant="outline"
+							color="secondary"
+							aria-label="Use my location"
+							title="Use my location"
+							loading={locating}
+							onclick={useMyLocation}
+						/>
+					</div>
+					{#if locateError}<Text size="small" color="danger" class="mt-1">{locateError}</Text>{/if}
+				</div>
 			</div>
+			{#if !general.weatherApiKey}
+				<Text size="small" class="mt-2 text-dark/60">No key, so the weather is hidden.</Text>
+			{/if}
 		</SettingRow>
-		<SettingRow title="Units">
-			{#snippet control()}
-				<Segmented
-					label="Units"
-					value={get('unitSystem') ?? 'imperial'}
-					options={[
-						{ value: 'metric', label: '°C, km/h' },
-						{ value: 'imperial', label: '°F, mph' }
-					]}
-					onchange={(v) => (general.unitSystem = String(v))}
-				/>
-			{/snippet}
-		</SettingRow>
-		<SettingRow title="Weather description" description="e.g. “light rain” next to the temperature">
-			{#snippet control()}
-				<Switch
-					aria-label="Weather description"
-					checked={get('showWeatherDescription')}
-					onCheckedChange={(v) => (general.showWeatherDescription = v)}
-				/>
-			{/snippet}
-		</SettingRow>
+		{#if general.weatherApiKey}
+			<SettingRow title="Units">
+				{#snippet control()}
+					<Segmented
+						label="Units"
+						value={get('unitSystem') ?? 'imperial'}
+						options={[
+							{ value: 'metric', label: '°C' },
+							{ value: 'imperial', label: '°F' }
+						]}
+						onchange={(v) => (general.unitSystem = String(v))}
+					/>
+				{/snippet}
+			</SettingRow>
+			<SettingRow title="Weather description" description="e.g. “light rain” under the temperature">
+				{#snippet control()}
+					<Switch
+						aria-label="Weather description"
+						checked={get('showWeatherDescription')}
+						onCheckedChange={(v) => (general.showWeatherDescription = v)}
+					/>
+				{/snippet}
+			</SettingRow>
+		{/if}
 		<SettingRow
 			title="Calendars"
-			description="Upcoming events in a corner. Paste a calendar's .ics link (iCloud: Share → Public calendar). Picked up within ~15 minutes."
+			description="Upcoming events in the top corner. Paste a calendar's .ics link; changes show within 15 minutes."
 		>
-			<ul class="mb-3 flex flex-col gap-2">
-				{#each general.webcalendars ?? [] as url, i (i)}
-					<li
-						class="flex items-center gap-2 rounded-xl bg-subtle/50 py-1 pr-1 pl-3 dark:bg-light-200"
-					>
-						<code class="min-w-0 flex-1 truncate text-sm">{url}</code>
-						<IconButton
-							icon={mdiDelete}
-							size="small"
-							variant="ghost"
-							color="danger"
-							aria-label="Remove calendar"
-							onclick={() =>
-								(general.webcalendars = (general.webcalendars ?? []).filter((_, j) => j !== i))}
-						/>
-					</li>
-				{/each}
-			</ul>
+			{#if (general.webcalendars ?? []).length}
+				<ul class="mb-3 flex flex-col gap-2">
+					{#each general.webcalendars ?? [] as url, i (i)}
+						<li
+							class="flex items-center gap-2 rounded-xl bg-subtle/50 py-1 pr-1 pl-3 dark:bg-light-200"
+						>
+							<code class="min-w-0 flex-1 truncate text-sm">{url}</code>
+							<IconButton
+								icon={mdiDelete}
+								size="small"
+								variant="ghost"
+								color="secondary"
+								aria-label="Remove calendar"
+								onclick={() =>
+									(general.webcalendars = (general.webcalendars ?? []).filter((_, j) => j !== i))}
+							/>
+						</li>
+					{/each}
+				</ul>
+			{/if}
 			<form
 				class="flex gap-2"
 				onsubmit={(e) => {
@@ -464,7 +563,15 @@
 				}}
 			>
 				<Input placeholder="https://… .ics" bind:value={newCalendar} aria-label="Calendar link" />
-				<Button type="submit" size="small" variant="outline" leadingIcon={mdiPlus}>Add</Button>
+				<Button
+					type="submit"
+					variant="outline"
+					color="secondary"
+					leadingIcon={mdiPlus}
+					disabled={!newCalendar.trim()}
+				>
+					Add
+				</Button>
 			</form>
 		</SettingRow>
 	</PageCard>

@@ -155,7 +155,7 @@
 								Not a valid date-fns pattern. It isn't saved until it's valid.
 							</Text>
 						{:else}
-							<Text color="muted" size="small" class="pt-1">
+							<Text size="small" class="text-dark/70 pt-1">
 								{formatPreview ? `Shows as: ${formatPreview}. ` : ''}Patterns follow date-fns
 								(date-fns.org/docs/format).
 							</Text>

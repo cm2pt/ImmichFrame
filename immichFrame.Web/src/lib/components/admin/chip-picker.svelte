@@ -14,8 +14,12 @@
 		selected: string[];
 		/** What can be picked; null while loading or when the server couldn't list it. */
 		items: PickerItem[] | null;
+		/** True while the list is still loading (chips show a placeholder, not raw ids). */
+		loading?: boolean;
 		addLabel: string;
 		emptyHint?: string;
+		/** Ids already used elsewhere (e.g. in Never show), with the reason shown in the list. */
+		usedElsewhere?: Map<string, string>;
 		/** Validates a hand-typed value (used when `items` is null). */
 		manualPattern?: RegExp;
 		manualPlaceholder?: string;
@@ -25,6 +29,8 @@
 	let {
 		selected,
 		items,
+		loading = false,
+		usedElsewhere,
 		addLabel,
 		emptyHint,
 		manualPattern,
@@ -81,7 +87,7 @@
 			<span class="font-medium"
 				>{item?.name ?? (items ? 'Unknown (' + id.slice(0, 8) + '…)' : id)}</span
 			>
-			{#if item?.detail}<span class="font-mono text-xs text-muted">{item.detail}</span>{/if}
+			{#if item?.detail}<span class="text-xs text-dark/60 tabular-nums">{item.detail}</span>{/if}
 			<button
 				type="button"
 				class="rounded-full p-1 hover:bg-light-300"
@@ -97,7 +103,7 @@
 		size="small"
 		variant="ghost"
 		leadingIcon={mdiPlus}
-		class="rounded-full border border-dashed border-primary/50"
+		class="rounded-full bg-primary/10 hover:bg-primary/15"
 		aria-expanded={open}
 		onclick={() => (open = !open)}
 	>
@@ -106,32 +112,42 @@
 </div>
 
 {#if selected.length === 0 && emptyHint && !open}
-	<Text size="small" color="muted" class="mt-2">{emptyHint}</Text>
+	<Text size="small" class="text-dark/70 mt-2">{emptyHint}</Text>
 {/if}
 
 {#if open}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="mt-3 rounded-2xl border border-light-300 bg-light-50 p-3" onkeydown={onKeydown}>
-		{#if items}
-			<Input placeholder="Search" bind:value={query} aria-label="Search {addLabel}" />
+		<div class="mb-2 flex items-center justify-between">
+			<Text size="small" fontWeight="semi-bold">{addLabel}</Text>
+			<Button size="tiny" variant="ghost" onclick={() => (open = false)}>Done</Button>
+		</div>
+		{#if loading}
+			<Text class="text-dark/70" size="small">Loading from Immich…</Text>
+		{:else if items}
+			<Input placeholder="Search" bind:value={query} aria-label="Search {addLabel}" autofocus />
 			<ul class="mt-2 max-h-64 overflow-y-auto">
 				{#each matches as item (item.id)}
+					{@const elsewhere = usedElsewhere?.get(item.id.toLowerCase())}
 					<li>
 						<button
 							type="button"
-							class="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left hover:bg-light-200"
+							class="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left hover:bg-light-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+							disabled={!!elsewhere}
 							onclick={() => add(item.id)}
 						>
-							<span>{item.name}</span>
-							{#if item.detail}<span class="font-mono text-xs text-muted">{item.detail}</span>{/if}
+							<span class="min-w-0 truncate">{item.name}</span>
+							<span class="shrink-0 text-xs text-dark/60 tabular-nums"
+								>{elsewhere ?? item.detail ?? ''}</span
+							>
 						</button>
 					</li>
 				{:else}
-					<li><Text size="small" color="muted" class="px-3 py-2">Nothing matches.</Text></li>
+					<li><Text size="small" class="text-dark/70 px-3 py-2">Nothing matches.</Text></li>
 				{/each}
 			</ul>
 		{:else}
-			<Text size="small" color="muted" class="mb-2">
+			<Text size="small" class="text-dark/70 mb-2">
 				The list from Immich isn't available, so paste the ID instead (it's in the address bar when
 				you open the album or person in Immich).
 			</Text>

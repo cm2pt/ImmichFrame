@@ -15,38 +15,64 @@
 
 	const get = <K extends keyof GeneralSettings>(key: K) => effective(general, generalDefaults, key);
 
+	// The frame is drawn on a 1920×1080 stage with the slideshow's own sizes, then scaled to
+	// fit, so text sizes look as they will on a TV.
+	const STAGE_W = 1920;
+	const STAGE_H = 1080;
+	let width = $state(360);
+	let scale = $derived(width / STAGE_W);
+
 	let now = $state(new Date());
+	let slide = $state(0);
 	onMount(() => {
-		const timer = setInterval(() => (now = new Date()), 15_000);
+		const clock = setInterval(() => (now = new Date()), 15_000);
+		return () => clearInterval(clock);
+	});
+
+	// Cycle the sample every few seconds, with the configured cross-fade.
+	const reducedMotion =
+		typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	$effect(() => {
+		if (reducedMotion || preview.items.length < 2) return;
+		const timer = setInterval(() => (slide = slide + 1), 5000);
 		return () => clearInterval(timer);
 	});
 
 	const lang = $derived(get('language'));
+	const split = $derived(get('layout') === 'splitview');
+	const perSlide = $derived(split ? 2 : 1);
+	const slides = $derived.by(() => {
+		const items = preview.items;
+		if (!items.length) return [];
+		const groups = [];
+		for (let i = 0; i + perSlide <= items.length || (i === 0 && items.length); i += perSlide) {
+			groups.push(items.slice(i, i + perSlide));
+		}
+		return groups;
+	});
+	const active = $derived(slides.length ? slide % slides.length : 0);
+	const first = $derived(slides[active]?.[0]);
+
 	const clock = $derived(formatExample(get('clockFormat') ?? 'hh:mm', lang, false, now) ?? '');
 	const clockDate = $derived(
 		formatExample(get('clockDateFormat') ?? 'eee, MMM d', lang, true, now) ?? ''
 	);
-	const split = $derived(get('layout') === 'splitview');
-	const photos = $derived(preview.items.slice(0, split ? 2 : 1));
-	const first = $derived(photos[0]);
 	const taken = $derived(
-		first?.takenAt
-			? (formatExample(
-					get('photoDateFormat') ?? 'MM/dd/yyyy',
-					lang,
-					true,
-					new Date(first.takenAt)
-				) ?? '')
-			: ''
+		formatExample(
+			get('photoDateFormat') ?? 'MM/dd/yyyy',
+			lang,
+			true,
+			first?.takenAt ? new Date(first.takenAt) : new Date(2025, 7, 12)
+		) ?? ''
 	);
 	const place = $derived(
 		(get('imageLocationFormat') ?? 'City,State,Country')
 			.split(',')
 			.map((part) =>
 				part === 'City'
-					? first?.city
+					? (first?.city ?? 'Lisbon')
 					: part === 'Country'
-						? first?.country
+						? (first?.country ?? 'Portugal')
 						: part === 'State'
 							? null
 							: part
@@ -54,80 +80,193 @@
 			.filter(Boolean)
 			.join(', ')
 	);
-	const people = $derived((first?.people ?? []).join(', '));
+	const people = $derived(first ? (first.people ?? []).join(', ') : 'Mia, Leo');
+
+	const captions = $derived(
+		[
+			get('showPhotoDate') && taken,
+			get('showImageDesc') && 'Beach day',
+			get('showAlbumName') && 'Summer 2025',
+			get('showPeopleDesc') && people,
+			get('showTagsDesc') && 'Family',
+			get('showImageLocation') && place
+		].filter((x): x is string => !!x)
+	);
+
+	const weather = $derived(!!general.weatherApiKey);
+	const calendars = $derived((general.webcalendars ?? []).length > 0);
 
 	const text = $derived(general.primaryColor || '#f5deb3');
 	const box = $derived(general.secondaryColor || '#000000');
 	const style = $derived(get('style'));
-	const scale = $derived(parseFloat(general.baseFontSize || '17px') / 17);
+	const base = $derived(parseFloat(general.baseFontSize || '') || 16);
+	const fit = $derived(get('imageFill') ? 'object-cover' : 'object-contain');
+	const zoom = $derived(!!get('imageZoom'));
+	const pan = $derived(!!get('imagePan'));
+	const motion = $derived(
+		reducedMotion ? '' : zoom && pan ? 'kb-both' : zoom ? 'kb-zoom' : pan ? 'kb-pan' : ''
+	);
+	const fade = $derived(get('transitionDuration') ?? 1);
 
-	function boxStyle(corner: 'left' | 'right') {
-		if (style === 'solid') return `background:${box};`;
+	function boxStyle(side: 'left' | 'right') {
+		const corner = side === 'left' ? 'border-top-right-radius' : 'border-top-left-radius';
+		if (style === 'solid') return `background:${box};${corner}:16px;`;
 		if (style === 'transition')
-			return `background:linear-gradient(to ${corner === 'left' ? 'right' : 'left'}, ${box}, transparent);`;
-		if (style === 'blur') return 'backdrop-filter:blur(12px);background:rgba(255,255,255,.08);';
+			return `background:linear-gradient(to ${side === 'left' ? 'right' : 'left'}, ${box}, transparent);padding-${side === 'left' ? 'right' : 'left'}:40px;`;
+		if (style === 'blur')
+			return `backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);${corner}:16px;`;
 		return '';
 	}
-	const fit = $derived(get('imageFill') ? 'object-cover' : 'object-contain');
+
+	const summary = $derived(
+		[
+			split
+				? 'Two portraits share the screen; a landscape photo fills it alone.'
+				: 'One photo at a time.',
+			get('showClock') ? null : 'Clock off.'
+		]
+			.filter(Boolean)
+			.join(' ')
+	);
 </script>
 
 <Card>
 	<CardBody>
 		<Text fontWeight="semi-bold" class="mb-3">Live preview</Text>
 		<div
-			class="relative aspect-video overflow-hidden rounded-xl bg-black"
-			style="color:{text}; font-size:{scale}rem"
-			aria-label="Preview of the frame"
+			class="relative overflow-hidden rounded-xl bg-black ring-1 ring-black/10"
+			style="aspect-ratio:16/9"
+			bind:clientWidth={width}
+			role="img"
+			aria-label="Preview of the frame: {summary}"
 		>
-			<div class="absolute inset-0 flex gap-0.5">
-				{#if photos.length}
-					{#each photos as photo (photo.id)}
-						<div class="relative h-full flex-1 overflow-hidden">
-							{#if photo.url}
-								<img src={photo.url} alt="" class="h-full w-full {fit}" />
-							{/if}
+			<div
+				class="absolute top-0 left-0 origin-top-left"
+				style="width:{STAGE_W}px;height:{STAGE_H}px;transform:scale({scale});color:{text};font-size:{base}px"
+			>
+				<!-- Photos, cross-fading between sample slides -->
+				{#if slides.length}
+					{#each slides as group, i (i)}
+						<div
+							class="absolute inset-0 flex gap-[6px] transition-opacity ease-in-out"
+							style="opacity:{i === active ? 1 : 0};transition-duration:{fade}s"
+						>
+							{#each group as photo (photo.id)}
+								<div class="relative h-full flex-1 overflow-hidden">
+									{#if photo.url}
+										<img
+											src={photo.url}
+											alt=""
+											class="h-full w-full {fit} {i === active ? motion : ''}"
+										/>
+									{/if}
+								</div>
+							{/each}
 						</div>
 					{/each}
 				{:else}
-					<div class="h-full flex-1 bg-gradient-to-br from-slate-500 to-slate-700"></div>
-					{#if split}<div
-							class="h-full flex-1 bg-gradient-to-br from-slate-400 to-slate-600"
-						></div>{/if}
+					<div class="absolute inset-0 flex gap-[6px]">
+						<div class="h-full flex-1 bg-gradient-to-br from-slate-500 to-slate-700 {motion}"></div>
+						{#if split}<div
+								class="h-full flex-1 bg-gradient-to-br from-slate-400 to-slate-600"
+							></div>{/if}
+					</div>
+				{/if}
+
+				{#if get('showProgressBar')}
+					<div class="absolute top-0 left-0 h-[6px] w-1/3" style="background:{text}"></div>
+				{/if}
+
+				{#if calendars}
+					<div
+						class="absolute top-0 right-0 m-5 text-center"
+						style="text-shadow:2px 2px 4px rgb(0 0 0/.8)"
+					>
+						<div class="font-semibold" style="font-size:1.25em">Today</div>
+						<div style="font-size:1em">14:00 · Swimming</div>
+						<div style="font-size:1em">18:30 · Dinner at grandma's</div>
+					</div>
+				{/if}
+
+				{#if get('showClock')}
+					<div class="absolute bottom-0 left-0 p-3 text-center" style={boxStyle('left')}>
+						<p
+							class="mt-2 font-thin"
+							style="font-size:1.25em;text-shadow:2px 2px 4px rgb(0 0 0/.8)"
+						>
+							{clockDate}
+						</p>
+						<p
+							class="mt-2 leading-none font-bold"
+							style="font-size:6em;text-shadow:3px 3px 6px rgb(0 0 0/.5)"
+						>
+							{clock}
+						</p>
+						{#if weather}
+							<p
+								class="mt-2 font-semibold"
+								style="font-size:1.875em;text-shadow:2px 2px 4px rgb(0 0 0/.8)"
+							>
+								Lisbon, 18.5°
+							</p>
+							{#if get('showWeatherDescription')}
+								<p style="font-size:1.25em;text-shadow:2px 2px 4px rgb(0 0 0/.8)">light rain</p>
+							{/if}
+						{/if}
+					</div>
+				{/if}
+
+				{#if captions.length}
+					<div
+						class="absolute right-0 bottom-0 max-w-[45%] p-1 text-right"
+						style="{boxStyle('right')};text-shadow:2px 2px 4px rgb(0 0 0/.8)"
+					>
+						{#each captions as line (line)}
+							<p class="truncate px-2 py-0.5" style="font-size:1em">{line}</p>
+						{/each}
+					</div>
 				{/if}
 			</div>
-
-			{#if get('showClock')}
-				<div class="absolute bottom-0 left-0 rounded-tr-xl px-3 py-1.5" style={boxStyle('left')}>
-					<div class="text-[1.6em] leading-none font-bold [text-shadow:0_1px_3px_rgba(0,0,0,.6)]">
-						{clock}
-					</div>
-					<div class="text-[0.6em] [text-shadow:0_1px_2px_rgba(0,0,0,.6)]">{clockDate}</div>
-				</div>
-			{/if}
-
-			{#if (get('showPhotoDate') && taken) || (get('showImageLocation') && place) || (get('showPeopleDesc') && people)}
-				<div
-					class="absolute right-0 bottom-0 max-w-[60%] rounded-tl-xl px-3 py-1.5 text-right text-[0.6em] leading-snug [text-shadow:0_1px_2px_rgba(0,0,0,.6)]"
-					style={boxStyle('right')}
-				>
-					{#if get('showPeopleDesc') && people}<div class="truncate">{people}</div>{/if}
-					<div class="truncate">
-						{[get('showImageLocation') ? place : '', get('showPhotoDate') ? taken : '']
-							.filter(Boolean)
-							.join(' · ')}
-					</div>
-				</div>
-			{/if}
-
-			{#if get('showProgressBar')}
-				<div class="absolute top-0 left-0 h-0.5 w-1/3" style="background:{text}"></div>
-			{/if}
 		</div>
-		<Text size="small" color="muted" class="mt-3">
-			{split
-				? 'Two portraits share the screen; a landscape photo fills it alone.'
-				: 'One photo at a time.'}
-			Photos come from the saved settings; the look follows your unsaved changes.
+		<Text size="small" class="mt-3 text-dark/70">
+			{summary} The look follows your changes; the photos are a sample of what's saved.
 		</Text>
 	</CardBody>
 </Card>
+
+<style>
+	/* A few seconds of the slideshow's movement, looping. */
+	:global(.kb-zoom) {
+		animation: kb-zoom 6s ease-in-out infinite alternate;
+	}
+	:global(.kb-pan) {
+		animation: kb-pan 6s ease-in-out infinite alternate;
+	}
+	:global(.kb-both) {
+		animation: kb-both 6s ease-in-out infinite alternate;
+	}
+	@keyframes kb-zoom {
+		from {
+			transform: scale(1);
+		}
+		to {
+			transform: scale(1.12);
+		}
+	}
+	@keyframes kb-pan {
+		from {
+			transform: scale(1.1) translateX(-3%);
+		}
+		to {
+			transform: scale(1.1) translateX(3%);
+		}
+	}
+	@keyframes kb-both {
+		from {
+			transform: scale(1) translateX(-2%);
+		}
+		to {
+			transform: scale(1.14) translateX(2%);
+		}
+	}
+</style>

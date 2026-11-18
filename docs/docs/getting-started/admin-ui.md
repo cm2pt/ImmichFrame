@@ -15,8 +15,8 @@ explains that, and edits apply on restart.
 
 | Page | What it does |
 | --- | --- |
-| **Photos** | One card per Immich account: what to *include* (favourites, memories, albums, people, tags), what to *never show* (albums), and how to *narrow it down* (date taken, minimum rating, videos, archived). Albums, people and tags are picked by name from the account's library, with photo counts. The top shows how many photos the current choices match. |
-| **Slideshow & look** | Timing, layout, photo size, movement, the box behind the clock and captions, what appears on the photo (clock, date taken, place, people…), colours, text size, language, weather and calendars. Date and clock formats are picked from examples, with a *Custom* option for any [date-fns pattern](https://date-fns.org/docs/format). |
+| **Photos** | One card per Immich account: what to *include* (favorites, memories, albums, people, tags), what to *never show* (albums), and how to *narrow it down* (date taken, minimum rating, videos, archived). Albums, people and tags are picked by name from the account's library, with photo counts. The top shows how many photos the current choices match. |
+| **Slideshow & look** | Timing, layout, photo size, movement, the box behind the clock and captions, what appears on the photo (clock, date taken, place, people…), colors, text size, language, weather and calendars. Date and clock formats are picked from examples, with a *Custom* option for any [date-fns pattern](https://date-fns.org/docs/format). |
 | **Screens** | Every device that has shown the frame, with when it was last seen. Screens can be renamed or forgotten. *Add a screen* gives per-device steps, the address and secret with copy buttons, and a QR code that opens the frame already signed in. |
 | **Access & accounts** | Immich accounts (server address, API key or key file, *Test*), the frame secret, the admin password, and server options (image cache, refresh interval, webhook). *Recent changes* lists every save with what it changed and can undo it; *Backup* downloads all settings as one file (secrets left out) or restores one. |
 

@@ -8,7 +8,7 @@
 		mdiCancel,
 		mdiTagOutline
 	} from '@mdi/js';
-	import { Avatar, Card, CardBody, Checkbox, Icon, Input, Switch, Text } from '@immich/ui';
+	import { Avatar, Card, CardBody, Checkbox, Icon, Input, Select, Switch, Text } from '@immich/ui';
 	import type { ServerAccountSettings } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import { accountDefaults, effective } from './admin-defaults';
@@ -62,17 +62,31 @@
 		}
 	});
 
+	const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 	let summary = $derived(
 		[
-			get('showFavorites') && 'Favourites',
+			get('showFavorites') && 'Favorites',
 			get('showMemories') && 'Memories',
-			(account.albums?.length ?? 0) > 0 && `${account.albums!.length} album(s)`,
-			(account.people?.length ?? 0) > 0 && `${account.people!.length} people`,
+			(account.albums?.length ?? 0) > 0 && count(account.albums!.length, 'album', 'albums'),
+			(account.people?.length ?? 0) > 0 && count(account.people!.length, 'person', 'people'),
+			(account.tags?.length ?? 0) > 0 && count(account.tags!.length, 'tag', 'tags'),
 			(account.excludedAlbums?.length ?? 0) > 0 &&
-				`never ${account.excludedAlbums!.length} album(s)`
+				`hides ${count(account.excludedAlbums!.length, 'album', 'albums')}`
 		]
 			.filter(Boolean)
 			.join(' · ') || 'The whole library'
+	);
+
+	// One album can't be both shown and hidden: each picker marks the other's albums.
+	let includedMap = $derived(
+		new Map((account.albums ?? []).map((id) => [String(id).toLowerCase(), 'Shown'] as const))
+	);
+	let excludedMap = $derived(
+		new Map(
+			(account.excludedAlbums ?? []).map(
+				(id) => [String(id).toLowerCase(), 'In Never show'] as const
+			)
+		)
 	);
 
 	let hasSource = $derived(
@@ -132,7 +146,7 @@
 			</div>
 			{#if matching != null}
 				<span
-					class="hidden rounded-full bg-primary/10 px-3 py-1 font-mono text-sm text-primary sm:inline"
+					class="hidden rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary tabular-nums sm:inline"
 					title="Photos these choices match, not counting memories"
 				>
 					{formatCount(matching)} photos
@@ -145,12 +159,12 @@
 
 		{#if expanded}
 			<div class="mt-4">
-				<Text size="tiny" fontWeight="bold" color="muted" class="tracking-widest uppercase">
+				<Text size="tiny" fontWeight="bold" class="text-dark/70 tracking-widest uppercase">
 					Include
 				</Text>
 
 				<SettingRow
-					title="Favourites"
+					title="Favorites"
 					description="Everything {library.userName
 						? `${library.userName} `
 						: ''}marked with a heart{library.favoriteCount != null
@@ -160,7 +174,7 @@
 					{#snippet icon()}<Icon icon={mdiHeartOutline} size="20" />{/snippet}
 					{#snippet control()}
 						<Switch
-							aria-label="Favourites"
+							aria-label="Favorites"
 							checked={get('showFavorites')}
 							onCheckedChange={(v) => (account.showFavorites = v)}
 						/>
@@ -190,18 +204,20 @@
 									checked={get('showBirthdayMemories')}
 									onCheckedChange={(v) => (account.showBirthdayMemories = v === true)}
 								/>
-								Birthdays (people with a birth date in Immich)
+								Birthdays
 							</label>
 						</div>
 					{/if}
 				</SettingRow>
 
-				<SettingRow title="Albums" description="Every photo in these albums, favourite or not">
+				<SettingRow title="Albums" description="Every photo in these albums, favorite or not">
 					{#snippet icon()}<Icon icon={mdiImageMultipleOutline} size="20" />{/snippet}
 					<div class="pl-8">
 						<ChipPicker
+							loading={library.state === 'loading'}
 							selected={(account.albums ?? []) as string[]}
 							items={library.albums}
+							usedElsewhere={excludedMap}
 							addLabel="Add album"
 							manualPattern={guid}
 							onchange={(ids) => (account.albums = ids)}
@@ -213,6 +229,7 @@
 					{#snippet icon()}<Icon icon={mdiAccountOutline} size="20" />{/snippet}
 					<div class="pl-8">
 						<ChipPicker
+							loading={library.state === 'loading'}
 							selected={(account.people ?? []) as string[]}
 							items={library.people}
 							addLabel="Add people"
@@ -226,6 +243,7 @@
 					{#snippet icon()}<Icon icon={mdiTagOutline} size="20" />{/snippet}
 					<div class="pl-8">
 						<ChipPicker
+							loading={library.state === 'loading'}
 							selected={account.tags ?? []}
 							items={library.tags}
 							addLabel="Add tag"
@@ -236,14 +254,14 @@
 				</SettingRow>
 
 				{#if !hasSource}
-					<Text size="small" color="muted" class="mb-2 pl-8">
+					<Text size="small" class="text-dark/70 mb-2 pl-8">
 						{get('showMemories')
 							? 'Only memories: nothing else is picked.'
 							: 'Nothing picked, so the frame shows the whole library.'}
 					</Text>
 				{/if}
 
-				<Text size="tiny" fontWeight="bold" color="muted" class="mt-6 tracking-widest uppercase">
+				<Text size="tiny" fontWeight="bold" class="text-dark/70 mt-6 tracking-widest uppercase">
 					Never show
 				</Text>
 				<SettingRow
@@ -253,8 +271,10 @@
 					{#snippet icon()}<Icon icon={mdiCancel} size="20" />{/snippet}
 					<div class="pl-8">
 						<ChipPicker
+							loading={library.state === 'loading'}
 							selected={(account.excludedAlbums ?? []) as string[]}
 							items={library.albums}
+							usedElsewhere={includedMap}
 							addLabel="Add album"
 							manualPattern={guid}
 							onchange={(ids) => (account.excludedAlbums = ids)}
@@ -262,10 +282,12 @@
 					</div>
 				</SettingRow>
 
-				<Text size="tiny" fontWeight="bold" color="muted" class="mt-6 tracking-widest uppercase">
+				<Text size="tiny" fontWeight="bold" class="text-dark/70 mt-6 tracking-widest uppercase">
 					Narrow down
 				</Text>
-				<Text size="small" color="muted">These apply to everything above except memories.</Text>
+				<Text class="text-dark/70" size="small"
+					>These apply to everything above except memories.</Text
+				>
 
 				<SettingRow title="Taken" description="Only photos from this period">
 					{#snippet control()}
@@ -314,28 +336,29 @@
 							</label>
 						</div>
 						{#if account.imagesFromDate && account.imagesFromDays != null}
-							<Text size="small" color="muted" class="mt-1"
+							<Text size="small" class="text-dark/70 mt-1"
 								>A From date wins over “last … days”.</Text
 							>
 						{/if}
 					{/if}
 				</SettingRow>
 
-				<SettingRow title="Minimum rating" description="Stars set in Immich">
+				<SettingRow title="Minimum rating" description="Stars given in Immich">
 					{#snippet control()}
-						<Segmented
-							label="Minimum rating"
-							value={account.rating ?? 0}
-							options={[
-								{ value: 0, label: 'Off' },
-								{ value: 1, label: '★ 1+' },
-								{ value: 2, label: '★ 2+' },
-								{ value: 3, label: '★ 3+' },
-								{ value: 4, label: '★ 4+' },
-								{ value: 5, label: '★ 5' }
-							]}
-							onchange={(v) => (account.rating = v === 0 ? null : v)}
-						/>
+						<div class="w-40">
+							<Select
+								options={[
+									{ value: '0', label: 'Any' },
+									{ value: '1', label: '★ and up' },
+									{ value: '2', label: '★★ and up' },
+									{ value: '3', label: '★★★ and up' },
+									{ value: '4', label: '★★★★ and up' },
+									{ value: '5', label: '★★★★★' }
+								]}
+								value={String(account.rating ?? 0)}
+								onChange={(v) => (account.rating = v === '0' ? null : Number(v))}
+							/>
+						</div>
 					{/snippet}
 				</SettingRow>
 

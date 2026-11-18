@@ -72,15 +72,23 @@
 <Card>
 	<CardBody>
 		<Text fontWeight="semi-bold">Backup</Text>
-		<Text size="small" color="muted" class="mb-3">
+		<Text size="small" class="text-dark/70 mb-3">
 			Download every setting as one file (secrets left out), or restore one.
 		</Text>
 		<div class="flex flex-wrap gap-2">
-			<Button size="small" variant="outline" leadingIcon={mdiDownload} onclick={download}
-				>Download settings</Button
+			<Button
+				size="small"
+				variant="outline"
+				color="secondary"
+				leadingIcon={mdiDownload}
+				onclick={download}>Download settings</Button
 			>
-			<Button size="small" variant="outline" leadingIcon={mdiUpload} onclick={() => input?.click()}
-				>Restore…</Button
+			<Button
+				size="small"
+				variant="outline"
+				color="secondary"
+				leadingIcon={mdiUpload}
+				onclick={() => input?.click()}>Restore…</Button
 			>
 			<input
 				bind:this={input}

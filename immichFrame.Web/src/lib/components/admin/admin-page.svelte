@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { AppShell, Card, CardBody, Code, Heading, Text } from '@immich/ui';
+	import { AppShell, Card, CardBody, Code, Heading, LoadingSpinner, Text } from '@immich/ui';
 	import * as adminApi from '$lib/services/admin';
 	import { AdminUiState, type ServerSettings } from '$lib/immichFrameApi';
 	import { adminPasswordStore } from '$lib/stores/admin.store';
@@ -148,9 +148,11 @@
 	<AppShell class="bg-light px-4">
 		<div class="p-4 pb-24">
 			{#if pageState === 'loading'}
-				<Text color="muted" class="block pt-24 text-center">Loading…</Text>
+				<div class="flex justify-center pt-32" role="status" aria-label="Loading">
+					<LoadingSpinner size="large" />
+				</div>
 			{:else if pageState === 'error'}
-				<Text color="muted" class="block pt-24 text-center">
+				<Text class="text-dark/70 block pt-24 text-center">
 					Could not reach the ImmichFrame server. Check the container logs and reload this page.
 				</Text>
 			{:else if pageState === 'setup'}
@@ -159,7 +161,7 @@
 				<Card class="mx-auto mt-24 max-w-lg">
 					<CardBody class="text-center">
 						<Heading size="large" class="mb-4">Admin UI is disabled</Heading>
-						<Text color="muted">
+						<Text class="text-dark/70">
 							This instance is already configured but has no admin password. Set the
 							<Code>IMMICHFRAME_ADMIN_PASSWORD</Code> environment variable and restart the container to
 							get in.
@@ -170,7 +172,7 @@
 				<Card class="mx-auto mt-24 max-w-lg">
 					<CardBody class="text-center">
 						<Heading size="large" class="mb-4">Settings come from a config file</Heading>
-						<Text color="muted">
+						<Text class="text-dark/70">
 							This instance is configured declaratively. The admin UI is disabled. Edit
 							<Code>Settings.yml</Code> or <Code>Settings.json</Code> and restart ImmichFrame to apply
 							changes.
