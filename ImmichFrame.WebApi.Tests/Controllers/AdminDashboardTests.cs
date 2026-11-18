@@ -164,7 +164,12 @@ namespace ImmichFrame.WebApi.Tests.Controllers
         {
             var info = JsonNode.Parse(await CreateAdminClient().GetStringAsync("/api/Admin/Info"))!;
 
-            Assert.That((string)info["version"]!, Does.Match(@"^\d+\.\d+"));
+            Assert.Multiple(() =>
+            {
+                Assert.That((string)info["version"]!, Does.Match(@"^\d+\.\d+"));
+                // The fixture sets IMMICHFRAME_ADMIN_PASSWORD, which the admin page must know about.
+                Assert.That((bool)info["passwordFromEnvironment"]!, Is.True);
+            });
         }
 
         [Test]

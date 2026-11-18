@@ -57,6 +57,11 @@ public class AdminAuthService(SettingsService _settingsService)
 
     public bool AdminEnabled => GetAdminPassword() != null;
 
+    /// <summary>True when IMMICHFRAME_ADMIN_PASSWORD is set: it wins over the stored password.</summary>
+    public bool PasswordFromEnvironment =>
+        !_settingsService.IsFileManaged
+        && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(AdminPasswordEnvVar));
+
     /// <summary>
     /// Onboarding only opens on a genuinely fresh install. An instance that already has
     /// settings — imported from a config file or saved earlier — is somebody's, even

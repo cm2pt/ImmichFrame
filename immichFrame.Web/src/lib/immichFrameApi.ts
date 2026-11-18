@@ -97,6 +97,7 @@ export type AccountTestResultDto = {
 };
 export type AdminInfoDto = {
     version?: string | null;
+    passwordFromEnvironment?: boolean;
 };
 export type LibraryAlbumDto = {
     id?: string;

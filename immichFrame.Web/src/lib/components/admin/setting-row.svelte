@@ -20,7 +20,7 @@
 	<div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
 		<!-- A real basis (not flex-1's 0) so the row wraps the control under the title when
 		     both don't fit, instead of drawing it over the text. -->
-		<div class="flex min-w-0 flex-[1_1_14rem] items-start gap-3">
+		<div class="flex min-w-0 flex-[1_1_12rem] items-start gap-3">
 			{#if icon}
 				<div class="mt-0.5 text-primary">{@render icon()}</div>
 			{/if}

@@ -294,8 +294,8 @@
 							value={taken}
 							options={[
 								{ value: 'any', label: 'Any time' },
-								{ value: '365', label: 'Last year' },
-								{ value: '1825', label: 'Last 5 years' },
+								{ value: '365', label: 'Past year' },
+								{ value: '1825', label: 'Past 5 years' },
 								{ value: 'custom', label: 'Custom…' }
 							]}
 							onchange={setTaken}

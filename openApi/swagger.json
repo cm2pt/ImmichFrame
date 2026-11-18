@@ -1529,6 +1529,9 @@
           "version": {
             "type": "string",
             "nullable": true
+          },
+          "passwordFromEnvironment": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

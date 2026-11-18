@@ -35,6 +35,12 @@ namespace ImmichFrame.WebApi.Controllers
     public class AdminInfoDto
     {
         public string Version { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The admin password comes from IMMICHFRAME_ADMIN_PASSWORD, so changing it in the
+        /// admin UI has no effect.
+        /// </summary>
+        public bool PasswordFromEnvironment { get; set; }
     }
 
     public class ScreenRenameDto
@@ -187,7 +193,8 @@ namespace ImmichFrame.WebApi.Controllers
         {
             return new AdminInfoDto
             {
-                Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown"
+                Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown",
+                PasswordFromEnvironment = _adminAuthService.PasswordFromEnvironment
             };
         }
 

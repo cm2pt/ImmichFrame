@@ -25,5 +25,5 @@
 	role={tone === 'info' ? 'note' : 'alert'}
 >
 	<Icon icon={icons[tone]} size="18" class="mt-0.5 shrink-0 {iconColors[tone]}" />
-	<div class="min-w-0">{@render children()}</div>
+	<div class="min-w-0 [&_code]:break-all">{@render children()}</div>
 </div>

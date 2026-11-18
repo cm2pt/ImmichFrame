@@ -66,13 +66,13 @@
 		{/each}
 	</div>
 
-	<div class="mt-5 grid gap-6 md:grid-cols-[minmax(0,1fr)_auto]">
+	<div class="mt-5 grid gap-6 {isLocal ? '' : 'md:grid-cols-[minmax(0,1fr)_auto]'}">
 		<div class="flex min-w-0 flex-col gap-4" role="tabpanel">
 			{#if isLocal}
 				<Callout tone="info">
-					You opened this page on <code>localhost</code>, which other devices can't reach. Open the
-					admin page through this server's network address (for example
-					<code>http://192.168.1.10:8080/admin</code>) to get an address and code they can use.
+					This page is open on <code>localhost</code>, which other devices can't reach. Open the
+					admin page using this server's IP address and port to get an address and code they can
+					use.
 				</Callout>
 			{/if}
 			<ol class="list-decimal space-y-2 pl-5 text-sm">
@@ -106,7 +106,17 @@
 				<Input placeholder="Living room" bind:value={screenName} />
 			</label>
 
-			{#if usesApp}
+			{#if isLocal}
+				<div>
+					<Text size="small" fontWeight="medium" class="mb-1">
+						{usesApp ? 'Server address' : 'Link'}
+					</Text>
+					<div class="rounded-xl border border-dashed border-light-300 px-4 py-2.5">
+						<code class="text-sm break-all text-dark/70">{origin}</code>
+					</div>
+					<Text size="small" class="mt-1 text-dark/60">Only works on this computer.</Text>
+				</div>
+			{:else if usesApp}
 				<CopyField label="Server address" value={origin} />
 				{#if secret}<CopyField label="Secret" value={secret} secret />{/if}
 			{:else}
@@ -123,21 +133,15 @@
 			{/if}
 		</div>
 
-		<div class="flex flex-col items-center gap-2 md:w-48">
-			{#if isLocal}
-				<div
-					class="flex aspect-square w-40 items-center justify-center rounded-2xl border border-dashed border-light-300 p-4 text-center text-sm text-dark/60"
-				>
-					No code on localhost
-				</div>
-			{:else}
+		{#if !isLocal}
+			<div class="flex flex-col items-center gap-2 md:w-48">
 				<div class="w-40 rounded-2xl border border-light-300 bg-white p-3">
 					<QrCode data={frameUrl} isResponsive />
 				</div>
 				<Text size="small" class="max-w-48 text-center text-dark/70">
 					Scan with a phone or tablet to open the frame{secret ? ', already signed in' : ''}.
 				</Text>
-			{/if}
-		</div>
+			</div>
+		{/if}
 	</div>
 </PageCard>

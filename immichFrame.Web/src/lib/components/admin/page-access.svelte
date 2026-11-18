@@ -15,9 +15,17 @@
 		version: number;
 		onaddaccount: () => void;
 		onremoveaccount: (index: number) => void;
+		/** IMMICHFRAME_ADMIN_PASSWORD is set on the server, so the password here has no effect. */
+		passwordFromEnvironment?: boolean;
 	}
 
-	let { settings, version, onaddaccount, onremoveaccount }: Props = $props();
+	let {
+		settings,
+		version,
+		onaddaccount,
+		onremoveaccount,
+		passwordFromEnvironment = false
+	}: Props = $props();
 
 	const general = $derived(settings.General ?? {});
 	const get = <K extends keyof typeof generalDefaults>(key: K) =>
@@ -132,44 +140,48 @@
 	</PageCard>
 
 	<PageCard title="Admin password" description="For this page only. Screens never need it.">
-		<form
-			class="grid items-start gap-4 py-2 sm:grid-cols-[1fr_1fr_auto]"
-			onsubmit={(e) => {
-				e.preventDefault();
-				setPassword();
-			}}
-		>
-			<label class="text-sm">
-				<span class="mb-1 block font-medium">New password</span>
-				<PasswordInput autocomplete="new-password" bind:value={newPassword} />
-				{#if newPassword.length > 0 && newPassword.length < 8}
-					<span class="mt-1 block text-dark/60">At least 8 characters</span>
-				{/if}
-			</label>
-			<label class="text-sm">
-				<span class="mb-1 block font-medium">Confirm password</span>
-				<PasswordInput autocomplete="new-password" bind:value={confirmPassword} />
-				{#if mismatch}<span class="mt-1 block text-danger-700 dark:text-danger-400"
-						>Passwords don't match</span
-					>{/if}
-			</label>
-			<Button
-				type="submit"
-				variant="outline"
-				color="secondary"
-				class="sm:mt-6"
-				disabled={!canChange}
+		{#if passwordFromEnvironment}
+			<div class="py-2">
+				<Callout tone="info">
+					Set by <code>IMMICHFRAME_ADMIN_PASSWORD</code> on the server. Change it there and restart ImmichFrame.
+				</Callout>
+			</div>
+		{:else}
+			<form
+				class="grid items-start gap-4 py-2 sm:grid-cols-[1fr_1fr_auto]"
+				onsubmit={(e) => {
+					e.preventDefault();
+					setPassword();
+				}}
 			>
-				Change
-			</Button>
-		</form>
-		{#if passwordReady}
-			<Text size="small" class="mt-1 text-dark/80">✓ Ready. It takes effect when you save.</Text>
+				<label class="text-sm">
+					<span class="mb-1 block font-medium">New password</span>
+					<PasswordInput autocomplete="new-password" bind:value={newPassword} />
+					{#if newPassword.length > 0 && newPassword.length < 8}
+						<span class="mt-1 block text-dark/60">At least 8 characters</span>
+					{/if}
+				</label>
+				<label class="text-sm">
+					<span class="mb-1 block font-medium">Confirm password</span>
+					<PasswordInput autocomplete="new-password" bind:value={confirmPassword} />
+					{#if mismatch}<span class="mt-1 block text-danger-700 dark:text-danger-400"
+							>Passwords don't match</span
+						>{/if}
+				</label>
+				<Button
+					type="submit"
+					variant="outline"
+					color="secondary"
+					class="sm:mt-6"
+					disabled={!canChange}
+				>
+					Change
+				</Button>
+			</form>
+			{#if passwordReady}
+				<Text size="small" class="mt-1 text-dark/80">✓ Ready. It takes effect when you save.</Text>
+			{/if}
 		{/if}
-		<Text size="small" class="mt-2 text-dark/60">
-			The <code>IMMICHFRAME_ADMIN_PASSWORD</code> environment variable, when set, always wins over this
-			password.
-		</Text>
 	</PageCard>
 
 	<section class="rounded-2xl border border-light-200">

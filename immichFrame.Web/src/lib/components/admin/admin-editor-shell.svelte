@@ -88,6 +88,7 @@
 	const preview = new AdminPreview();
 	let liveScreens: number | null = $state(null);
 	let frameVersion = $state('');
+	let passwordFromEnvironment = $state(false);
 
 	function countLive(screens: ScreenDto[]) {
 		liveScreens = screens.filter(
@@ -114,7 +115,11 @@
 		window.addEventListener('keydown', onKey);
 		adminApi
 			.getAdminInfo()
-			.then((res) => res.status === 200 && (frameVersion = res.data.version ?? ''))
+			.then((res) => {
+				if (res.status !== 200) return;
+				frameVersion = res.data.version ?? '';
+				passwordFromEnvironment = !!res.data.passwordFromEnvironment;
+			})
 			.catch(() => {});
 		adminApi
 			.getScreens()
@@ -281,6 +286,7 @@
 								onaddaccount={() =>
 									(editor.settings.Accounts = [...(editor.settings.Accounts ?? []), {}])}
 								onremoveaccount={removeAccount}
+								{passwordFromEnvironment}
 							/>
 						{/key}
 					{/if}
