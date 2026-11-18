@@ -315,6 +315,572 @@
         ]
       }
     },
+    "/api/Admin/Info": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "GetAdminInfo",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminInfoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminInfoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminInfoDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ImmichFrameAdminScheme": [ ]
+          }
+        ]
+      }
+    },
+    "/api/Admin/Library": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "GetAccountLibrary",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServerAccountSettings"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServerAccountSettings"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServerAccountSettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountLibraryDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountLibraryDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountLibraryDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ImmichFrameAdminScheme": [ ]
+          }
+        ]
+      }
+    },
+    "/api/Admin/Screens": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "GetScreens",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScreenDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScreenDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScreenDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ImmichFrameAdminScheme": [ ]
+          }
+        ]
+      }
+    },
+    "/api/Admin/Screens/{clientIdentifier}/Name": {
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "RenameScreen",
+        "parameters": [
+          {
+            "name": "clientIdentifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScreenRenameDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScreenRenameDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScreenRenameDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ImmichFrameAdminScheme": [ ]
+          }
+        ]
+      }
+    },
+    "/api/Admin/Screens/{clientIdentifier}": {
+      "delete": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "ForgetScreen",
+        "parameters": [
+          {
+            "name": "clientIdentifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ImmichFrameAdminScheme": [ ]
+          }
+        ]
+      }
+    },
+    "/api/Admin/Settings/History": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "GetSettingsHistory",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SettingsHistoryEntryDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SettingsHistoryEntryDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SettingsHistoryEntryDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ImmichFrameAdminScheme": [ ]
+          }
+        ]
+      }
+    },
+    "/api/Admin/Settings/History/{version}/Restore": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "RestoreSettingsVersion",
+        "parameters": [
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsUpdateResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsUpdateResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsUpdateResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ImmichFrameAdminScheme": [ ]
+          }
+        ]
+      }
+    },
+    "/api/Admin/Preview": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "GetAdminPreview",
+        "parameters": [
+          {
+            "name": "count",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 4
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminPreviewAssetDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminPreviewAssetDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminPreviewAssetDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ImmichFrameAdminScheme": [ ]
+          }
+        ]
+      }
+    },
+    "/api/Admin/Preview/{id}/Image": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "GetAdminPreviewImage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ImmichFrameAdminScheme": [ ]
+          }
+        ]
+      }
+    },
     "/api/Asset": {
       "get": {
         "tags": [
@@ -887,6 +1453,59 @@
   },
   "components": {
     "schemas": {
+      "AccountLibraryDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalAssets": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "favoriteCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "matchingAssets": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "albums": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LibraryAlbumDto"
+            },
+            "nullable": true
+          },
+          "people": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LibraryPersonDto"
+            },
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LibraryTagDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "AccountTestResultDto": {
         "type": "object",
         "properties": {
@@ -898,6 +1517,54 @@
             "nullable": true
           },
           "version": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminInfoDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminPreviewAssetDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fileName": {
+            "type": "string",
+            "nullable": true
+          },
+          "takenAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "nullable": true
+          },
+          "people": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "type": {
             "type": "string",
             "nullable": true
           }
@@ -1017,9 +1684,7 @@
           },
           "additionalProperties": {
             "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
+            "additionalProperties": { },
             "nullable": true
           }
         },
@@ -1040,9 +1705,7 @@
           },
           "additionalProperties": {
             "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
+            "additionalProperties": { },
             "nullable": true
           }
         },
@@ -1111,9 +1774,7 @@
           },
           "additionalProperties": {
             "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
+            "additionalProperties": { },
             "nullable": true
           }
         },
@@ -1284,9 +1945,7 @@
           },
           "additionalProperties": {
             "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
+            "additionalProperties": { },
             "nullable": true
           }
         },
@@ -1317,9 +1976,7 @@
           },
           "additionalProperties": {
             "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
+            "additionalProperties": { },
             "nullable": true
           }
         },
@@ -1466,9 +2123,7 @@
           },
           "additionalProperties": {
             "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
+            "additionalProperties": { },
             "nullable": true
           }
         },
@@ -1588,9 +2243,7 @@
           },
           "additionalProperties": {
             "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
+            "additionalProperties": { },
             "nullable": true
           }
         },
@@ -1823,6 +2476,55 @@
         },
         "additionalProperties": false
       },
+      "LibraryAlbumDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "assetCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "shared": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LibraryPersonDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LibraryTagDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "PeopleUserResponseDto": {
         "required": [
           "avatarColor",
@@ -1862,9 +2564,7 @@
           },
           "additionalProperties": {
             "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
+            "additionalProperties": { },
             "nullable": true
           }
         },
@@ -1895,9 +2595,7 @@
           },
           "additionalProperties": {
             "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
+            "additionalProperties": { },
             "nullable": true
           }
         },
@@ -1966,9 +2664,7 @@
           },
           "additionalProperties": {
             "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
+            "additionalProperties": { },
             "nullable": true
           }
         },
@@ -2008,6 +2704,46 @@
           }
         },
         "additionalProperties": { }
+      },
+      "ScreenDto": {
+        "type": "object",
+        "properties": {
+          "clientIdentifier": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "firstSeenUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastSeenUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "userAgent": {
+            "type": "string",
+            "nullable": true
+          },
+          "remoteAddress": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ScreenRenameDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "ServerAccountSettings": {
         "type": "object",
@@ -2112,6 +2848,27 @@
         },
         "additionalProperties": false
       },
+      "SettingsHistoryEntryDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "savedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "SettingsUpdateResultDto": {
         "type": "object",
         "properties": {
@@ -2172,9 +2929,7 @@
           },
           "additionalProperties": {
             "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
+            "additionalProperties": { },
             "nullable": true
           }
         },
@@ -2230,9 +2985,7 @@
           },
           "additionalProperties": {
             "type": "object",
-            "additionalProperties": {
-              "nullable": true
-            },
+            "additionalProperties": { },
             "nullable": true
           }
         },
@@ -2246,5 +2999,22 @@
         "scheme": "bearer"
       }
     }
-  }
+  },
+  "tags": [
+    {
+      "name": "Admin"
+    },
+    {
+      "name": "Asset"
+    },
+    {
+      "name": "Calendar"
+    },
+    {
+      "name": "Config"
+    },
+    {
+      "name": "Weather"
+    }
+  ]
 }

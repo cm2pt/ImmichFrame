@@ -1,3 +1,4 @@
+using ImmichFrame.WebApi.Helpers;
 using System.Globalization;
 using ImmichFrame.Core.Api;
 using ImmichFrame.Core.Exceptions;
@@ -19,6 +20,7 @@ namespace ImmichFrame.WebApi.Controllers
 
 
     [ApiController]
+    [TrackScreen]
     [Route("api/[controller]")]
     [Authorize]
     public class AssetController : ControllerBase

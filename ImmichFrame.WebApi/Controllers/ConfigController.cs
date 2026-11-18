@@ -1,3 +1,4 @@
+using ImmichFrame.WebApi.Helpers;
 using ImmichFrame.Core.Interfaces;
 using ImmichFrame.WebApi.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -5,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ImmichFrame.WebApi.Controllers
 {
     [ApiController]
+    [TrackScreen]
     [Route("api/[controller]")]
     public class ConfigController : ControllerBase
     {

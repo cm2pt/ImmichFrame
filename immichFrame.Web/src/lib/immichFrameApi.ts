@@ -95,6 +95,59 @@ export type AccountTestResultDto = {
     message?: string | null;
     version?: string | null;
 };
+export type AdminInfoDto = {
+    version?: string | null;
+};
+export type LibraryAlbumDto = {
+    id?: string;
+    name?: string | null;
+    assetCount?: number;
+    shared?: boolean;
+};
+export type LibraryPersonDto = {
+    id?: string;
+    name?: string | null;
+};
+export type LibraryTagDto = {
+    id?: string;
+    name?: string | null;
+};
+export type AccountLibraryDto = {
+    success?: boolean;
+    message?: string | null;
+    userName?: string | null;
+    totalAssets?: number | null;
+    favoriteCount?: number | null;
+    matchingAssets?: number | null;
+    albums?: LibraryAlbumDto[] | null;
+    people?: LibraryPersonDto[] | null;
+    tags?: LibraryTagDto[] | null;
+};
+export type ScreenDto = {
+    clientIdentifier?: string | null;
+    name?: string | null;
+    firstSeenUtc?: string;
+    lastSeenUtc?: string;
+    userAgent?: string | null;
+    remoteAddress?: string | null;
+};
+export type ScreenRenameDto = {
+    name?: string | null;
+};
+export type SettingsHistoryEntryDto = {
+    version?: number;
+    savedAtUtc?: string;
+    changes?: string[] | null;
+};
+export type AdminPreviewAssetDto = {
+    id?: string;
+    fileName?: string | null;
+    takenAt?: string | null;
+    city?: string | null;
+    country?: string | null;
+    people?: string[] | null;
+    "type"?: string | null;
+};
 export type ExifResponseDto = {
     city?: string | null;
     country?: string | null;
@@ -119,7 +172,7 @@ export type ExifResponseDto = {
     state?: string | null;
     timeZone?: string | null;
     additionalProperties?: {
-        [key: string]: any | null;
+        [key: string]: any;
     } | null;
 };
 export type UserResponseDto = {
@@ -130,7 +183,7 @@ export type UserResponseDto = {
     profileChangedAt: string;
     profileImagePath: string;
     additionalProperties?: {
-        [key: string]: any | null;
+        [key: string]: any;
     } | null;
 };
 export type PersonOtherResponseDto = {
@@ -139,7 +192,7 @@ export type PersonOtherResponseDto = {
     role: PersonUserRole;
     sharedById: string;
     additionalProperties?: {
-        [key: string]: any | null;
+        [key: string]: any;
     } | null;
 };
 export type PeopleUserResponseDto = {
@@ -151,7 +204,7 @@ export type PeopleUserResponseDto = {
     profileImagePath: string;
     role: PersonUserRole;
     additionalProperties?: {
-        [key: string]: any | null;
+        [key: string]: any;
     } | null;
 };
 export type PersonResponseDto = {
@@ -167,7 +220,7 @@ export type PersonResponseDto = {
     thumbnailPath: string;
     updatedAt?: string | null;
     additionalProperties?: {
-        [key: string]: any | null;
+        [key: string]: any;
     } | null;
 };
 export type AssetStackResponseDto = {
@@ -175,7 +228,7 @@ export type AssetStackResponseDto = {
     id: string;
     primaryAssetId: string;
     additionalProperties?: {
-        [key: string]: any | null;
+        [key: string]: any;
     } | null;
 };
 export type TagResponseDto = {
@@ -187,7 +240,7 @@ export type TagResponseDto = {
     updatedAt: string;
     value: string;
     additionalProperties?: {
-        [key: string]: any | null;
+        [key: string]: any;
     } | null;
 };
 export type AssetResponseDto = {
@@ -225,7 +278,7 @@ export type AssetResponseDto = {
     visibility: AssetVisibility;
     width?: number | null;
     additionalProperties?: {
-        [key: string]: any | null;
+        [key: string]: any;
     } | null;
 };
 export type AssetFaceResponseDto = {
@@ -239,21 +292,21 @@ export type AssetFaceResponseDto = {
     person?: PersonResponseDto;
     sourceType?: SourceType;
     additionalProperties?: {
-        [key: string]: any | null;
+        [key: string]: any;
     } | null;
 };
 export type AlbumUserResponseDto = {
     role: AlbumUserRole;
     user: UserResponseDto;
     additionalProperties?: {
-        [key: string]: any | null;
+        [key: string]: any;
     } | null;
 };
 export type ContributorCountResponseDto = {
     assetCount?: number;
     userId: string;
     additionalProperties?: {
-        [key: string]: any | null;
+        [key: string]: any;
     } | null;
 };
 export type AlbumResponseDto = {
@@ -274,7 +327,7 @@ export type AlbumResponseDto = {
     startDate?: string | null;
     updatedAt: string;
     additionalProperties?: {
-        [key: string]: any | null;
+        [key: string]: any;
     } | null;
 };
 export type ImageResponse = {
@@ -392,6 +445,119 @@ export function testAccount(serverAccountSettings?: ServerAccountSettings, opts?
         method: "POST",
         body: serverAccountSettings
     }));
+}
+export function getAdminInfo(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: AdminInfoDto;
+    } | {
+        status: 401;
+        data: string;
+    }>("/api/Admin/Info", {
+        ...opts
+    });
+}
+export function getAccountLibrary(serverAccountSettings?: ServerAccountSettings, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: AccountLibraryDto;
+    } | {
+        status: 401;
+        data: string;
+    }>("/api/Admin/Library", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: serverAccountSettings
+    }));
+}
+export function getScreens(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: ScreenDto[];
+    } | {
+        status: 401;
+        data: string;
+    }>("/api/Admin/Screens", {
+        ...opts
+    });
+}
+export function renameScreen(clientIdentifier: string, screenRenameDto?: ScreenRenameDto, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 204;
+    } | {
+        status: 401;
+        data: string;
+    } | {
+        status: 404;
+        data: ProblemDetails;
+    }>(`/api/Admin/Screens/${encodeURIComponent(clientIdentifier)}/Name`, oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body: screenRenameDto
+    }));
+}
+export function forgetScreen(clientIdentifier: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 204;
+    } | {
+        status: 401;
+        data: string;
+    } | {
+        status: 404;
+        data: ProblemDetails;
+    }>(`/api/Admin/Screens/${encodeURIComponent(clientIdentifier)}`, {
+        ...opts,
+        method: "DELETE"
+    });
+}
+export function getSettingsHistory(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: SettingsHistoryEntryDto[];
+    } | {
+        status: 401;
+        data: string;
+    }>("/api/Admin/Settings/History", {
+        ...opts
+    });
+}
+export function restoreSettingsVersion(version: number, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: SettingsUpdateResultDto;
+    } | {
+        status: 400;
+        data: ProblemDetails;
+    } | {
+        status: 401;
+        data: string;
+    } | {
+        status: 404;
+        data: ProblemDetails;
+    }>(`/api/Admin/Settings/History/${encodeURIComponent(version)}/Restore`, {
+        ...opts,
+        method: "POST"
+    });
+}
+export function getAdminPreview({ count }: {
+    count?: number;
+} = {}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: AdminPreviewAssetDto[];
+    } | {
+        status: 401;
+        data: string;
+    }>(`/api/Admin/Preview${QS.query(QS.explode({
+        count
+    }))}`, {
+        ...opts
+    });
+}
+export function getAdminPreviewImage(id: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchText(`/api/Admin/Preview/${encodeURIComponent(id)}/Image`, {
+        ...opts
+    });
 }
 export function getAssets({ clientIdentifier }: {
     clientIdentifier?: string;

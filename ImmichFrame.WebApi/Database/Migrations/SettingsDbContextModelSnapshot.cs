@@ -15,7 +15,32 @@ namespace ImmichFrame.WebApi.Database.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.20");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.15");
+
+            modelBuilder.Entity("ImmichFrame.WebApi.Database.ScreenRecord", b =>
+                {
+                    b.Property<string>("ClientIdentifier")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("FirstSeenUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastSeenUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RemoteAddress")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ClientIdentifier");
+
+                    b.ToTable("Screens");
+                });
 
             modelBuilder.Entity("ImmichFrame.WebApi.Database.SettingsDocument", b =>
                 {
@@ -30,6 +55,9 @@ namespace ImmichFrame.WebApi.Database.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<long?>("RestoredFromVersion")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("SchemaVersion")
                         .HasColumnType("INTEGER");
 
@@ -43,6 +71,35 @@ namespace ImmichFrame.WebApi.Database.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("SettingsDocuments");
+                });
+
+            modelBuilder.Entity("ImmichFrame.WebApi.Database.SettingsHistoryEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Json")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("RestoredFromVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("SavedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Version");
+
+                    b.ToTable("SettingsHistory");
                 });
 #pragma warning restore 612, 618
         }

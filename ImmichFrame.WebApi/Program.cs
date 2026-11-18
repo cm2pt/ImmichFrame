@@ -137,6 +137,11 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddAuthorization(options => { options.AddPolicy("AllowAnonymous", policy => policy.RequireAssertion(context => true)); });
 
 builder.Services.AddSingleton<AdminAuthService>();
+// In file mode no database factory is registered: screens are then kept in memory only.
+builder.Services.AddSingleton(sp => new ScreenRegistry(
+    sp.GetService<IDbContextFactory<SettingsDbContext>>(),
+    TimeProvider.System,
+    sp.GetRequiredService<ILogger<ScreenRegistry>>()));
 
 builder.Services.AddAuthentication("ImmichFrameScheme")
     .AddScheme<AuthenticationSchemeOptions, ImmichFrameAuthenticationHandler>("ImmichFrameScheme", options => { })
