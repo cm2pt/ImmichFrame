@@ -54,7 +54,9 @@
 			onchange={(v) => (device = v)}
 		/>
 		<div class="mt-4 flex gap-5">
-			<ol class="min-w-0 flex-1 list-decimal space-y-1 pl-5 text-[0.875rem] leading-snug">
+			<ol
+				class="min-w-0 flex-1 list-inside list-decimal space-y-0.5 text-[0.8125rem] leading-[1.45]"
+			>
 				{#if device === 'appletv'}
 					<li>On the Apple TV, install <strong>ImmichFrame</strong> from the App Store.</li>
 					<li>Open it and enter the server address{secret ? ' and secret' : ''} below.</li>
@@ -77,7 +79,7 @@
 					<li>Open the link on that screen, or scan the code.</li>
 					<li>Switch the browser to full screen and leave it running.</li>
 				{/if}
-				<li>Give it a name so you can tell it apart above.</li>
+				<li>Give it a name so you can find it in Screens.</li>
 			</ol>
 			{#if !isLocal}
 				<div class="hidden w-28 shrink-0 sm:block">

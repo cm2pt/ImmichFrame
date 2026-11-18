@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { ServerAccountSettings, ServerSettings } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import { accountDefaults, effective } from './admin-defaults';
@@ -18,7 +19,11 @@
 
 	let accounts = $derived(settings.Accounts ?? []);
 	let libraries = $derived(accounts.map((account) => libraryFor(account)));
-	let selected = $state(0);
+	// The accounts list drills into one account, like a list in System Settings. With a single
+	// account there is nothing to choose, so it opens straight away.
+	let selected: number | null = $state(
+		untrack(() => ((settings.Accounts ?? []).length === 1 ? 0 : null))
+	);
 
 	// The count the frame's own search draws from for each account's current choices,
 	// refreshed shortly after each change.
@@ -39,6 +44,17 @@
 		}, 800);
 		return () => clearTimeout(timer);
 	});
+	// Search can jump to an account's setting: open the first account if none is open.
+	$effect(() => {
+		const reveal = (e: Event) => {
+			const title = (e as CustomEvent<string>).detail;
+			if (selected === null && accounts.length && !['Accounts', 'Up next'].includes(title))
+				selected = 0;
+		};
+		window.addEventListener('if-reveal', reveal);
+		return () => window.removeEventListener('if-reveal', reveal);
+	});
+
 	let total = $derived(
 		accounts.length && matching.length >= accounts.length && matching.every((n) => n != null)
 			? matching.reduce<number>((sum, n) => sum + (n ?? 0), 0)
@@ -64,50 +80,69 @@
 	}
 </script>
 
-<PageCard
-	title="Accounts"
-	footer={total != null ? `${formatCount(total)} photos in rotation, plus memories.` : undefined}
->
-	{#each accounts as account, i (i)}
-		{@const name = libraries[i]?.userName || `Account ${i + 1}`}
-		{@const isSelected = i === selected}
+{#if selected === null || !accounts[selected]}
+	<PageCard
+		title="Accounts"
+		footer={total != null ? `${formatCount(total)} photos in rotation, plus memories.` : undefined}
+	>
+		{#each accounts as account, i (i)}
+			<button
+				type="button"
+				class="border-sep flex min-h-14 w-full items-center gap-3 border-t py-2 text-left first:border-t-0 focus-visible:outline-2 focus-visible:outline-primary"
+				onclick={() => (selected = i)}
+			>
+				<Monogram name={libraries[i]?.userName || String(i + 1)} />
+				<span class="min-w-0 flex-1">
+					<span class="block text-[0.9375rem] md:text-[0.875rem]"
+						>{libraries[i]?.userName || `Account ${i + 1}`}</span
+					>
+					<span class="text-label-2 block truncate text-[0.8125rem] md:text-[0.75rem]"
+						>{summary(account, i)}</span
+					>
+				</span>
+				{#if matching[i] != null}
+					<span
+						class="text-label-2 text-[0.875rem] tabular-nums"
+						title="Photos these choices match, not counting memories"
+						>{formatCount(matching[i])}</span
+					>
+				{/if}
+				<span class="text-label-3"><Glyph name="chevronRight" size={16} stroke={2} /></span>
+			</button>
+		{/each}
 		<button
 			type="button"
-			class="border-sep -mx-4 flex min-h-14 w-[calc(100%+2rem)] items-center gap-3 border-t px-4 py-2 text-left first:rounded-t-[var(--if-r-group)] first:border-t-0 focus-visible:outline-2 focus-visible:outline-primary {isSelected
-				? 'bg-fill'
-				: 'hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'}"
-			aria-current={isSelected ? 'true' : undefined}
-			onclick={() => (selected = i)}
+			class="border-sep flex min-h-11 w-full items-center border-t py-2 text-left text-[0.9375rem] text-primary first:border-t-0 md:text-[0.875rem]"
+			onclick={onaddaccount}
 		>
-			<Monogram name={libraries[i]?.userName || String(i + 1)} />
-			<span class="min-w-0 flex-1">
-				<span class="block text-[0.9375rem] md:text-[0.875rem] {isSelected ? 'font-semibold' : ''}"
-					>{name}</span
-				>
-				<span class="text-label-2 block truncate text-[0.8125rem] md:text-[0.75rem]"
-					>{summary(account, i)}</span
-				>
-			</span>
-			{#if matching[i] != null}
-				<span
-					class="text-label-2 text-[0.875rem] tabular-nums"
-					title="Photos these choices match, not counting memories">{formatCount(matching[i])}</span
-				>
-			{/if}
-			<span class="text-label-3"><Glyph name="chevronRight" size={16} stroke={2} /></span>
+			Add Immich Account…
 		</button>
-	{/each}
-	<button
-		type="button"
-		class="border-sep flex min-h-11 w-full items-center border-t py-2 text-left text-[0.9375rem] text-primary first:border-t-0 md:text-[0.875rem]"
-		onclick={onaddaccount}
-	>
-		Add Immich Account…
-	</button>
-</PageCard>
-
-{#if accounts[selected]}
-	{#key `${version}-${selected}`}
-		<AccountPhotos account={accounts[selected]} />
+	</PageCard>
+{:else}
+	{@const i = selected}
+	<div class="-mb-2 flex items-center gap-3">
+		<button
+			type="button"
+			class="flex items-center gap-0.5 rounded-md text-[0.9375rem] text-primary focus-visible:outline-2 focus-visible:outline-primary md:text-[0.875rem]"
+			onclick={() => (selected = null)}
+		>
+			<Glyph name="chevronLeft" size={18} stroke={2.2} /> Accounts
+		</button>
+	</div>
+	<div class="flex items-center gap-3">
+		<Monogram name={libraries[i]?.userName || String(i + 1)} size={44} />
+		<div class="min-w-0">
+			<h2 class="text-[1.25rem] leading-tight font-semibold tracking-[-0.01em]">
+				{libraries[i]?.userName || `Account ${i + 1}`}
+			</h2>
+			<p class="text-label-2 text-[0.8125rem]">
+				{matching[i] != null
+					? `${formatCount(matching[i])} photos in rotation, plus memories`
+					: summary(accounts[i], i)}
+			</p>
+		</div>
+	</div>
+	{#key `${version}-${i}`}
+		<AccountPhotos account={accounts[i]} />
 	{/key}
 {/if}

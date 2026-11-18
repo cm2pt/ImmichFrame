@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Btn from './btn.svelte';
 	import { onMount } from 'svelte';
 	import PageCard from './page-card.svelte';
 	import type { AdminPreview } from './admin-preview.svelte';
@@ -20,15 +19,12 @@
 	footer="A sample of what will show next, to spot screenshots or receipts that slip in."
 >
 	{#snippet actions()}
-		<Btn
-			variant="ghost"
-			color="primary"
-			size="small"
-			loading={preview.state === 'loading'}
-			onclick={() => preview.load(4)}
+		<button
+			type="button"
+			class="text-primary disabled:opacity-40"
+			disabled={preview.state === 'loading'}
+			onclick={() => preview.load(4)}>Shuffle</button
 		>
-			Shuffle
-		</Btn>
 	{/snippet}
 	<div class="py-4">
 		{#if preview.state === 'error'}

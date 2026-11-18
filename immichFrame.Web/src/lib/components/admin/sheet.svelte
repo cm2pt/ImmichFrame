@@ -9,9 +9,11 @@
 		/** id of the element that opened the sheet, to focus again when it closes. */
 		returnFocusTo?: string;
 		children: Snippet;
+		/** Buttons for the bottom of the desktop sheet; defaults to a prominent Done. */
+		actions?: Snippet;
 	}
 
-	let { title, onclose, returnFocusTo, children }: Props = $props();
+	let { title, onclose, returnFocusTo, children, actions }: Props = $props();
 
 	let panel: HTMLElement | undefined = $state();
 	// Captured when the sheet opens: props are live, and by the time it closes the opener's
@@ -62,10 +64,20 @@
 		aria-modal="true"
 		aria-label={title}
 		tabindex="-1"
-		class="relative flex h-full w-full flex-col overflow-hidden bg-[#f5f5f7] outline-none md:h-auto md:max-h-[85dvh] md:w-[30rem] md:rounded-[12px] md:shadow-[0_24px_64px_rgb(0_0_0/0.3),0_0_0_0.5px_rgb(0_0_0/0.15)] dark:bg-[#1c1c1e] dark:md:shadow-[0_24px_64px_rgb(0_0_0/0.6),0_0_0_0.5px_rgb(255_255_255/0.12)]"
+		class="relative mt-[calc(env(safe-area-inset-top)+10px)] flex h-[calc(100%-env(safe-area-inset-top)-10px)] w-full flex-col overflow-hidden rounded-t-[10px] bg-[#f5f5f7] outline-none md:mt-0 md:h-auto md:max-h-[85dvh] md:w-[30rem] md:rounded-[12px] md:shadow-[0_24px_64px_rgb(0_0_0/0.3),0_0_0_0.5px_rgb(0_0_0/0.15)] dark:bg-[#1c1c1e] dark:md:shadow-[0_24px_64px_rgb(0_0_0/0.6),0_0_0_0.5px_rgb(255_255_255/0.12)]"
 		transition:fly={{ y: 24, duration: 220, easing: cubicOut }}
 	>
-		<header class="border-sep grid grid-cols-[1fr_auto_1fr] items-center border-b px-3 py-2.5">
+		<!-- Phone: an iOS page sheet, with a grabber and a nav bar. Desktop: a macOS sheet, with
+		     no title bar and its buttons at the bottom right. -->
+		<button
+			type="button"
+			class="mx-auto mt-1.5 h-[5px] w-9 shrink-0 rounded-full bg-black/20 md:hidden dark:bg-white/25"
+			aria-label="Close"
+			onclick={onclose}
+		></button>
+		<header
+			class="border-sep grid grid-cols-[1fr_auto_1fr] items-center border-b px-3 py-2.5 md:hidden"
+		>
 			<span></span>
 			<h2 class="truncate text-[1.0625rem] font-semibold md:text-[0.9375rem]">{title}</h2>
 			<button
@@ -74,10 +86,21 @@
 				onclick={onclose}>Done</button
 			>
 		</header>
-		<div class="flex-1 overflow-y-auto px-4 py-5">
+		<div class="flex-1 overflow-y-auto px-4 py-5 md:px-5 md:pt-6">
 			<div class="flex flex-col gap-6">
 				{@render children()}
 			</div>
 		</div>
+		<footer class="hidden justify-end gap-2 px-5 pt-1 pb-5 md:flex">
+			{#if actions}
+				{@render actions()}
+			{:else}
+				<button
+					type="button"
+					class="bg-accent h-7 rounded-[6px] px-4 text-[0.8125rem] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+					onclick={onclose}>Done</button
+				>
+			{/if}
+		</footer>
 	</div>
 </div>

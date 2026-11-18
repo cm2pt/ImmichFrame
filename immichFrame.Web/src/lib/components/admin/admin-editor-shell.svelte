@@ -312,35 +312,42 @@
 						{/each}
 					</nav>
 				</div>
-				<div class="flex flex-col gap-0.5 px-2 text-[0.8125rem]">
-					{#if statusText}
-						<button
-							type="button"
-							class="text-label-2 flex items-center gap-2 py-1 text-left hover:underline"
-							onclick={() => go('screens')}
-						>
-							<span class="h-1.5 w-1.5 rounded-full {liveScreens ? 'bg-[#30d158]' : 'bg-[#8e8e93]'}"
-							></span>
-							{statusText}
-						</button>
-					{/if}
+				<!-- Window actions as sidebar items; status and version as small print. -->
+				<div class="flex flex-col gap-0.5">
 					<a
 						href={resolve('/')}
 						target="_blank"
-						class="flex items-center gap-1.5 py-1 text-primary hover:underline"
+						class="flex items-center gap-2.5 rounded-[6px] px-2 py-[5px] text-[0.875rem] hover:bg-black/5 dark:hover:bg-white/10"
 					>
-						Open Frame <Glyph name="externalLink" size={13} />
+						<span class="text-label-2 flex w-6 justify-center"
+							><Glyph name="externalLink" size={16} /></span
+						>
+						Open Frame
 					</a>
 					<button
 						type="button"
-						class="py-1 text-left text-primary hover:underline"
+						class="flex items-center gap-2.5 rounded-[6px] px-2 py-[5px] text-left text-[0.875rem] hover:bg-black/5 dark:hover:bg-white/10"
 						onclick={onlogout}
 					>
+						<span class="text-label-2 flex w-6 justify-center"><Glyph name="lock" size={16} /></span
+						>
 						Lock
 					</button>
-					{#if frameVersion}
-						<p class="text-label-3 pt-2 text-[0.75rem]">ImmichFrame {frameVersion}</p>
-					{/if}
+					<div class="text-label-2 mt-2 px-2 text-[0.6875rem] leading-relaxed">
+						{#if statusText}
+							<button
+								type="button"
+								class="flex items-center gap-1.5 hover:underline"
+								onclick={() => go('screens')}
+							>
+								<span
+									class="h-1.5 w-1.5 rounded-full {liveScreens ? 'bg-[#30d158]' : 'bg-[#8e8e93]'}"
+								></span>
+								{statusText}
+							</button>
+						{/if}
+						{#if frameVersion}<p>ImmichFrame {frameVersion}</p>{/if}
+					</div>
 				</div>
 			</aside>
 		</div>
@@ -423,7 +430,7 @@
 									{saveError}
 								</p>
 							{:else if editor.dirty}
-								<p class="min-w-0 flex-1 text-[0.875rem] font-medium">
+								<p class="text-label-2 min-w-0 flex-1 text-[0.8125rem]">
 									{invalidFormats.size > 0
 										? 'Fix the invalid date or clock pattern to save'
 										: plural(Math.max(editor.changeCount, 1), 'unsaved change')}

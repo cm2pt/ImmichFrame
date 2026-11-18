@@ -217,26 +217,23 @@
 				/>
 			</div>
 		{:else}
-			<div
-				class="border-sep flex flex-wrap gap-2 py-3 {general.authenticationSecret
-					? 'border-t'
-					: ''}"
+			<button
+				id="secret-new"
+				type="button"
+				class="border-sep flex min-h-11 w-full items-center border-t py-2 text-left text-[0.9375rem] text-primary first:border-t-0 md:text-[0.875rem]"
+				onclick={() => (secretAction = 'new')}
 			>
-				<Btn
-					id="secret-new"
-					size="small"
-					variant="outline"
-					color="secondary"
-					onclick={() => (secretAction = 'new')}
+				{general.authenticationSecret ? 'Create New Secret…' : 'Create Secret…'}
+			</button>
+			{#if general.authenticationSecret}
+				<button
+					type="button"
+					class="border-sep flex min-h-11 w-full items-center border-t py-2 text-left text-[0.9375rem] text-[#d70015] md:text-[0.875rem] dark:text-[#ff6961]"
+					onclick={() => (secretAction = 'off')}
 				>
-					{general.authenticationSecret ? 'Create New Secret…' : 'Create Secret…'}
-				</Btn>
-				{#if general.authenticationSecret}
-					<Btn size="small" variant="outline" color="danger" onclick={() => (secretAction = 'off')}
-						>Turn Off Secret…</Btn
-					>
-				{/if}
-			</div>
+					Turn Off Secret…
+				</button>
+			{/if}
 		{/if}
 	</PageCard>
 
@@ -271,7 +268,19 @@
 			returnFocusTo="change-password"
 			onclose={() => (passwordSheet = false)}
 		>
+			{#snippet actions()}
+				<Btn
+					size="small"
+					variant="outline"
+					color="secondary"
+					onclick={() => (passwordSheet = false)}>Cancel</Btn
+				>
+				<Btn size="small" type="submit" form="password-form" disabled={!canChange}
+					>Change Password</Btn
+				>
+			{/snippet}
 			<form
+				id="password-form"
 				onsubmit={(e) => {
 					e.preventDefault();
 					setPassword();
@@ -299,7 +308,8 @@
 						oninput={(v) => (confirmPassword = v)}
 					/>
 				</PageCard>
-				<div class="mt-5 flex justify-end">
+				<!-- Phone: the sheet has no bottom bar, so the button sits under the fields. -->
+				<div class="mt-5 flex justify-end md:hidden">
 					<Btn type="submit" disabled={!canChange}>Change Password</Btn>
 				</div>
 			</form>

@@ -63,10 +63,10 @@
 	}
 
 	const tiles: Record<string, { glyph: GlyphName; color: string }> = {
-		tv: { glyph: 'tv', color: '#5e5ce6' },
-		tablet: { glyph: 'tablet', color: '#ff9f0a' },
-		phone: { glyph: 'smartphone', color: '#30d158' },
-		desktop: { glyph: 'monitor', color: '#0a84ff' }
+		tv: { glyph: 'tv', color: '#8e8e93' },
+		tablet: { glyph: 'tablet', color: '#8e8e93' },
+		phone: { glyph: 'smartphone', color: '#8e8e93' },
+		desktop: { glyph: 'monitor', color: '#8e8e93' }
 	};
 	const screenName = (screen: ScreenDto) => screen.name || screen.clientIdentifier || 'Screen';
 </script>
@@ -78,7 +78,9 @@
 		: 'A screen shows up here after it first opens the frame.'}
 >
 	{#snippet actions()}
-		<Btn variant="ghost" color="primary" size="small" disabled={loading} onclick={load}>Refresh</Btn
+		<button type="button" class="text-primary disabled:opacity-40" disabled={loading} onclick={load}
+			>Refresh</button
+		>
 		>
 	{/snippet}
 

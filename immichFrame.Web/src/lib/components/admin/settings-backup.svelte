@@ -70,11 +70,18 @@
 	title="Backup"
 	footer={message || 'Download every setting as one file, without secrets, or restore one.'}
 >
-	<div class="flex flex-wrap gap-2 py-3">
-		<Btn size="small" variant="outline" color="secondary" onclick={download}>Download Settings</Btn>
-		<Btn size="small" variant="outline" color="secondary" onclick={() => input?.click()}
-			>Restore…</Btn
-		>
+	<!-- A labeled row with its buttons trailing, as in macOS settings. -->
+	<div
+		class="flex min-h-11 flex-wrap items-center justify-between gap-3 py-2"
+		data-setting="Backup"
+	>
+		<span class="text-[0.9375rem] md:text-[0.875rem]">Settings file</span>
+		<span class="flex gap-2">
+			<Btn size="small" variant="outline" color="secondary" onclick={() => input?.click()}
+				>Restore from File…</Btn
+			>
+			<Btn size="small" variant="outline" color="secondary" onclick={download}>Download…</Btn>
+		</span>
 		<input
 			bind:this={input}
 			type="file"

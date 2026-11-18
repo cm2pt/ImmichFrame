@@ -21,7 +21,7 @@
 
 <section class="scroll-mt-24" {id} aria-label={title}>
 	{#if title || actions}
-		<div class="mb-1.5 flex min-h-6 items-end justify-between gap-3 px-4">
+		<div class="mb-1.5 flex min-h-6 items-baseline justify-between gap-3 px-4">
 			{#if title}
 				<!-- iOS: small capitals in secondary gray. macOS: sentence case, semibold, label color. -->
 				<h2
@@ -30,7 +30,9 @@
 					{title}
 				</h2>
 			{/if}
-			{#if actions}<div class="flex items-center gap-1">{@render actions()}</div>{/if}
+			{#if actions}<div class="flex items-baseline gap-3 text-[0.8125rem]">
+					{@render actions()}
+				</div>{/if}
 		</div>
 	{/if}
 	<div class="bg-group rounded-group px-4">

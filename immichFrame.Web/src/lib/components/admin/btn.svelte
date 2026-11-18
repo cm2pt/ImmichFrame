@@ -15,6 +15,8 @@
 		disabled?: boolean;
 		fullWidth?: boolean;
 		type?: 'button' | 'submit';
+		/** The form a submit button belongs to, when it sits outside it. */
+		form?: string;
 		href?: string;
 		target?: string;
 		id?: string;

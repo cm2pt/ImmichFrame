@@ -162,7 +162,7 @@
 				aria-label={color.name}
 				title={color.name}
 				{disabled}
-				class="h-[30px] w-[30px] rounded-full shadow-[inset_0_0_0_0.5px_rgb(0_0_0/0.18)] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-40 md:h-6 md:w-6 dark:shadow-[inset_0_0_0_0.5px_rgb(255_255_255/0.25)] {selected
+				class="h-[30px] w-[30px] rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.18)] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-40 md:h-6 md:w-6 dark:shadow-[inset_0_0_0_0.5px_rgb(255_255_255/0.25)] {selected
 					? 'outline-2 outline-offset-2 outline-primary'
 					: ''}"
 				style="background:{color.value}"
@@ -170,7 +170,7 @@
 			></button>
 		{/each}
 		<label
-			class="relative h-[30px] w-[30px] cursor-pointer rounded-full shadow-[inset_0_0_0_0.5px_rgb(0_0_0/0.18)] md:h-6 md:w-6 dark:shadow-[inset_0_0_0_0.5px_rgb(255_255_255/0.25)] {custom
+			class="relative h-[30px] w-[30px] cursor-pointer rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.18)] md:h-6 md:w-6 dark:shadow-[inset_0_0_0_0.5px_rgb(255_255_255/0.25)] {custom
 				? 'outline-2 outline-offset-2 outline-primary'
 				: ''} {disabled ? 'pointer-events-none opacity-40' : ''}"
 			style="background:{custom

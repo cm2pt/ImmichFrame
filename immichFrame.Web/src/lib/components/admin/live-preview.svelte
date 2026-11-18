@@ -156,12 +156,11 @@
 	footer="Shows your changes before you save. The photos are a sample of what's saved."
 >
 	{#snippet actions()}
-		<Btn
-			variant="ghost"
-			color="primary"
-			size="small"
+		<button
+			type="button"
+			class="text-primary"
 			aria-label="Show the preview larger"
-			onclick={() => (expanded = true)}>Larger</Btn
+			onclick={() => (expanded = true)}>Larger</button
 		>
 	{/snippet}
 	<div class="py-4">

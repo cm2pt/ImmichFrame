@@ -47,9 +47,9 @@
 	}
 </script>
 
-<!-- A row of mutually exclusive choices. With more than three, phones get a menu instead,
-     so the row never wraps onto two lines. -->
-{#if options.length > 3}
+<!-- A row of mutually exclusive choices on desktop; on phones a pop-up button, as iOS Settings
+     shows choices. -->
+{#if true}
 	<div class="w-full sm:hidden" role="group" aria-label={label}>
 		<PopupSelect
 			{label}
@@ -65,9 +65,7 @@
 <div
 	role="radiogroup"
 	aria-label={label}
-	class="{options.length > 3
-		? 'hidden sm:inline-flex'
-		: 'inline-flex'} bg-fill relative max-w-full rounded-[9px] p-[2px]"
+	class="hidden sm:inline-flex bg-fill relative max-w-full rounded-[9px] p-[2px]"
 >
 	{#if thumb.width}
 		<span
@@ -86,7 +84,7 @@
 			aria-checked={selected}
 			tabindex={index === focusIndex ? 0 : -1}
 			bind:this={buttons[index]}
-			class="relative z-[1] rounded-[7px] px-3.5 py-[5px] text-[0.8125rem] whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-primary {selected
+			class="relative z-[1] rounded-[7px] px-3 py-[3px] text-[0.8125rem] whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-primary {selected
 				? 'font-semibold'
 				: 'font-medium opacity-80 hover:opacity-100'}"
 			onclick={() => onchange(option.value)}
