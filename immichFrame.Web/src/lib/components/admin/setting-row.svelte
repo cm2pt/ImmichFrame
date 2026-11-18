@@ -18,11 +18,13 @@
 
 <div class="border-t border-light-200 py-4 first:border-t-0" {id}>
 	<div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-		<div class="flex min-w-0 flex-1 items-start gap-3">
+		<!-- A real basis (not flex-1's 0) so the row wraps the control under the title when
+		     both don't fit, instead of drawing it over the text. -->
+		<div class="flex min-w-0 flex-[1_1_14rem] items-start gap-3">
 			{#if icon}
 				<div class="mt-0.5 text-primary">{@render icon()}</div>
 			{/if}
-			<div class="min-w-48">
+			<div class="min-w-0">
 				<Text fontWeight="semi-bold">{title}</Text>
 				{#if description}
 					<Text size="small" class="text-dark/70">{description}</Text>

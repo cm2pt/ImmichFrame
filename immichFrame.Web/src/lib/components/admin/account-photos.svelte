@@ -74,7 +74,7 @@
 				`hides ${count(account.excludedAlbums!.length, 'album', 'albums')}`
 		]
 			.filter(Boolean)
-			.join(' · ') || 'The whole library'
+			.join('\u00a0·\u2002') || 'The whole library'
 	);
 
 	// One album can't be both shown and hidden: each picker marks the other's albums.
@@ -137,8 +137,6 @@
 						Connecting to {host}…
 					{:else if library.state === 'error'}
 						{library.message}
-					{:else if expanded}
-						Connected · {host}
 					{:else}
 						{summary}
 					{/if}
@@ -168,7 +166,7 @@
 					description="Everything {library.userName
 						? `${library.userName} `
 						: ''}marked with a heart{library.favoriteCount != null
-						? ` · ${formatCount(library.favoriteCount)} photos`
+						? `\u00a0·\u2002${formatCount(library.favoriteCount)} photos`
 						: ''}"
 				>
 					{#snippet icon()}<Icon icon={mdiHeartOutline} size="20" />{/snippet}

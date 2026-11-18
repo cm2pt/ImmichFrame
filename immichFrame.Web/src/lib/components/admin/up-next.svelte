@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { mdiShuffleVariant } from '@mdi/js';
-	import { Button, Card, CardBody, Text } from '@immich/ui';
+	import { Button, Card, CardBody, Text, Heading } from '@immich/ui';
 	import type { AdminPreview } from './admin-preview.svelte';
 
 	interface Props {
@@ -18,7 +18,7 @@
 <Card>
 	<CardBody>
 		<div class="mb-3 flex items-center justify-between gap-2">
-			<Text fontWeight="semi-bold">Up next</Text>
+			<Heading tag="h2" size="tiny" fontWeight="semi-bold">Up next</Heading>
 			<Button
 				size="small"
 				variant="outline"
@@ -30,7 +30,7 @@
 			</Button>
 		</div>
 		{#if preview.state === 'error'}
-			<Text size="small" color="danger">
+			<Text class="text-danger-700 dark:text-danger-400" size="small">
 				{preview.message}
 				<button class="underline" onclick={() => preview.load(4)}>Retry</button>
 			</Text>
@@ -42,7 +42,7 @@
 							<img
 								src={item.url}
 								alt={item.fileName ?? ''}
-								title={[item.fileName, item.city].filter(Boolean).join(' · ')}
+								title={[item.fileName, item.city].filter(Boolean).join('\u00a0·\u2002')}
 								class="h-full w-full object-cover"
 							/>
 						{/if}

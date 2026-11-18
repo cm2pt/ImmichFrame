@@ -112,6 +112,9 @@
 		newCalendar = '';
 	}
 
+	// Browsers only share location with HTTPS pages.
+	const canLocate =
+		typeof window !== 'undefined' && window.isSecureContext && !!navigator.geolocation;
 	let locating = $state(false);
 	let locateError = $state('');
 	function useMyLocation() {
@@ -279,7 +282,7 @@
 					options={[
 						{ value: 'zoom', label: 'Zoom' },
 						{ value: 'pan', label: 'Pan' },
-						{ value: 'both', label: 'Both' },
+						{ value: 'both', label: 'Zoom and pan' },
 						{ value: 'still', label: 'Still' }
 					]}
 					onchange={setMovement}
@@ -419,20 +422,7 @@
 				/>
 			{/snippet}
 		</SettingRow>
-		<SettingRow
-			title="Box color"
-			description={usesBox ? 'The solid or faded box behind the text' : 'Used with Solid or Fade'}
-		>
-			{#snippet control()}
-				{@render swatches(
-					'Box color',
-					boxColors,
-					general.secondaryColor || '#000000',
-					(v) => (general.secondaryColor = v),
-					!usesBox
-				)}
-			{/snippet}
-		</SettingRow>
+
 		<SettingRow title="Text color" description="The clock and the captions">
 			{#snippet control()}
 				{@render swatches(
@@ -443,6 +433,19 @@
 				)}
 			{/snippet}
 		</SettingRow>
+		{#if usesBox}
+			<SettingRow title="Box color" description="The box behind the clock and captions">
+				{#snippet control()}
+					{@render swatches(
+						'Box color',
+						boxColors,
+						general.secondaryColor || '#000000',
+						(v) => (general.secondaryColor = v),
+						!usesBox
+					)}
+				{/snippet}
+			</SettingRow>
+		{/if}
 		<SettingRow title="Text size">
 			{#snippet control()}
 				<Segmented
@@ -490,17 +493,21 @@
 							value={general.weatherLatLong ?? ''}
 							oninput={(e) => (general.weatherLatLong = e.currentTarget.value)}
 						/>
-						<IconButton
-							icon={mdiCrosshairsGps}
-							variant="outline"
-							color="secondary"
-							aria-label="Use my location"
-							title="Use my location"
-							loading={locating}
-							onclick={useMyLocation}
-						/>
+						{#if canLocate}
+							<IconButton
+								icon={mdiCrosshairsGps}
+								variant="outline"
+								color="secondary"
+								aria-label="Use my location"
+								title="Use my location"
+								loading={locating}
+								onclick={useMyLocation}
+							/>
+						{/if}
 					</div>
-					{#if locateError}<Text size="small" color="danger" class="mt-1">{locateError}</Text>{/if}
+					{#if locateError}<Text size="small" class="text-danger-700 dark:text-danger-400 mt-1"
+							>{locateError}</Text
+						>{/if}
 				</div>
 			</div>
 			{#if !general.weatherApiKey}
@@ -544,7 +551,7 @@
 							<code class="min-w-0 flex-1 truncate text-sm">{url}</code>
 							<IconButton
 								icon={mdiDelete}
-								size="small"
+								size="medium"
 								variant="ghost"
 								color="secondary"
 								aria-label="Remove calendar"

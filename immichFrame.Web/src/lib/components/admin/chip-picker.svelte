@@ -120,7 +120,7 @@
 	<div class="mt-3 rounded-2xl border border-light-300 bg-light-50 p-3" onkeydown={onKeydown}>
 		<div class="mb-2 flex items-center justify-between">
 			<Text size="small" fontWeight="semi-bold">{addLabel}</Text>
-			<Button size="tiny" variant="ghost" onclick={() => (open = false)}>Done</Button>
+			<Button size="small" variant="ghost" onclick={() => (open = false)}>Done</Button>
 		</div>
 		{#if loading}
 			<Text class="text-dark/70" size="small">Loading from Immich…</Text>
@@ -161,7 +161,9 @@
 				<Input placeholder={manualPlaceholder} bind:value={manual} aria-label={manualPlaceholder} />
 				<Button type="submit" size="small">Add</Button>
 			</form>
-			{#if manualError}<Text size="small" color="danger" class="mt-1">{manualError}</Text>{/if}
+			{#if manualError}<Text size="small" class="text-danger-700 dark:text-danger-400 mt-1"
+					>{manualError}</Text
+				>{/if}
 		{/if}
 	</div>
 {/if}

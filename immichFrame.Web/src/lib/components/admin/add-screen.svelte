@@ -1,6 +1,7 @@
 <script lang="ts">
 	import QrCode from '@castlenine/svelte-qrcode';
 	import { Input, Select, Text } from '@immich/ui';
+	import Callout from './callout.svelte';
 	import CopyField from './copy-field.svelte';
 	import PageCard from './page-card.svelte';
 
@@ -67,6 +68,13 @@
 
 	<div class="mt-5 grid gap-6 md:grid-cols-[minmax(0,1fr)_auto]">
 		<div class="flex min-w-0 flex-col gap-4" role="tabpanel">
+			{#if isLocal}
+				<Callout tone="info">
+					You opened this page on <code>localhost</code>, which other devices can't reach. Open the
+					admin page through this server's network address (for example
+					<code>http://192.168.1.10:8080/admin</code>) to get an address and code they can use.
+				</Callout>
+			{/if}
 			<ol class="list-decimal space-y-2 pl-5 text-sm">
 				{#if device === 'appletv'}
 					<li>On the Apple TV, install <strong>ImmichFrame</strong> from the App Store.</li>
@@ -105,29 +113,31 @@
 				<CopyField label="Link" value={frameUrl} secret={!!secret} />
 			{/if}
 
-			{#if isLocal}
-				<Text size="small" color="warning">
-					This page is open on localhost, which other devices can't reach. Open the admin page using
-					this server's network address to get an address they can use.
-				</Text>
-			{/if}
 			{#if !secret}
-				<Text size="small" color="warning">
+				<Callout>
 					There's no frame secret, so anyone who can reach this address can see the photos.
 					<button type="button" class="font-medium underline" onclick={ongotoaccess}>
 						Set a secret
 					</button>
-				</Text>
+				</Callout>
 			{/if}
 		</div>
 
 		<div class="flex flex-col items-center gap-2 md:w-48">
-			<div class="w-40 rounded-2xl border border-light-300 bg-white p-3">
-				<QrCode data={frameUrl} isResponsive />
-			</div>
-			<Text size="small" class="text-dark/70 max-w-48 text-center">
-				Scan with a phone or tablet to open the frame{secret ? ', already signed in' : ''}.
-			</Text>
+			{#if isLocal}
+				<div
+					class="flex aspect-square w-40 items-center justify-center rounded-2xl border border-dashed border-light-300 p-4 text-center text-sm text-dark/60"
+				>
+					No code on localhost
+				</div>
+			{:else}
+				<div class="w-40 rounded-2xl border border-light-300 bg-white p-3">
+					<QrCode data={frameUrl} isResponsive />
+				</div>
+				<Text size="small" class="max-w-48 text-center text-dark/70">
+					Scan with a phone or tablet to open the frame{secret ? ', already signed in' : ''}.
+				</Text>
+			{/if}
 		</div>
 	</div>
 </PageCard>

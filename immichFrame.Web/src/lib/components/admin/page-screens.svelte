@@ -5,6 +5,7 @@
 	import type { ScreenDto } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import AddScreen from './add-screen.svelte';
+	import InlineConfirm from './inline-confirm.svelte';
 	import { describeDevice, relativeTime } from './admin-format';
 
 	interface Props {
@@ -74,7 +75,7 @@
 			<div class="mb-3 flex items-center justify-between gap-3">
 				<Text class="text-dark/70" size="small">
 					{screens?.length
-						? `${screens.length} ${screens.length === 1 ? 'screen' : 'screens'} · updated ${relativeTime(now)}`
+						? `${screens.length} ${screens.length === 1 ? 'screen' : 'screens'}\u00a0·\u2002updated ${relativeTime(now)}`
 						: 'Screens appear here after they first open the frame.'}
 				</Text>
 				<IconButton
@@ -91,7 +92,7 @@
 
 			{#if error}
 				<div class="flex items-center gap-3 rounded-xl bg-danger/10 p-4">
-					<Text size="small" color="danger" class="flex-1">{error}</Text>
+					<Text size="small" class="text-danger-700 dark:text-danger-400 flex-1">{error}</Text>
 					<Button size="small" variant="outline" onclick={load}>Retry</Button>
 				</div>
 			{:else if screens === null}
@@ -142,8 +143,8 @@
 									<Text class="text-dark/70" size="small">{device.label}</Text>
 									<span
 										class="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium {live
-											? 'bg-success/15 text-success'
-											: 'bg-warning/15 text-warning'}"
+											? 'bg-success/15 text-dark'
+											: 'bg-warning/20 text-dark'}"
 									>
 										<span class="h-1.5 w-1.5 rounded-full {live ? 'bg-success' : 'bg-warning'}"
 										></span>
@@ -153,30 +154,18 @@
 							</div>
 
 							{#if confirmForget === screen.clientIdentifier}
-								<div
-									class="mt-4 rounded-xl bg-subtle/50 p-3 dark:bg-light-100"
-									role="alertdialog"
-									aria-label="Forget screen"
-								>
-									<Text size="small">
-										Forget “{screenName(screen)}”? It comes back with no name the next time it opens
-										the frame.
-									</Text>
-									<div class="mt-3 flex justify-end gap-2">
-										<Button
-											size="small"
-											variant="ghost"
-											color="secondary"
-											onclick={() => (confirmForget = null)}>Cancel</Button
-										>
-										<Button size="small" color="danger" onclick={() => forget(screen)}
-											>Forget</Button
-										>
-									</div>
-								</div>
+								<InlineConfirm
+									message={`Forget “${screenName(screen)}”? It comes back with no name the next time it opens the frame.`}
+									confirmLabel="Forget"
+									danger
+									returnFocusTo={`forget-${screen.clientIdentifier}`}
+									onconfirm={() => forget(screen)}
+									oncancel={() => (confirmForget = null)}
+								/>
 							{:else if renaming !== screen.clientIdentifier}
 								<div class="mt-auto flex justify-end gap-2 pt-4">
 									<Button
+										id={`forget-${screen.clientIdentifier}`}
 										size="small"
 										variant="ghost"
 										color="secondary"

@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Button, Card, CardBody, Text } from '@immich/ui';
+	import { Button, Card, CardBody, Text, Heading } from '@immich/ui';
 	import type { ServerAccountSettings, SettingsHistoryEntryDto } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import { relativeTime } from './admin-format';
 	import { humanizeChange } from './admin-history';
 	import { peekLibrary } from './admin-library.svelte';
+	import InlineConfirm from './inline-confirm.svelte';
 
 	interface Props {
 		/** Bumped after each save so the list refreshes. */
@@ -67,11 +68,11 @@
 
 <Card>
 	<CardBody>
-		<Text fontWeight="semi-bold">Recent changes</Text>
+		<Heading tag="h2" size="tiny" fontWeight="semi-bold">Recent changes</Heading>
 		<Text size="small" class="mb-3 text-dark/70">Every save, newest first.</Text>
 		{#if error}
 			<div class="flex items-center gap-2">
-				<Text size="small" color="danger" class="flex-1">{error}</Text>
+				<Text size="small" class="text-danger-700 dark:text-danger-400 flex-1">{error}</Text>
 				<Button size="tiny" variant="outline" onclick={load}>Retry</Button>
 			</div>
 		{:else if entries === null}
@@ -92,55 +93,42 @@
 									: 'bg-light-400'}"
 							></span>
 							<div class="min-w-0 flex-1">
-								<Text size="small" fontWeight="medium">{lines[0]}</Text>
-								{#each lines.slice(1, 3) as line (line)}<Text size="small" class="text-dark/70"
+								{#each lines.slice(0, 3) as line (line)}<Text size="small" fontWeight="medium"
 										>{line}</Text
 									>{/each}
 								{#if lines.length > 3}<Text size="small" class="text-dark/60"
 										>and {lines.length - 3} more</Text
 									>{/if}
 								<Text size="tiny" class="mt-0.5 text-dark/60">
-									{index === 0 ? 'Current · ' : ''}{relativeTime(
+									{index === 0 ? 'Current\u00a0·\u2002' : ''}{relativeTime(
 										new Date(entry.savedAtUtc!).getTime()
 									)}
 								</Text>
 							</div>
 							{#if index < entries.length - 1 && confirming !== index}
 								<Button
+									id={`history-${entry.version}`}
 									size="tiny"
 									variant="outline"
 									color="secondary"
 									loading={busy === index}
 									onclick={() => (confirming = index)}
 								>
-									{index === 0 ? 'Undo' : 'Go back…'}
+									{index === 0 ? 'Undo' : 'Restore…'}
 								</Button>
 							{/if}
 						</div>
 						{#if confirming === index}
-							<div
-								class="mt-2 ml-5 rounded-xl bg-subtle/50 p-3 dark:bg-light-100"
-								role="alertdialog"
-								aria-label="Confirm"
-							>
-								<Text size="small">
-									{index === 0
-										? 'Undo this save?'
-										: `Go back to how things were before this? The ${index + 1} newest saves are undone.`}
-									{dirty ? ' Your unsaved changes are lost.' : ''}
-								</Text>
-								<div class="mt-2 flex justify-end gap-2">
-									<Button
-										size="tiny"
-										variant="ghost"
-										color="secondary"
-										onclick={() => (confirming = null)}>Cancel</Button
-									>
-									<Button size="tiny" onclick={() => restoreBefore(index)}
-										>{index === 0 ? 'Undo' : 'Go back'}</Button
-									>
-								</div>
-							</div>
+							<InlineConfirm
+								message={(index === 0
+									? 'Undo the last save?'
+									: `Restore the settings from ${relativeTime(new Date(entries[index + 1].savedAtUtc!).getTime())}? The ${index + 1} saves after it are undone.`) +
+									(dirty ? ' Your unsaved changes are lost too.' : '')}
+								confirmLabel={index === 0 ? 'Undo' : 'Restore'}
+								returnFocusTo={`history-${entry.version}`}
+								onconfirm={() => restoreBefore(index)}
+								oncancel={() => (confirming = null)}
+							/>
 						{/if}
 					</li>
 				{/each}
@@ -150,8 +138,7 @@
 					>Show all {entries.length}</Button
 				>
 			{/if}
-			<Text size="tiny" class="mt-2 text-dark/60">Going back never changes the admin password.</Text
-			>
+			<Text size="tiny" class="mt-2 text-dark/60">Restoring never changes the admin password.</Text>
 		{/if}
 	</CardBody>
 </Card>

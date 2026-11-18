@@ -39,6 +39,12 @@
 		$props();
 
 	type PageId = 'photos' | 'look' | 'screens' | 'access';
+	const shortTitles: Record<PageId, string> = {
+		photos: 'Photos',
+		look: 'Look',
+		screens: 'Screens',
+		access: 'Access'
+	};
 	const pages: { id: PageId; title: string; icon: string; intro: string }[] = [
 		{
 			id: 'photos',
@@ -211,7 +217,7 @@
 						go(p.id);
 					}}
 				>
-					{p.title}
+					{shortTitles[p.id]}
 				</a>
 			{/each}
 		</nav>
@@ -240,7 +246,7 @@
 					{/each}
 				</nav>
 				{#if frameVersion}
-					<Text size="tiny" class="px-4 pb-2 text-dark/50">ImmichFrame {frameVersion}</Text>
+					<Text size="small" class="px-4 pb-2 text-dark/60">ImmichFrame {frameVersion}</Text>
 				{/if}
 			</aside>
 		</div>
@@ -281,9 +287,15 @@
 				</div>
 
 				{#if page === 'photos' || page === 'look'}
-					<aside class="flex flex-col gap-4 xl:sticky xl:top-20 xl:w-96" aria-label="Preview">
+					<!-- On narrow screens the Look page shows the preview first, so changes are in view. -->
+					<aside
+						class="flex flex-col gap-4 xl:sticky xl:top-20 xl:w-96 {page === 'look'
+							? 'order-first xl:order-none'
+							: ''}"
+						aria-label="Preview"
+					>
 						<LivePreview general={editor.settings.General ?? {}} {preview} />
-						<UpNext {preview} />
+						<div class={page === 'look' ? 'hidden xl:block' : ''}><UpNext {preview} /></div>
 					</aside>
 				{:else if page === 'access'}
 					<aside class="flex flex-col gap-4 xl:sticky xl:top-20 xl:w-96">
@@ -309,7 +321,10 @@
 							aria-live="polite"
 						>
 							{#if saveError}
-								<Text fontWeight="medium" color="danger" class="min-w-0 flex-1">{saveError}</Text>
+								<Text
+									fontWeight="medium"
+									class="text-danger-700 dark:text-danger-400 min-w-0 flex-1">{saveError}</Text
+								>
 							{:else if editor.dirty}
 								<Text fontWeight="medium" class="min-w-0 flex-1">
 									{invalidFormats.size > 0
@@ -320,10 +335,14 @@
 								<div class="flex min-w-0 flex-1 flex-col">
 									<span
 										class="flex items-center gap-2 font-medium {saveWarnings.length
-											? 'text-warning'
-											: 'text-success'}"
+											? 'text-dark'
+											: 'text-dark'}"
 									>
-										<Icon icon={mdiCheckCircle} size="20" />
+										<Icon
+											icon={mdiCheckCircle}
+											size="20"
+											class={saveWarnings.length ? 'text-warning' : 'text-success'}
+										/>
 										{saveWarnings.length ? 'Saved, with a warning' : 'Saved'}
 									</span>
 									<Text size="small" class="text-dark/70">

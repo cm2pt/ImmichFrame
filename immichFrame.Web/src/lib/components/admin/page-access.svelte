@@ -4,7 +4,9 @@
 	import type { ServerSettings } from '$lib/immichFrameApi';
 	import { effective, generalDefaults } from './admin-defaults';
 	import AccountConnection from './account-connection.svelte';
+	import Callout from './callout.svelte';
 	import CopyField from './copy-field.svelte';
+	import InlineConfirm from './inline-confirm.svelte';
 	import PageCard from './page-card.svelte';
 	import SettingRow from './setting-row.svelte';
 
@@ -83,49 +85,31 @@
 			{#if general.authenticationSecret}
 				<CopyField label="Secret" value={general.authenticationSecret} secret />
 			{:else}
-				<div class="rounded-xl bg-warning/10 px-4 py-3 text-sm text-warning">
-					The frame has no secret.
-				</div>
+				<Callout>The frame has no secret, so anyone who can reach it can see the photos.</Callout>
 			{/if}
 		</div>
 
 		{#if secretAction}
-			<div
-				class="mt-2 rounded-xl bg-subtle/50 p-4 dark:bg-light-100"
-				role="alertdialog"
-				aria-label="Confirm"
-			>
-				<Text size="small">
-					{secretAction === 'new'
-						? general.authenticationSecret
-							? 'After you save, every screen needs the new secret before it shows photos again.'
-							: 'After you save, every screen needs this secret before it shows photos again.'
-						: 'After you save, anyone who can reach the frame can see the photos.'}
-				</Text>
-				<div class="mt-3 flex justify-end gap-2">
-					<Button
-						size="small"
-						variant="ghost"
-						color="secondary"
-						onclick={() => (secretAction = null)}>Cancel</Button
-					>
-					{#if secretAction === 'new'}
-						<Button size="small" onclick={newSecret}>Create secret</Button>
-					{:else}
-						<Button
-							size="small"
-							color="danger"
-							onclick={() => {
-								general.authenticationSecret = null;
-								secretAction = null;
-							}}>Turn off</Button
-						>
-					{/if}
-				</div>
-			</div>
+			<InlineConfirm
+				message={secretAction === 'new'
+					? 'After you save, every screen needs the new secret before it shows photos again.'
+					: 'After you save, anyone who can reach the frame can see the photos.'}
+				confirmLabel={secretAction === 'new' ? 'Create secret' : 'Turn off'}
+				danger={secretAction === 'off'}
+				returnFocusTo="secret-new"
+				onconfirm={() => {
+					if (secretAction === 'new') newSecret();
+					else {
+						general.authenticationSecret = null;
+						secretAction = null;
+					}
+				}}
+				oncancel={() => (secretAction = null)}
+			/>
 		{:else}
 			<div class="mt-2 flex flex-wrap gap-2">
 				<Button
+					id="secret-new"
 					size="small"
 					variant="outline"
 					color="secondary"
@@ -165,7 +149,9 @@
 			<label class="text-sm">
 				<span class="mb-1 block font-medium">Confirm password</span>
 				<PasswordInput autocomplete="new-password" bind:value={confirmPassword} />
-				{#if mismatch}<span class="mt-1 block text-danger">Passwords don't match</span>{/if}
+				{#if mismatch}<span class="mt-1 block text-danger-700 dark:text-danger-400"
+						>Passwords don't match</span
+					>{/if}
 			</label>
 			<Button
 				type="submit"
@@ -178,7 +164,7 @@
 			</Button>
 		</form>
 		{#if passwordReady}
-			<Text size="small" color="success" class="mt-1">Ready. It takes effect when you save.</Text>
+			<Text size="small" class="mt-1 text-dark/80">✓ Ready. It takes effect when you save.</Text>
 		{/if}
 		<Text size="small" class="mt-2 text-dark/60">
 			The <code>IMMICHFRAME_ADMIN_PASSWORD</code> environment variable, when set, always wins over this

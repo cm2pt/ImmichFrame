@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Card, CardBody, Text } from '@immich/ui';
+	import { mdiArrowExpand } from '@mdi/js';
+	import { Button, Card, CardBody, Heading, IconButton, Text } from '@immich/ui';
 	import type { GeneralSettings } from '$lib/immichFrameApi';
 	import { effective, generalDefaults } from './admin-defaults';
 	import { formatExample } from './format-presets';
@@ -21,6 +22,19 @@
 	const STAGE_H = 1080;
 	let width = $state(360);
 	let scale = $derived(width / STAGE_W);
+	let expanded = $state(false);
+	let bigWidth = $state(1280);
+	let closeButton: HTMLElement | null = $state(null);
+	$effect(() => {
+		if (expanded) closeButton?.focus();
+	});
+
+	// The side column is sticky, which traps fixed children under the header; render the
+	// large preview at the end of <body> instead.
+	function portal(node: HTMLElement) {
+		document.body.appendChild(node);
+		return { destroy: () => node.remove() };
+	}
 
 	let now = $state(new Date());
 	let slide = $state(0);
@@ -132,107 +146,152 @@
 
 <Card>
 	<CardBody>
-		<Text fontWeight="semi-bold" class="mb-3">Live preview</Text>
-		<div
-			class="relative overflow-hidden rounded-xl bg-black ring-1 ring-black/10"
+		<div class="mb-3 flex items-center justify-between">
+			<Heading tag="h2" size="tiny" fontWeight="semi-bold">Live preview</Heading>
+			<IconButton
+				icon={mdiArrowExpand}
+				size="small"
+				variant="ghost"
+				color="secondary"
+				aria-label="Show the preview larger"
+				title="Larger"
+				onclick={() => (expanded = true)}
+			/>
+		</div>
+		<button
+			type="button"
+			class="relative block w-full cursor-zoom-in overflow-hidden rounded-lg bg-black ring-1 ring-black/10"
 			style="aspect-ratio:16/9"
 			bind:clientWidth={width}
-			role="img"
-			aria-label="Preview of the frame: {summary}"
+			aria-label="Preview of the frame: {summary} Show larger."
+			onclick={() => (expanded = true)}
 		>
-			<div
-				class="absolute top-0 left-0 origin-top-left"
-				style="width:{STAGE_W}px;height:{STAGE_H}px;transform:scale({scale});color:{text};font-size:{base}px"
-			>
-				<!-- Photos, cross-fading between sample slides -->
-				{#if slides.length}
-					{#each slides as group, i (i)}
-						<div
-							class="absolute inset-0 flex gap-[6px] transition-opacity ease-in-out"
-							style="opacity:{i === active ? 1 : 0};transition-duration:{fade}s"
-						>
-							{#each group as photo (photo.id)}
-								<div class="relative h-full flex-1 overflow-hidden">
-									{#if photo.url}
-										<img
-											src={photo.url}
-											alt=""
-											class="h-full w-full {fit} {i === active ? motion : ''}"
-										/>
-									{/if}
-								</div>
-							{/each}
-						</div>
-					{/each}
-				{:else}
-					<div class="absolute inset-0 flex gap-[6px]">
-						<div class="h-full flex-1 bg-gradient-to-br from-slate-500 to-slate-700 {motion}"></div>
-						{#if split}<div
-								class="h-full flex-1 bg-gradient-to-br from-slate-400 to-slate-600"
-							></div>{/if}
-					</div>
-				{/if}
-
-				{#if get('showProgressBar')}
-					<div class="absolute top-0 left-0 h-[6px] w-1/3" style="background:{text}"></div>
-				{/if}
-
-				{#if calendars}
-					<div
-						class="absolute top-0 right-0 m-5 text-center"
-						style="text-shadow:2px 2px 4px rgb(0 0 0/.8)"
-					>
-						<div class="font-semibold" style="font-size:1.25em">Today</div>
-						<div style="font-size:1em">14:00 · Swimming</div>
-						<div style="font-size:1em">18:30 · Dinner at grandma's</div>
-					</div>
-				{/if}
-
-				{#if get('showClock')}
-					<div class="absolute bottom-0 left-0 p-3 text-center" style={boxStyle('left')}>
-						<p
-							class="mt-2 font-thin"
-							style="font-size:1.25em;text-shadow:2px 2px 4px rgb(0 0 0/.8)"
-						>
-							{clockDate}
-						</p>
-						<p
-							class="mt-2 leading-none font-bold"
-							style="font-size:6em;text-shadow:3px 3px 6px rgb(0 0 0/.5)"
-						>
-							{clock}
-						</p>
-						{#if weather}
-							<p
-								class="mt-2 font-semibold"
-								style="font-size:1.875em;text-shadow:2px 2px 4px rgb(0 0 0/.8)"
-							>
-								Lisbon, 18.5°
-							</p>
-							{#if get('showWeatherDescription')}
-								<p style="font-size:1.25em;text-shadow:2px 2px 4px rgb(0 0 0/.8)">light rain</p>
-							{/if}
-						{/if}
-					</div>
-				{/if}
-
-				{#if captions.length}
-					<div
-						class="absolute right-0 bottom-0 max-w-[45%] p-1 text-right"
-						style="{boxStyle('right')};text-shadow:2px 2px 4px rgb(0 0 0/.8)"
-					>
-						{#each captions as line (line)}
-							<p class="truncate px-2 py-0.5" style="font-size:1em">{line}</p>
-						{/each}
-					</div>
-				{/if}
-			</div>
-		</div>
+			{@render stage(scale)}
+		</button>
 		<Text size="small" class="mt-3 text-dark/70">
-			{summary} The look follows your changes; the photos are a sample of what's saved.
+			{summary} A sample of your saved photos, with your unsaved changes.
 		</Text>
 	</CardBody>
 </Card>
+
+{#if expanded}
+	<div
+		use:portal
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+		role="dialog"
+		aria-modal="true"
+		aria-label="Larger preview"
+		tabindex="-1"
+		onkeydown={(e) => e.key === 'Escape' && (expanded = false)}
+		onclick={(e) => e.target === e.currentTarget && (expanded = false)}
+	>
+		<div class="w-[min(92vw,1280px)]">
+			<div
+				class="relative overflow-hidden rounded-xl bg-black shadow-2xl"
+				style="aspect-ratio:16/9"
+				bind:clientWidth={bigWidth}
+			>
+				{@render stage(bigWidth / STAGE_W)}
+			</div>
+			<div class="mt-3 flex items-center justify-between gap-3 text-sm text-white/80">
+				<span>{summary}</span>
+				<Button
+					size="small"
+					color="secondary"
+					bind:ref={closeButton}
+					onclick={() => (expanded = false)}>Close</Button
+				>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#snippet stage(stageScale: number)}
+	<div
+		class="absolute top-0 left-0 origin-top-left"
+		style="width:{STAGE_W}px;height:{STAGE_H}px;transform:scale({stageScale});color:{text};font-size:{base}px"
+	>
+		<!-- Photos, cross-fading between sample slides -->
+		{#if slides.length}
+			{#each slides as group, i (i)}
+				<div
+					class="absolute inset-0 flex gap-[6px] transition-opacity ease-in-out"
+					style="opacity:{i === active ? 1 : 0};transition-duration:{fade}s"
+				>
+					{#each group as photo (photo.id)}
+						<div class="relative h-full flex-1 overflow-hidden">
+							{#if photo.url}
+								<img
+									src={photo.url}
+									alt=""
+									class="h-full w-full {fit} {i === active ? motion : ''}"
+								/>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			{/each}
+		{:else}
+			<div class="absolute inset-0 flex gap-[6px]">
+				<div class="h-full flex-1 bg-gradient-to-br from-slate-500 to-slate-700 {motion}"></div>
+				{#if split}<div
+						class="h-full flex-1 bg-gradient-to-br from-slate-400 to-slate-600"
+					></div>{/if}
+			</div>
+		{/if}
+
+		{#if get('showProgressBar')}
+			<div class="absolute top-0 left-0 h-[6px] w-1/3" style="background:{text}"></div>
+		{/if}
+
+		{#if calendars}
+			<div
+				class="absolute top-0 right-0 m-5 text-center"
+				style="text-shadow:2px 2px 4px rgb(0 0 0/.8)"
+			>
+				<div class="font-semibold" style="font-size:1.25em">Today</div>
+				<div style="font-size:1em">14:00&nbsp;·&ensp;Swimming</div>
+				<div style="font-size:1em">18:30&nbsp;·&ensp;Dinner at grandma's</div>
+			</div>
+		{/if}
+
+		{#if get('showClock')}
+			<div class="absolute bottom-0 left-0 p-3 text-center" style={boxStyle('left')}>
+				<p class="mt-2 font-thin" style="font-size:1.25em;text-shadow:2px 2px 4px rgb(0 0 0/.8)">
+					{clockDate}
+				</p>
+				<p
+					class="mt-2 leading-none font-bold"
+					style="font-size:6em;text-shadow:3px 3px 6px rgb(0 0 0/.5)"
+				>
+					{clock}
+				</p>
+				{#if weather}
+					<p
+						class="mt-2 font-semibold"
+						style="font-size:1.875em;text-shadow:2px 2px 4px rgb(0 0 0/.8)"
+					>
+						Lisbon, 18.5°
+					</p>
+					{#if get('showWeatherDescription')}
+						<p style="font-size:1.25em;text-shadow:2px 2px 4px rgb(0 0 0/.8)">light rain</p>
+					{/if}
+				{/if}
+			</div>
+		{/if}
+
+		{#if captions.length}
+			<div
+				class="absolute right-0 bottom-0 max-w-[45%] p-1 text-right"
+				style="{boxStyle('right')};text-shadow:2px 2px 4px rgb(0 0 0/.8)"
+			>
+				{#each captions as line (line)}
+					<p class="truncate px-2 py-0.5" style="font-size:1em">{line}</p>
+				{/each}
+			</div>
+		{/if}
+	</div>
+{/snippet}
 
 <style>
 	/* A few seconds of the slideshow's movement, looping. */

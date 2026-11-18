@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { mdiDownload, mdiUpload } from '@mdi/js';
-	import { Button, Card, CardBody, Text } from '@immich/ui';
+	import { Button, Card, CardBody, Text, Heading } from '@immich/ui';
 	import type { ServerSettings } from '$lib/immichFrameApi';
 	import { accountSecrets, generalSecrets } from './admin-defaults';
 
@@ -71,7 +71,7 @@
 
 <Card>
 	<CardBody>
-		<Text fontWeight="semi-bold">Backup</Text>
+		<Heading tag="h2" size="tiny" fontWeight="semi-bold">Backup</Heading>
 		<Text size="small" class="text-dark/70 mb-3">
 			Download every setting as one file (secrets left out), or restore one.
 		</Text>

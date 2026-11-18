@@ -6,6 +6,8 @@
 	import * as adminApi from '$lib/services/admin';
 	import { relativeTime } from './admin-format';
 	import { peekLibrary } from './admin-library.svelte';
+	import Callout from './callout.svelte';
+	import InlineConfirm from './inline-confirm.svelte';
 	import Segmented from './segmented.svelte';
 
 	interface Props {
@@ -72,12 +74,15 @@
 		/>
 		<div class="min-w-0 flex-1">
 			<Text fontWeight="semi-bold">{name}</Text>
-			<Text size="small" class={result && !result.success ? 'text-danger' : 'text-dark/70'}>
+			<Text
+				size="small"
+				class={result && !result.success ? 'text-danger-700 dark:text-danger-400' : 'text-dark/70'}
+			>
 				{#if testing}
 					Checking the connection…
 				{:else if result?.success}
-					Connected · Immich {result.version}{checkedAt
-						? ` · checked ${relativeTime(checkedAt)}`
+					Connected&nbsp;·&ensp;Immich {result.version}{checkedAt
+						? `\u00a0·\u2002checked ${relativeTime(checkedAt)}`
 						: ''}
 				{:else if result}
 					Not connected
@@ -89,7 +94,7 @@
 	</div>
 
 	{#if result && !result.success}
-		<div class="mt-3 rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">{result.message}</div>
+		<div class="mt-3"><Callout tone="danger">{result.message}</Callout></div>
 	{/if}
 
 	<div class="mt-4 grid gap-4 sm:grid-cols-2">
@@ -141,28 +146,21 @@
 	</div>
 
 	{#if confirmRemove}
-		<div
-			class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-subtle/50 p-3 dark:bg-light-100"
-			role="alertdialog"
-			aria-label="Remove account"
-		>
-			<Text size="small">Remove {name}? Its photos leave the frame when you save.</Text>
-			<div class="flex gap-2">
-				<Button
-					size="small"
-					variant="ghost"
-					color="secondary"
-					onclick={() => (confirmRemove = false)}>Cancel</Button
-				>
-				<Button size="small" color="danger" onclick={onremove}>Remove</Button>
-			</div>
-		</div>
+		<InlineConfirm
+			message={`Remove ${name}? Its photos leave the frame when you save.`}
+			confirmLabel="Remove"
+			danger
+			returnFocusTo={`remove-account-${index}`}
+			onconfirm={onremove}
+			oncancel={() => (confirmRemove = false)}
+		/>
 	{:else}
 		<div class="mt-4 flex justify-end gap-2">
 			<Button
 				size="small"
 				variant="ghost"
 				color="secondary"
+				id={`remove-account-${index}`}
 				leadingIcon={mdiDeleteOutline}
 				onclick={() => (confirmRemove = true)}
 			>

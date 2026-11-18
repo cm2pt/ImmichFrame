@@ -73,7 +73,7 @@
 	let formatOptions = $derived([
 		...presets.map((pattern) => ({
 			value: pattern,
-			label: `${formatExample(pattern, target.language, field.localized === true) ?? pattern}  (${pattern})`
+			label: formatExample(pattern, target.language, field.localized === true) ?? pattern
 		})),
 		{ value: CUSTOM_FORMAT, label: 'Custom…' }
 	]);
