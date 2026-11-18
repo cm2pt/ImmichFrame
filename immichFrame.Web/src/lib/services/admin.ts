@@ -32,6 +32,44 @@ export function testAccount(account: ServerAccountSettings) {
 	return api.testAccount(account, authOpts());
 }
 
+export function getAccountLibrary(account: ServerAccountSettings) {
+	return api.getAccountLibrary(account, authOpts());
+}
+
+export function getScreens() {
+	return api.getScreens(authOpts());
+}
+
+export function renameScreen(clientIdentifier: string, name: string | null) {
+	return api.renameScreen(clientIdentifier, { name }, authOpts());
+}
+
+export function forgetScreen(clientIdentifier: string) {
+	return api.forgetScreen(clientIdentifier, authOpts());
+}
+
+export function getSettingsHistory() {
+	return api.getSettingsHistory(authOpts());
+}
+
+export function restoreSettingsVersion(version: number) {
+	return api.restoreSettingsVersion(version, authOpts());
+}
+
+export function getAdminInfo() {
+	return api.getAdminInfo(authOpts());
+}
+
+export function getPreview(count: number) {
+	return api.getAdminPreview({ count }, authOpts());
+}
+
+/** The preview image as an object URL; the caller revokes it. */
+export async function getPreviewImageUrl(id: string): Promise<string | null> {
+	const res = await fetch(`/api/Admin/Preview/${encodeURIComponent(id)}/Image`, authOpts());
+	return res.ok ? URL.createObjectURL(await res.blob()) : null;
+}
+
 // Drop empty values so the server falls back to its defaults instead of
 // receiving empty strings / nulls for unset fields. The PUT replaces the whole
 // document, so an omitted key deserialises to the C# default.

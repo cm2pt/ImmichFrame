@@ -1,4 +1,5 @@
 import type { GeneralSettings, ServerAccountSettings } from '$lib/immichFrameApi';
+import { generalDefaults } from './admin-defaults';
 
 export type FieldType =
 	| 'text'
@@ -25,6 +26,8 @@ export interface FieldDef<T = GeneralSettings> {
 	presets?: string[];
 	/** For 'format' fields: render examples in the configured language (the slideshow does for dates). */
 	localized?: boolean;
+	/** The server's value when the setting is unset, so an unset format shows its preset. */
+	defaultValue?: string;
 }
 
 // What setting-field.svelte accepts: any concrete FieldDef widens to this,
@@ -208,3 +211,19 @@ export const accountFields: FieldDef<ServerAccountSettings>[] = [
 	{ key: 'people', label: 'People', type: 'guid-list', help: 'One ID per line.' },
 	{ key: 'tags', label: 'Tags', type: 'list', help: 'One tag per line.' }
 ];
+
+/** A general field definition by key, for pages that place fields one by one. */
+export function generalField(key: keyof GeneralSettings & string, label?: string): AnyFieldDef {
+	for (const section of generalSections) {
+		const field = section.fields.find((f) => f.key === key);
+		if (field) {
+			const fallback = generalDefaults[key];
+			return {
+				...(field as AnyFieldDef),
+				...(label ? { label } : {}),
+				...(typeof fallback === 'string' ? { defaultValue: fallback } : {})
+			};
+		}
+	}
+	throw new Error(`Unknown setting ${key}`);
+}

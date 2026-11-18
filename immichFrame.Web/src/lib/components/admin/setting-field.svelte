@@ -64,7 +64,7 @@
 	$effect.pre(() => {
 		const doc = target;
 		untrack(() => {
-			const saved = (doc[field.key] as string | null) ?? '';
+			const saved = (doc[field.key] as string | null) || field.defaultValue || '';
 			customDraft = saved;
 			customFormat = field.type === 'format' && !presets.includes(saved);
 		});
@@ -135,7 +135,7 @@
 	{:else if field.type === 'format'}
 		<Select
 			options={formatOptions}
-			value={customFormat ? CUSTOM_FORMAT : textValue}
+			value={customFormat ? CUSTOM_FORMAT : textValue || field.defaultValue || ''}
 			onChange={selectFormat}
 		/>
 		{#if customFormat}
