@@ -31,9 +31,8 @@ with the right secret are recorded. A screen that asks with a wrong secret, or n
 under *Turned away* instead (kept in memory for a week), so a device left with an old secret
 after you change it is easy to find. It leaves the list once it connects with the right one.
 
-Saved settings reach screens in a browser (the web frame, and apps that show it, such as the
-iPad and Android ones) within a minute: each checks the frame's settings every 60 seconds and
-reloads when they change. Photo choices take effect on the next photo either way.
+Saved settings reach screens showing the web frame within a minute: each checks the frame's
+settings every 60 seconds and reloads when they change.
 
 ## Enabling the admin UI
 
