@@ -12,9 +12,11 @@
 
 	interface Props {
 		account: ServerAccountSettings;
+		/** Its place in the saved settings, for faces and album covers. */
+		accountIndex?: number | null;
 	}
 
-	let { account }: Props = $props();
+	let { account, accountIndex = null }: Props = $props();
 
 	const guid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -119,6 +121,7 @@
 <PageCard title="Albums" footer="Every photo in these albums, favorite or not.">
 	<ItemList
 		noun="Album"
+		{accountIndex}
 		selected={(account.albums ?? []) as string[]}
 		items={library.albums}
 		{loading}
@@ -131,6 +134,7 @@
 <PageCard title="People" footer="Any photo with one of them in it.">
 	<ItemList
 		noun="Person"
+		{accountIndex}
 		selected={(account.people ?? []) as string[]}
 		items={library.people}
 		{loading}
@@ -143,6 +147,7 @@
 <PageCard title="Tags" footer="Photos with any of these tags.">
 	<ItemList
 		noun="Tag"
+		glyph="tag"
 		selected={account.tags ?? []}
 		items={library.tags}
 		{loading}
@@ -158,6 +163,7 @@
 >
 	<ItemList
 		noun="Album"
+		{accountIndex}
 		selected={(account.excludedAlbums ?? []) as string[]}
 		items={library.albums}
 		{loading}
@@ -167,6 +173,7 @@
 	/>
 	<ItemList
 		noun="Person"
+		{accountIndex}
 		selected={(account.excludedPeople ?? []) as string[]}
 		items={library.people}
 		{loading}
@@ -176,6 +183,7 @@
 	/>
 	<ItemList
 		noun="Tag"
+		glyph="tag"
 		selected={account.excludedTags ?? []}
 		items={library.tags}
 		{loading}

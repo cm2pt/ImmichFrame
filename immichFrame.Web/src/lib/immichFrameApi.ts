@@ -109,6 +109,7 @@ export type LibraryAlbumDto = {
     name?: string | null;
     assetCount?: number;
     shared?: boolean;
+    thumbnailAssetId?: string | null;
 };
 export type LibraryPersonDto = {
     id?: string;
@@ -593,6 +594,16 @@ export function getAdminPreview({ count }: {
     }>(`/api/Admin/Preview${QS.query(QS.explode({
         count
     }))}`, {
+        ...opts
+    });
+}
+export function getPersonThumbnail(index: number, id: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchText(`/api/Admin/Accounts/${encodeURIComponent(index)}/People/${encodeURIComponent(id)}/Thumbnail`, {
+        ...opts
+    });
+}
+export function getAssetThumbnail(index: number, id: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchText(`/api/Admin/Accounts/${encodeURIComponent(index)}/Assets/${encodeURIComponent(id)}/Thumbnail`, {
         ...opts
     });
 }

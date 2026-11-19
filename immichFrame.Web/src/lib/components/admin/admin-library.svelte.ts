@@ -5,6 +5,8 @@ export interface LibraryItem {
 	id: string;
 	name: string;
 	detail?: string;
+	/** What to show beside the name: a face, an album cover, or a glyph (tags). */
+	thumb?: { kind: adminApi.ThumbnailKind; id: string } | null;
 }
 
 export interface AccountLibrary {
@@ -69,11 +71,16 @@ export function libraryFor(account: ServerAccountSettings, refresh = false): Acc
 				? data.albums.map((a) => ({
 						id: a.id!,
 						name: a.name ?? '',
-						detail: formatCount(a.assetCount)
+						detail: formatCount(a.assetCount),
+						thumb: a.thumbnailAssetId ? { kind: 'asset' as const, id: a.thumbnailAssetId } : null
 					}))
 				: null;
 			library.people = data.people
-				? data.people.map((p) => ({ id: p.id!, name: p.name ?? '' }))
+				? data.people.map((p) => ({
+						id: p.id!,
+						name: p.name ?? '',
+						thumb: { kind: 'person' as const, id: p.id! }
+					}))
 				: null;
 			library.tags = data.tags
 				? data.tags.map((t) => ({ id: t.name ?? '', name: t.name ?? '' }))

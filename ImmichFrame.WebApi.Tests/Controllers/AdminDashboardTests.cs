@@ -8,6 +8,7 @@ using ImmichFrame.WebApi.Tests.Mocks;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Moq;
+using Moq.Protected;
 using NUnit.Framework;
 
 namespace ImmichFrame.WebApi.Tests.Controllers
@@ -24,6 +25,7 @@ namespace ImmichFrame.WebApi.Tests.Controllers
 
         private string _configDir;
         private WebApplicationFactory<Program> _factory;
+        private Mock<HttpMessageHandler> _immich;
 
         [SetUp]
         public void Setup()
@@ -34,11 +36,11 @@ namespace ImmichFrame.WebApi.Tests.Controllers
             Environment.SetEnvironmentVariable("IMMICHFRAME_ADMIN_PASSWORD", AdminPassword);
             Environment.SetEnvironmentVariable(SettingsSourceParser.EnvVar, "database");
 
-            var versionHandler = new Mock<HttpMessageHandler>().WithServerVersion();
+            _immich = new Mock<HttpMessageHandler>().WithServerVersion();
             _factory = new WebApplicationFactory<Program>()
                 .WithWebHostBuilder(builder =>
                 {
-                    builder.ConfigureTestServices(services => services.UseMockHandler(versionHandler));
+                    builder.ConfigureTestServices(services => services.UseMockHandler(_immich));
                 });
         }
 
@@ -153,6 +155,47 @@ namespace ImmichFrame.WebApi.Tests.Controllers
             Assert.That((await admin.DeleteAsync("/api/Admin/Screens/Rejected/hallway")).StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
             Assert.That((await admin.DeleteAsync("/api/Admin/Screens/Rejected/hallway")).StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
             Assert.That(JsonNode.Parse(await admin.GetStringAsync("/api/Admin/Screens/Rejected"))!.AsArray(), Is.Empty);
+        }
+
+        [Test]
+        public async Task PersonThumbnail_IsFetchedWithTheSavedAccountsKey()
+        {
+            var admin = CreateAdminClient();
+            (await admin.PutAsJsonAsync("/api/Admin/Settings", SettingsBody("single"))).EnsureSuccessStatusCode();
+            var personId = Guid.NewGuid();
+            HttpRequestMessage? sent = null;
+            _immich.Protected()
+                .Setup<Task<HttpResponseMessage>>("SendAsync",
+                    ItExpr.Is<HttpRequestMessage>(r => r.RequestUri!.ToString().Contains($"people/{personId}/thumbnail")),
+                    ItExpr.IsAny<CancellationToken>())
+                .Callback<HttpRequestMessage, CancellationToken>((r, _) => sent = r)
+                .ReturnsAsync(() =>
+                {
+                    var content = new ByteArrayContent(new byte[] { 0xFF, 0xD8, 0xFF });
+                    content.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+                    return new HttpResponseMessage(HttpStatusCode.OK) { Content = content };
+                });
+
+            var response = await admin.GetAsync($"/api/Admin/Accounts/0/People/{personId}/Thumbnail");
+
+            Assert.Multiple(async () =>
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("image/jpeg"));
+                Assert.That(await response.Content.ReadAsByteArrayAsync(), Has.Length.EqualTo(3));
+                Assert.That(sent?.Headers.GetValues("x-api-key").Single(), Is.EqualTo("key123"));
+            });
+        }
+
+        [Test]
+        public async Task Thumbnail_UnknownAccount_IsNotFound_AndNeedsThePassword()
+        {
+            var admin = CreateAdminClient();
+            (await admin.PutAsJsonAsync("/api/Admin/Settings", SettingsBody("single"))).EnsureSuccessStatusCode();
+            var url = $"/api/Admin/Accounts/3/Assets/{Guid.NewGuid()}/Thumbnail";
+
+            Assert.That((await admin.GetAsync(url)).StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+            Assert.That((await _factory.CreateClient().GetAsync(url)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
         }
 
         [Test]

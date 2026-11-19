@@ -1,5 +1,6 @@
 using ImmichFrame.Core.Api;
 using ImmichFrame.Core.Exceptions;
+using ImmichFrame.Core.Helpers;
 using ImmichFrame.Core.Interfaces;
 using ImmichFrame.WebApi.Helpers;
 using ImmichFrame.WebApi.Models;
@@ -324,6 +325,51 @@ namespace ImmichFrame.WebApi.Controllers
         }
 
         internal static int ClampPreviewCount(int count) => Math.Clamp(count, 1, MaxPreviewCount);
+
+        /// <summary>A person's face, as Immich shows it, for the admin's people lists.</summary>
+        [HttpGet("Accounts/{index:int}/People/{id:guid}/Thumbnail", Name = "GetPersonThumbnail")]
+        [Produces("image/jpeg", "image/webp")]
+        [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public Task<IActionResult> GetPersonThumbnail(int index, Guid id) =>
+            ProxyThumbnail(index, api => api.GetPersonThumbnailAsync(id, HttpContext.RequestAborted));
+
+        /// <summary>A small thumbnail of one asset (an album's cover), for the admin's album lists.</summary>
+        [HttpGet("Accounts/{index:int}/Assets/{id:guid}/Thumbnail", Name = "GetAssetThumbnail")]
+        [Produces("image/jpeg", "image/webp")]
+        [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public Task<IActionResult> GetAssetThumbnail(int index, Guid id) =>
+            ProxyThumbnail(index, api => api.ViewAssetAsync(true, id, string.Empty, AssetMediaSize.Thumbnail, null, HttpContext.RequestAborted));
+
+        /// <summary>
+        /// Fetches a thumbnail with a saved account's key, so the key never reaches the browser.
+        /// Unknown accounts and anything Immich won't serve are a 404; the UI falls back to a monogram.
+        /// </summary>
+        private async Task<IActionResult> ProxyThumbnail(int index, Func<ImmichApi, Task<FileResponse>> fetch)
+        {
+            var account = _settingsService.Current.Accounts.ElementAtOrDefault(index);
+            if (account == null || string.IsNullOrWhiteSpace(account.ApiKey))
+            {
+                return NotFound();
+            }
+
+            var httpClient = _httpClientFactory.CreateClient(ImmichApiHttpClientExtensions.ImmichApiAccountClient);
+            httpClient.UseApiKey(account.ApiKey);
+            try
+            {
+                var file = await fetch(new ImmichApi(account.ImmichServerUrl, httpClient));
+                HttpContext.Response.RegisterForDispose(file);
+                var contentType = file.Headers.TryGetValue("Content-Type", out var ct) ? ct.FirstOrDefault() : null;
+                Response.Headers.CacheControl = "private, max-age=3600";
+                return File(file.Stream, contentType ?? "image/jpeg");
+            }
+            catch (ApiException ex)
+            {
+                _logger.LogDebug("Thumbnail not served by Immich ({status})", ex.StatusCode);
+                return NotFound();
+            }
+        }
 
         /// <summary>The image of a preview asset. Fetched with the admin password, so the UI loads it as a blob.</summary>
         [HttpGet("Preview/{id}/Image", Name = "GetAdminPreviewImage")]

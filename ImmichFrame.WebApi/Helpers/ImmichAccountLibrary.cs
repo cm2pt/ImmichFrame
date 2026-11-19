@@ -10,6 +10,9 @@ namespace ImmichFrame.WebApi.Helpers
         public string Name { get; set; } = string.Empty;
         public int AssetCount { get; set; }
         public bool Shared { get; set; }
+
+        /// <summary>The album's cover photo, for <c>Admin/Accounts/{index}/Assets/{id}/Thumbnail</c>.</summary>
+        public Guid? ThumbnailAssetId { get; set; }
     }
 
     public class LibraryPersonDto
@@ -113,7 +116,8 @@ namespace ImmichFrame.WebApi.Helpers
                             Id = a.Id,
                             Name = a.AlbumName ?? string.Empty,
                             AssetCount = (int)Math.Min(a.AssetCount, int.MaxValue),
-                            Shared = a.Shared
+                            Shared = a.Shared,
+                            ThumbnailAssetId = a.AlbumThumbnailAssetId
                         })
                         .OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase)
                         .ToList();

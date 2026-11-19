@@ -132,6 +132,6 @@
 		</p>
 	</div>
 	{#key `${version}-${i}`}
-		<AccountPhotos account={accounts[i]} />
+		<AccountPhotos account={accounts[i]} accountIndex={i} />
 	{/key}
 {/if}

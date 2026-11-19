@@ -1,12 +1,16 @@
 <script lang="ts">
 	import Btn from './btn.svelte';
 	import Glyph from './glyph.svelte';
+	import type { GlyphName } from './glyphs';
+	import Thumbnail from './thumbnail.svelte';
+	import type { ThumbnailKind } from '$lib/services/admin';
 
 	export interface PickerItem {
 		id: string;
 		name: string;
 		/** e.g. a photo count */
 		detail?: string;
+		thumb?: { kind: ThumbnailKind; id: string } | null;
 	}
 
 	interface Props {
@@ -22,6 +26,10 @@
 		manualPattern?: RegExp;
 		manualPlaceholder?: string;
 		emptyText?: string;
+		/** The saved account whose faces and album covers to show; null for an unsaved one. */
+		accountIndex?: number | null;
+		/** Shown beside items that have no picture (tags). */
+		glyph?: GlyphName;
 		onchange: (ids: string[]) => void;
 	}
 
@@ -34,6 +42,8 @@
 		manualPattern,
 		manualPlaceholder = 'Paste an ID',
 		emptyText,
+		accountIndex = null,
+		glyph,
 		onchange
 	}: Props = $props();
 
@@ -112,6 +122,7 @@
 		class="border-sep flex min-h-11 items-center gap-3 border-t py-2 first:border-t-0"
 		title={id}
 	>
+		<Thumbnail name={item?.name ?? '?'} {accountIndex} thumb={item?.thumb} {glyph} />
 		<span class="min-w-0 flex-1 truncate text-[0.9375rem] md:text-[0.875rem]">
 			{#if loading && !item}
 				<span class="bg-fill inline-block h-3 w-28 animate-pulse rounded" aria-label="Loading"
@@ -183,7 +194,10 @@
 								disabled={!!elsewhere}
 								onclick={() => pick(item.id)}
 							>
-								<span class="min-w-0 truncate">{item.name}</span>
+								<span class="flex min-w-0 items-center gap-2.5">
+									<Thumbnail name={item.name} {accountIndex} thumb={item.thumb} {glyph} size={24} />
+									<span class="min-w-0 truncate">{item.name}</span>
+								</span>
 								<span class="text-label-2 shrink-0 text-[0.75rem] tabular-nums"
 									>{elsewhere ?? item.detail ?? ''}</span
 								>
