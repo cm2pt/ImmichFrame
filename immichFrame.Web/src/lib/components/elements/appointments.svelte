@@ -1,23 +1,24 @@
 <script lang="ts">
 	import * as api from '$lib/index';
 	import { onMount } from 'svelte';
-	import { format } from 'date-fns';
+	import { format, isSameDay, isToday } from 'date-fns';
 	import { configStore } from '$lib/stores/config.store';
 	import { clientIdentifierStore } from '$lib/stores/persist.store';
 
 	api.init();
 
 	function formatDates(startTime: string, endTime: string) {
-		let startDate = new Date(startTime);
-		let endDate = new Date(endTime);
-		let sameDay = startDate.getDate() == endDate.getDate();
+		const startDate = new Date(startTime);
+		const endDate = new Date(endTime);
 
-		let clockFormat = $configStore.clockFormat ?? 'HH:mm';
-		let clockDateFormat = $configStore.clockDateFormat ?? 'eee, MMM d';
-		let fullFormat = clockDateFormat + ' ' + clockFormat;
+		const clockFormat = $configStore.clockFormat ?? 'HH:mm';
+		const clockDateFormat = $configStore.clockDateFormat ?? 'eee, MMM d';
+		const fullFormat = clockDateFormat + ' ' + clockFormat;
 
-		if (sameDay) {
-			return format(startDate, clockFormat) + ' - ' + format(endDate, clockFormat);
+		if (isSameDay(startDate, endDate)) {
+			const times = format(startDate, clockFormat) + ' - ' + format(endDate, clockFormat);
+			// With CalendarDaysAhead above 1, an event on another day says which day.
+			return isToday(startDate) ? times : format(startDate, clockDateFormat) + ' · ' + times;
 		}
 
 		return format(startDate, fullFormat) + ' - ' + format(endDate, fullFormat);

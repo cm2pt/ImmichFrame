@@ -65,4 +65,12 @@ public class CollectionExtensionMethodsTests
         Assert.That(result, Has.Count.EqualTo(100));
         Assert.That(enumerations, Is.EqualTo(1));
     }
+
+    [Test]
+    public void Interleave_KeepsEachListsOrder_AndSpreadsTheShorterOne()
+    {
+        var merged = new[] { new[] { "a1", "a2", "a3", "a4" }, new[] { "b1", "b2" } }.Interleave().ToList();
+
+        Assert.That(merged, Is.EqualTo(new[] { "a1", "b1", "a2", "a3", "b2", "a4" }));
+    }
 }

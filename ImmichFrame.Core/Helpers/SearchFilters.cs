@@ -28,6 +28,12 @@ public static class SearchFilters
         return new IdsFilter { None = excluded };
     }
 
+    public static IdsFilter? ExcludedPeople(IAccountSettings settings) =>
+        settings.ExcludedPeople is { Count: > 0 } excluded ? new IdsFilter { None = excluded } : null;
+
+    public static IdsFilter? ExcludedTags(IReadOnlyCollection<Guid> excludedTagIds) =>
+        excludedTagIds.Count > 0 ? new IdsFilter { None = excludedTagIds.ToList() } : null;
+
     public static EnumFilterAssetType Types(IAccountSettings settings)
     {
         var types = new List<AssetTypeEnum> { AssetTypeEnum.IMAGE };
@@ -45,7 +51,10 @@ public static class SearchFilters
         || settings.People is { Count: > 0 }
         || settings.Tags is { Count: > 0 };
 
-    public static SearchFilter ForAccount(IAccountSettings settings, IReadOnlyCollection<Guid> tagIds)
+    public static SearchFilter ForAccount(
+        IAccountSettings settings,
+        IReadOnlyCollection<Guid> tagIds,
+        IReadOnlyCollection<Guid>? excludedTagIds = null)
     {
         var filter = new SearchFilter
         {
@@ -53,6 +62,8 @@ public static class SearchFilters
             Visibility = Visibility(settings),
             Type = Types(settings),
             AlbumIds = ExcludedAlbums(settings),
+            PersonIds = ExcludedPeople(settings),
+            TagIds = ExcludedTags(excludedTagIds ?? []),
             TakenAt = TakenAt(settings),
             Rating = Rating(settings)
         };

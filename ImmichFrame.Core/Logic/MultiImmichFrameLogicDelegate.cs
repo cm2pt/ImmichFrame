@@ -31,7 +31,17 @@ public class MultiImmichFrameLogicDelegate : IImmichFrameLogic, IDisposable
 
 
     public async Task<IEnumerable<AssetResponseDto>> GetAssets()
-        => (await _accountSelectionStrategy.GetAssets()).Shuffle().Select(it => it.ToAsset());
+        => KeepOrder((await _accountSelectionStrategy.GetAssets()).Select(it => it.ToAsset()));
+
+    public async Task<IEnumerable<AssetResponseDto>> PeekAssets()
+        => KeepOrder((await _accountSelectionStrategy.PeekAssets()).Select(it => it.ToAsset()));
+
+    // In random order a batch is shuffled across accounts; the other orders arrive already
+    // interleaved and must stay as they are.
+    private IEnumerable<AssetResponseDto> KeepOrder(IEnumerable<AssetResponseDto> assets) =>
+        SlideshowOrders.Normalize(_serverSettings.GeneralSettings.SlideshowOrder) == SlideshowOrders.Random
+            ? assets.Shuffle()
+            : assets.ToList();
 
 
     public Task<AssetResponseDto> GetAssetInfoById(Guid assetId)

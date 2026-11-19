@@ -16,6 +16,7 @@ export const generalDefaults: GeneralSettings = {
 	showPhotoDate: true,
 	showImageDesc: true,
 	showPeopleDesc: true,
+	showPeopleAge: false,
 	showTagsDesc: true,
 	showAlbumName: true,
 	showImageLocation: true,
@@ -29,6 +30,8 @@ export const generalDefaults: GeneralSettings = {
 	layout: 'splitview',
 	renewImagesDuration: 30,
 	webcalendars: [],
+	calendarDaysAhead: 1,
+	slideshowOrder: 'random',
 	refreshAlbumPeopleInterval: 12,
 	unitSystem: 'imperial'
 };
@@ -43,7 +46,9 @@ export const accountDefaults: ServerAccountSettings = {
 	albums: [],
 	excludedAlbums: [],
 	people: [],
-	tags: []
+	tags: [],
+	excludedPeople: [],
+	excludedTags: []
 };
 
 /** The effective value: what's stored, or the server default when it isn't set. */

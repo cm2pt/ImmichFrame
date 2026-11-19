@@ -20,9 +20,13 @@ public class IcalCalendarService : ICalendarService
         _httpClientFactory = httpClientFactory;
     }
 
+    /// <summary>The most days ahead a frame shows: a month of events is already a long list.</summary>
+    public const int MaxDaysAhead = 31;
+
     public async Task<List<IAppointment>> GetAppointments()
     {
-        return await _appointmentCache.GetOrAddAsync("appointments", async () =>
+        var days = Math.Clamp(_serverSettings.CalendarDaysAhead, 1, MaxDaysAhead);
+        return await _appointmentCache.GetOrAddAsync($"appointments_{days}", async () =>
         {
             var appointments = new List<IAppointment>();
 
@@ -51,7 +55,7 @@ public class IcalCalendarService : ICalendarService
             {
                 var calendar = Calendar.Load(ical);
 
-                appointments.AddRange(calendar.GetOccurrences(DateTime.Today, DateTime.Today.AddDays(1)).Select(x => x.ToAppointment()));
+                appointments.AddRange(calendar.GetOccurrences(DateTime.Today, DateTime.Today.AddDays(days)).Select(x => x.ToAppointment()));
             }
 
             return appointments;

@@ -31,6 +31,7 @@ public class LiveGeneralSettings(ISettingsProvider _provider) : IGeneralSettings
     public string? PhotoDateFormat => Current.PhotoDateFormat;
     public bool ShowImageDesc => Current.ShowImageDesc;
     public bool ShowPeopleDesc => Current.ShowPeopleDesc;
+    public bool ShowPeopleAge => Current.ShowPeopleAge;
     public bool ShowTagsDesc => Current.ShowTagsDesc;
     public bool ShowAlbumName => Current.ShowAlbumName;
     public bool ShowImageLocation => Current.ShowImageLocation;
@@ -48,6 +49,8 @@ public class LiveGeneralSettings(ISettingsProvider _provider) : IGeneralSettings
     public string Layout => Current.Layout;
     public string Language => Current.Language;
     public List<string> Webcalendars => Current.Webcalendars;
+    public int CalendarDaysAhead => Current.CalendarDaysAhead;
+    public string SlideshowOrder => Current.SlideshowOrder;
     public int RefreshAlbumPeopleInterval => Current.RefreshAlbumPeopleInterval;
     public string? WeatherApiKey => Current.WeatherApiKey;
     public string? WeatherLatLong => Current.WeatherLatLong;

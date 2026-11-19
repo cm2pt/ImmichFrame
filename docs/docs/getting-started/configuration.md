@@ -92,6 +92,8 @@ General:
   # e.g. https://user:pass@calendar.immichframe.dev/dav/calendars/basic.ics
   Webcalendars: # string[]
     - UUID
+  # How many days of events to show, starting today (1 = today only, up to 31).
+  CalendarDaysAhead: 1 # int
   # Interval in hours. Determines how often images are pulled from a album/person in immich.
   RefreshAlbumPeopleInterval: 12 # int
   # Date format. See https://date-fns.org/v4.1.0/docs/format for more information.
@@ -109,6 +111,13 @@ General:
   Webhook: null # string
   # Image interval in seconds. How long an image is displayed in the frame.
   Interval: 45
+  # How the next photo is picked from each account's library:
+  #   random  - a random photo each time (photos can repeat before others are shown)
+  #   shuffle - every photo once, in a shuffled order, then a new shuffle
+  #   oldest  - by date taken, oldest first, then from the start again
+  #   newest  - by date taken, newest first, then from the start again
+  # Memories are mixed in at random either way.
+  SlideshowOrder: "random" # random | shuffle | oldest | newest
   # Duration in seconds.
   TransitionDuration: 2 # float
   # Displays the current time.
@@ -125,6 +134,8 @@ General:
   ShowImageDesc: true # boolean
   # Displays a comma separated list of names of all the people that are assigned in immich.
   ShowPeopleDesc: true # boolean
+  # Adds each person's age when the photo was taken ("Joana, 7"), from their birth date in Immich.
+  ShowPeopleAge: false # boolean
   # Displays a comma separated list of names of all the tags that are assigned in immich.
   ShowTagsDesc: true # boolean
   # Displays a comma separated list of names of all the albums for an image.
@@ -195,6 +206,12 @@ Accounts:
     Tags: # string[]
       - "Vacation"
       - "Travel/Europe"
+    # Never show photos with any of these people (UUIDs). Memories ignore this.
+    ExcludedPeople: # string[]
+      - UUID
+    # Never show photos with any of these tags (full paths, case-sensitive). Memories ignore this.
+    ExcludedTags: # string[]
+      - "Screenshots"
 ```
 
 ### Security

@@ -7,6 +7,13 @@ public interface IAssetPool
     Task<long> GetAssetCount(CancellationToken ct = default);
     Task<IEnumerable<AssetResponseDto>> GetAssets(int requested, CancellationToken ct = default);
 
+    /// <summary>
+    /// The assets that would come next, without using them up. Pools that deal in an order
+    /// override it; for random pools any sample is as good as the next one.
+    /// </summary>
+    Task<IEnumerable<AssetResponseDto>> PeekAssets(int requested, CancellationToken ct = default) =>
+        GetAssets(requested, ct);
+
     protected static async Task<IEnumerable<AssetResponseDto>> WaitAssets(
         int requested,
         Func<CancellationToken, Task<AssetResponseDto?>> supplier,

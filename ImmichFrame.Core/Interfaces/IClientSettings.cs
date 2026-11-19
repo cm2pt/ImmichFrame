@@ -14,6 +14,8 @@ namespace ImmichFrame.Core.Interfaces
         public string? PhotoDateFormat { get; }
         public bool ShowImageDesc { get; }
         public bool ShowPeopleDesc { get; }
+        /// <summary>Adds each person's age when the photo was taken, from their birth date in Immich.</summary>
+        public bool ShowPeopleAge { get; }
         public bool ShowTagsDesc { get; }
         public bool ShowAlbumName { get; }
         public bool ShowImageLocation { get; }

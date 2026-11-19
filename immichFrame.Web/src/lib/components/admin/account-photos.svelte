@@ -30,17 +30,15 @@
 			(account.tags?.length ?? 0) > 0
 	);
 
-	// One album can't be both shown and hidden: each list marks the other's albums.
-	let includedMap = $derived(
-		new Map((account.albums ?? []).map((id) => [String(id).toLowerCase(), 'Shown'] as const))
-	);
-	let excludedMap = $derived(
-		new Map(
-			(account.excludedAlbums ?? []).map(
-				(id) => [String(id).toLowerCase(), 'In Never show'] as const
-			)
-		)
-	);
+	// One album, person or tag can't be both shown and hidden: each list marks the other's.
+	const marks = (ids: readonly unknown[] | null | undefined, reason: string) =>
+		new Map((ids ?? []).map((id) => [String(id).toLowerCase(), reason]));
+	let includedMap = $derived(marks(account.albums, 'Shown'));
+	let excludedMap = $derived(marks(account.excludedAlbums, 'In Never show'));
+	let includedPeopleMap = $derived(marks(account.people, 'Shown'));
+	let excludedPeopleMap = $derived(marks(account.excludedPeople, 'In Never show'));
+	let includedTagsMap = $derived(marks(account.tags, 'Shown'));
+	let excludedTagsMap = $derived(marks(account.excludedTags, 'In Never show'));
 
 	// "Taken" maps onto ImagesFromDays / ImagesFromDate / ImagesUntilDate.
 	type Taken = 'any' | '365' | '1825' | 'custom';
@@ -136,6 +134,7 @@
 		selected={(account.people ?? []) as string[]}
 		items={library.people}
 		{loading}
+		usedElsewhere={excludedPeopleMap}
 		manualPattern={guid}
 		onchange={(ids) => (account.people = ids)}
 	/>
@@ -147,6 +146,7 @@
 		selected={account.tags ?? []}
 		items={library.tags}
 		{loading}
+		usedElsewhere={excludedTagsMap}
 		manualPlaceholder="Tag, e.g. Family/Holidays"
 		onchange={(ids) => (account.tags = ids)}
 	/>
@@ -154,7 +154,7 @@
 
 <PageCard
 	title="Never show"
-	footer="Add a photo to one of these albums in Immich to keep it off the frame. Memories ignore this."
+	footer="Photos in these albums, with these people or with these tags never show. Memories ignore this."
 >
 	<ItemList
 		noun="Album"
@@ -164,6 +164,24 @@
 		usedElsewhere={includedMap}
 		manualPattern={guid}
 		onchange={(ids) => (account.excludedAlbums = ids)}
+	/>
+	<ItemList
+		noun="Person"
+		selected={(account.excludedPeople ?? []) as string[]}
+		items={library.people}
+		{loading}
+		usedElsewhere={includedPeopleMap}
+		manualPattern={guid}
+		onchange={(ids) => (account.excludedPeople = ids)}
+	/>
+	<ItemList
+		noun="Tag"
+		selected={account.excludedTags ?? []}
+		items={library.tags}
+		{loading}
+		usedElsewhere={includedTagsMap}
+		manualPlaceholder="Tag, e.g. Screenshots"
+		onchange={(ids) => (account.excludedTags = ids)}
 	/>
 </PageCard>
 

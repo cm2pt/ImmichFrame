@@ -6,6 +6,8 @@
     "Webcalendars": [
       "calendarurl"
     ],
+    "CalendarDaysAhead": 1,
+    "SlideshowOrder": "random",
     "RefreshAlbumPeopleInterval": 12,
     "PhotoDateFormat": "MM/dd/yyyy",
     "ImageLocationFormat": "City,State,Country",
@@ -23,6 +25,7 @@
     "ShowPhotoDate": true,
     "ShowImageDesc": true,
     "ShowPeopleDesc": true,
+    "ShowPeopleAge": false,
     "ShowAlbumName": true,
     "ShowImageLocation": true,
     "PrimaryColor": "#f5deb3",
@@ -64,6 +67,12 @@
       "Tags": [
         "Vacation",
         "Travel/Europe"
+      ],
+      "ExcludedPeople": [
+        "UUID"
+      ],
+      "ExcludedTags": [
+        "Screenshots"
       ]
     }
   ]

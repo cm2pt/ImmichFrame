@@ -55,12 +55,54 @@ public class TotalAccountImagesSelectionStrategy(
         return account.GetTotalAssets();
     }
 
+    public async Task<IEnumerable<(IAccountImmichFrameLogic, AssetResponseDto)>> PeekAssets()
+    {
+        if (_accounts.Count == 0)
+        {
+            return [];
+        }
+
+        return _accounts.Any(a => a.KeepsOrder) ? await GetOrderedAssets(peek: true) : await GetAssets();
+    }
+
+    /// <summary>
+    /// For the ordered slideshows: each account deals its share of a batch, by its photo count,
+    /// and the shares are interleaved without shuffling. Nothing dealt is dropped, so "every
+    /// photo once" holds across accounts too.
+    /// </summary>
+    private async Task<IEnumerable<(IAccountImmichFrameLogic, AssetResponseDto)>> GetOrderedAssets(bool peek)
+    {
+        var proportions = await GetProportions(_accounts);
+        var sum = proportions.Sum();
+        var lists = await Task.WhenAll(_accounts.Select(async (account, i) =>
+        {
+            var share = sum > 0 ? proportions[i] / sum : 0;
+            var count = share > 0 ? Math.Max(1, (int)Math.Round(PooledImmichFrameLogic.BatchSize * share)) : 0;
+            var assets = count == 0
+                ? []
+                : (peek ? await account.PeekAssets(count) : await account.GetAssets(count)).ToList();
+            foreach (var asset in assets)
+            {
+                await _tracker.RecordAssetLocation(account, asset.Id);
+            }
+
+            return assets.Select(asset => (account, asset)).ToList();
+        }));
+
+        return lists.Interleave().ToList();
+    }
+
     public async Task<IEnumerable<(IAccountImmichFrameLogic, AssetResponseDto)>> GetAssets()
     {
         if (_accounts.Count == 0)
         {
             _logger.LogDebug("No accounts configured, returning no assets");
             return Enumerable.Empty<(IAccountImmichFrameLogic, AssetResponseDto)>();
+        }
+
+        if (_accounts.Any(a => a.KeepsOrder))
+        {
+            return await GetOrderedAssets(peek: false);
         }
 
         var proportions = await GetProportions(_accounts);

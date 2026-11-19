@@ -254,6 +254,159 @@ public class AccountSearchPoolTests
         _api.Verify(a => a.SearchAssetStatisticsAsync(It.IsAny<StatisticsSearchDto>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Test]
+    public async Task GetAssets_ExcludedPeople_SentAsNone()
+    {
+        var person = Guid.NewGuid();
+        _settings.SetupGet(s => s.ExcludedPeople).Returns(new List<Guid> { person });
+
+        await _pool.GetAssets(1);
+
+        VerifyRandom(dto => dto.Filter!.PersonIds!.None.Contains(person) && dto.Filter.Or == null);
+    }
+
+    [Test]
+    public async Task GetAssets_ExcludedTags_ResolvedAndSentAsNone()
+    {
+        var tagId = Guid.NewGuid();
+        _settings.SetupGet(s => s.ExcludedTags).Returns(new List<string> { "Screenshots" });
+        _api.Setup(a => a.GetAllTagsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<TagResponseDto> { new() { Id = tagId, Value = "Screenshots", Name = "Screenshots" } });
+
+        await _pool.GetAssets(1);
+
+        VerifyRandom(dto => dto.Filter!.TagIds!.None.Contains(tagId) && dto.Filter.Or == null);
+    }
+
+    [Test]
+    public async Task GetAssets_NoExclusions_OmitsPersonAndTagFilters()
+    {
+        await _pool.GetAssets(1);
+
+        VerifyRandom(dto => dto.Filter!.PersonIds == null && dto.Filter.TagIds == null);
+    }
+
+    // --- Ordered slideshows: the deck ---
+
+    private List<Guid> SetupLibrary(int count)
+    {
+        var ids = Enumerable.Range(0, count).Select(_ => Guid.NewGuid()).ToList();
+        _api.Setup(a => a.SearchAssetsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<MetadataSearchDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, string _, MetadataSearchDto dto, CancellationToken _) =>
+            {
+                // Two pages of at most 3, by cursor.
+                var start = dto.Cursor == null ? 0 : int.Parse(dto.Cursor);
+                var page = ids.Skip(start).Take(3).Select(id => new AssetResponseDto { Id = id }).ToList();
+                return new SearchResponseDto
+                {
+                    Assets = new SearchAssetResponseDto
+                    {
+                        Items = page,
+                        NextCursor = start + 3 < ids.Count ? (start + 3).ToString() : null!
+                    }
+                };
+            });
+        _api.Setup(a => a.GetAssetInfoAsync(It.IsAny<Guid>(), null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Guid id, string _, string _, CancellationToken _) => new AssetResponseDto { Id = id });
+        return ids;
+    }
+
+    private AccountSearchPool OrderedPool(string order) =>
+        new(_cache.Object, _api.Object, _settings.Object, () => order, new Random(42));
+
+    [Test]
+    public async Task Shuffle_ShowsEveryPhotoOnce_ThenReshuffles()
+    {
+        var ids = SetupLibrary(7);
+        var pool = OrderedPool(SlideshowOrders.Shuffle);
+
+        var firstRound = new List<Guid>();
+        for (var i = 0; i < 7; i++)
+        {
+            firstRound.AddRange((await pool.GetAssets(1)).Select(a => a.Id));
+        }
+
+        Assert.That(firstRound, Is.EquivalentTo(ids), "each photo exactly once per round");
+        var secondRound = (await pool.GetAssets(7)).Select(a => a.Id).ToList();
+        Assert.That(secondRound, Is.EquivalentTo(ids), "a new round deals them all again");
+        _api.Verify(a => a.SearchRandomAsync(It.IsAny<RandomSearchDto>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // REGRESSION: Immich 400s with "Deprecated field order cannot be combined with filter/orderBy",
+    // so the deck asks with OrderBy only (the Order checks below lock that in).
+    [Test]
+    public async Task OldestFirst_KeepsTheLibraryOrder_AndAsksAscending()
+    {
+        var ids = SetupLibrary(5);
+        var pool = OrderedPool(SlideshowOrders.OldestFirst);
+
+        var dealt = (await pool.GetAssets(5)).Select(a => a.Id).ToList();
+
+        Assert.That(dealt, Is.EqualTo(ids));
+        _api.Verify(a => a.SearchAssetsAsync(It.IsAny<string>(), It.IsAny<string>(),
+            It.Is<MetadataSearchDto>(d => d.Order == null && d.OrderBy.Direction == AssetOrder.Asc),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
+    [Test]
+    public async Task NewestFirst_AsksDescending()
+    {
+        SetupLibrary(2);
+        await OrderedPool(SlideshowOrders.NewestFirst).GetAssets(1);
+
+        _api.Verify(a => a.SearchAssetsAsync(It.IsAny<string>(), It.IsAny<string>(),
+            It.Is<MetadataSearchDto>(d => d.Order == null && d.OrderBy.Direction == AssetOrder.Desc),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
+    [Test]
+    public async Task Peek_DoesNotUseUpTheDeck()
+    {
+        var ids = SetupLibrary(5);
+        var pool = OrderedPool(SlideshowOrders.OldestFirst);
+
+        var peeked = (await pool.PeekAssets(3)).Select(a => a.Id).ToList();
+        var dealt = (await pool.GetAssets(3)).Select(a => a.Id).ToList();
+
+        Assert.That(peeked, Is.EqualTo(ids.Take(3)));
+        Assert.That(dealt, Is.EqualTo(peeked), "what Up next showed is what the frame shows");
+    }
+
+    [Test]
+    public async Task Deck_SkipsPhotosDeletedSinceItWasBuilt()
+    {
+        var ids = SetupLibrary(3);
+        _api.Setup(a => a.GetAssetInfoAsync(ids[1], null, null, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ApiException("gone", 400, null, null, null));
+        var pool = OrderedPool(SlideshowOrders.OldestFirst);
+
+        var dealt = (await pool.GetAssets(2)).Select(a => a.Id).ToList();
+
+        Assert.That(dealt, Is.EqualTo(new[] { ids[0], ids[2] }));
+    }
+
+    [Test]
+    public async Task Deck_EmptyLibrary_ReturnsNothing()
+    {
+        SetupLibrary(0);
+        Assert.That(await OrderedPool(SlideshowOrders.Shuffle).GetAssets(5), Is.Empty);
+    }
+
+    [Test]
+    public async Task Deck_ChangingTheOrder_RebuildsIt()
+    {
+        var ids = SetupLibrary(4);
+        var order = SlideshowOrders.OldestFirst;
+        var pool = new AccountSearchPool(_cache.Object, _api.Object, _settings.Object, () => order);
+        await pool.GetAssets(2);
+
+        order = SlideshowOrders.NewestFirst;
+        await pool.GetAssets(1);
+
+        _api.Verify(a => a.SearchAssetsAsync(It.IsAny<string>(), It.IsAny<string>(),
+            It.Is<MetadataSearchDto>(d => d.OrderBy.Direction == AssetOrder.Desc), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
     private void VerifyRandom(Func<RandomSearchDto, bool> match) =>
         _api.Verify(a => a.SearchRandomAsync(It.Is<RandomSearchDto>(dto => match(dto)), It.IsAny<CancellationToken>()), Times.Once);
 }

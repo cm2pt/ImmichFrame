@@ -111,5 +111,44 @@ namespace ImmichFrame.Core.Tests.Logic.AccountSelection
             Assert.That(result!.Value.Item2.Id, Is.EqualTo(asset.Id));
             _mockTracker.Verify(t => t.RecordAssetLocation(account.Object, asset.Id), Times.Once);
         }
-    }
+    
+        [Test]
+        public async Task GetAssets_OrderedAccounts_DealTheirShare_WithoutDroppingOrShuffling()
+        {
+            var big = Enumerable.Range(0, 20).Select(_ => CreateAsset()).ToList();
+            var small = Enumerable.Range(0, 5).Select(_ => CreateAsset()).ToList();
+            var a = new Mock<IAccountImmichFrameLogic>();
+            a.Setup(x => x.GetTotalAssets()).ReturnsAsync(800);
+            a.SetupGet(x => x.KeepsOrder).Returns(true);
+            a.Setup(x => x.GetAssets(It.IsAny<int>())).ReturnsAsync((int n) => big.Take(n));
+            var b = new Mock<IAccountImmichFrameLogic>();
+            b.Setup(x => x.GetTotalAssets()).ReturnsAsync(200);
+            b.SetupGet(x => x.KeepsOrder).Returns(true);
+            b.Setup(x => x.GetAssets(It.IsAny<int>())).ReturnsAsync((int n) => small.Take(n));
+
+            var assets = (await CreateStrategy(a.Object, b.Object).GetAssets()).Select(t => t.Item2).ToList();
+
+            a.Verify(x => x.GetAssets(20), Times.Once);
+            b.Verify(x => x.GetAssets(5), Times.Once);
+            Assert.That(assets, Has.Count.EqualTo(25), "nothing dealt is dropped");
+            Assert.That(assets.Where(big.Contains), Is.EqualTo(big), "each account keeps its order");
+            Assert.That(assets.Where(small.Contains), Is.EqualTo(small));
+        }
+
+        [Test]
+        public async Task PeekAssets_OrderedAccounts_PeekInsteadOfDealing()
+        {
+            var asset = CreateAsset();
+            var a = new Mock<IAccountImmichFrameLogic>();
+            a.Setup(x => x.GetTotalAssets()).ReturnsAsync(10);
+            a.SetupGet(x => x.KeepsOrder).Returns(true);
+            a.Setup(x => x.PeekAssets(It.IsAny<int>())).ReturnsAsync(new[] { asset });
+
+            var peeked = await CreateStrategy(a.Object).PeekAssets();
+
+            Assert.That(peeked.Single().Item2, Is.SameAs(asset));
+            a.Verify(x => x.GetAssets(It.IsAny<int>()), Times.Never);
+            a.Verify(x => x.GetAssets(), Times.Never);
+        }
+}
 }

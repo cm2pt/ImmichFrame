@@ -8,6 +8,8 @@
       "Webcalendars_TEST"
     ],
     "RefreshAlbumPeopleInterval": 7,
+    "CalendarDaysAhead": 7,
+    "SlideshowOrder": "SlideshowOrder_TEST",
     "PhotoDateFormat": "PhotoDateFormat_TEST",
     "ImageLocationFormat": "ImageLocationFormat_TEST",
     "WeatherApiKey": "WeatherApiKey_TEST",
@@ -24,6 +26,7 @@
     "ShowPhotoDate": true,
     "ShowImageDesc": true,
     "ShowPeopleDesc": true,
+    "ShowPeopleAge": true,
     "ShowAlbumName": true,
     "ShowImageLocation": true,
     "PrimaryColor": "PrimaryColor_TEST",
@@ -64,6 +67,12 @@
       ],
       "Tags": [
         "Account1.Tags_TEST"
+      ],
+      "ExcludedPeople": [
+        "00000000-0000-0000-0000-000000000001"
+      ],
+      "ExcludedTags": [
+        "Account1.ExcludedTags_TEST"
       ]
     },
     {
@@ -91,6 +100,12 @@
       ],
       "Tags": [
         "Account2.Tags_TEST"
+      ],
+      "ExcludedPeople": [
+        "00000000-0000-0000-0000-000000000001"
+      ],
+      "ExcludedTags": [
+        "Account2.ExcludedTags_TEST"
       ]
     }
   ]

@@ -49,6 +49,7 @@ public class GeneralSettings : IGeneralSettings
     public bool ShowPhotoDate { get; set; } = true;
     public bool ShowImageDesc { get; set; } = true;
     public bool ShowPeopleDesc { get; set; } = true;
+    public bool ShowPeopleAge { get; set; } = false;
     public bool ShowTagsDesc { get; set; } = true;
     public bool ShowAlbumName { get; set; } = true;
     public bool ShowImageLocation { get; set; } = true;
@@ -65,6 +66,8 @@ public class GeneralSettings : IGeneralSettings
     public string Layout { get; set; } = "splitview";
     public int RenewImagesDuration { get; set; } = 30;
     public List<string> Webcalendars { get; set; } = new();
+    public int CalendarDaysAhead { get; set; } = 1;
+    public string SlideshowOrder { get; set; } = SlideshowOrders.Random;
     public int RefreshAlbumPeopleInterval { get; set; } = 12;
     public string? WeatherApiKey { get; set; } = string.Empty;
     public string? UnitSystem { get; set; } = "imperial";
@@ -95,6 +98,8 @@ public class ServerAccountSettings : IAccountSettings
     public List<Guid> ExcludedAlbums { get; set; } = new();
     public List<Guid> People { get; set; } = new();
     public List<string> Tags { get; set; } = new();
+    public List<Guid> ExcludedPeople { get; set; } = new();
+    public List<string> ExcludedTags { get; set; } = new();
     public int? Rating { get; set; }
 
     public void ValidateAndInitialize()

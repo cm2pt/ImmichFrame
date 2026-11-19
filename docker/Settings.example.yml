@@ -4,6 +4,8 @@ General:
   RenewImagesDuration: 30
   Webcalendars:
     - calendarurl
+  CalendarDaysAhead: 1
+  SlideshowOrder: random
   RefreshAlbumPeopleInterval: 12
   PhotoDateFormat: MM/dd/yyyy
   ImageLocationFormat: 'City,State,Country'
@@ -21,6 +23,7 @@ General:
   ShowPhotoDate: true
   ShowImageDesc: true
   ShowPeopleDesc: true
+  ShowPeopleAge: false
   ShowAlbumName: true
   ShowImageLocation: true
   PrimaryColor: '#f5deb3'
@@ -59,3 +62,7 @@ Accounts:
     Tags:
       - Vacation
       - Travel/Europe
+    ExcludedPeople:
+      - UUID
+    ExcludedTags:
+      - Screenshots

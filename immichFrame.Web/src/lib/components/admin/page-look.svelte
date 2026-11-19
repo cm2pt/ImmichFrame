@@ -48,6 +48,25 @@
 	let transitionValue = $derived(get('transitionDuration') ?? 1);
 	let transitionIsPreset = $derived(transitions.some((t) => t.value === transitionValue));
 
+	// Order: how the next photo is picked (the server's SlideshowOrder).
+	const orders = [
+		{ value: 'random', label: 'Random', description: 'Any photo, any time' },
+		{ value: 'shuffle', label: 'Shuffle', description: 'Every photo once, then a new shuffle' },
+		{ value: 'oldest', label: 'Oldest First', description: 'By date taken, from the first photo' },
+		{ value: 'newest', label: 'Newest First', description: 'By date taken, from the latest photo' }
+	];
+	let order = $derived(orders.find((o) => o.value === get('slideshowOrder')) ?? orders[0]);
+
+	// Calendars: how far ahead the events go (CalendarDaysAhead).
+	const calendarRanges = [
+		{ value: '1', label: 'Today' },
+		{ value: '2', label: 'Today and Tomorrow' },
+		{ value: '3', label: 'Next 3 Days' },
+		{ value: '7', label: 'Next Week' },
+		{ value: '14', label: 'Next 2 Weeks' },
+		{ value: '31', label: 'Next Month' }
+	];
+
 	// Movement maps onto two switches.
 	type Movement = 'zoom' | 'pan' | 'both' | 'still';
 	let movement: Movement = $derived.by(() => {
@@ -191,7 +210,17 @@
 {/snippet}
 
 <div class="flex flex-col gap-6">
-	<PageCard title="Timing">
+	<PageCard title="Slideshow">
+		<SettingRow title="Order" description={order.description}>
+			{#snippet control()}
+				<PopupSelect
+					label="Order"
+					options={orders.map(({ value, label }) => ({ value, label }))}
+					value={order.value}
+					onchange={(v) => (general.slideshowOrder = v)}
+				/>
+			{/snippet}
+		</SettingRow>
 		<SettingRow
 			title="Time on each photo"
 			description="About {perHour} photos an hour{get('layout') === 'splitview'
@@ -397,6 +426,21 @@
 				/>
 			{/snippet}
 		</SettingRow>
+		{#if get('showPeopleDesc')}
+			<SettingRow
+				title="Ages"
+				description="How old each person was, from birthdays in Immich"
+				nested
+			>
+				{#snippet control()}
+					<Toggle
+						aria-label="Ages"
+						checked={get('showPeopleAge')}
+						onCheckedChange={(v) => (general.showPeopleAge = v)}
+					/>
+				{/snippet}
+			</SettingRow>
+		{/if}
 		<SettingRow title="Album name" description="The album the photo is in">
 			{#snippet control()}
 				<Toggle
@@ -558,6 +602,18 @@
 		title="Calendars"
 		footer="Upcoming events in the top corner. Paste a calendar's .ics link; changes show within 15 minutes."
 	>
+		{#if (general.webcalendars ?? []).length}
+			<SettingRow title="Show events for">
+				{#snippet control()}
+					<PopupSelect
+						label="Show events for"
+						options={calendarRanges}
+						value={String(get('calendarDaysAhead') ?? 1)}
+						onchange={(v) => (general.calendarDaysAhead = Number(v))}
+					/>
+				{/snippet}
+			</SettingRow>
+		{/if}
 		<div data-setting="Calendars">
 			{#each general.webcalendars ?? [] as url, i (i)}
 				<div class="border-sep flex min-h-11 items-center gap-3 border-t py-2 first:border-t-0">

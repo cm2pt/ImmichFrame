@@ -75,6 +75,8 @@ public class ReloadingImmichFrameLogic : IImmichFrameLogic, IDisposable
 
     public Task<IEnumerable<AssetResponseDto>> GetAssets() => _inner.GetAssets();
 
+    public Task<IEnumerable<AssetResponseDto>> PeekAssets() => _inner.PeekAssets();
+
     public Task<AssetResponseDto> GetAssetInfoById(Guid assetId) => _inner.GetAssetInfoById(assetId);
 
     public Task<IEnumerable<AssetFaceResponseDto>> GetAssetFacesById(Guid assetId) => _inner.GetAssetFacesById(assetId);

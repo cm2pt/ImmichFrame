@@ -2160,6 +2160,9 @@
           "showPeopleDesc": {
             "type": "boolean"
           },
+          "showPeopleAge": {
+            "type": "boolean"
+          },
           "showTagsDesc": {
             "type": "boolean"
           },
@@ -2413,6 +2416,9 @@
           "showPeopleDesc": {
             "type": "boolean"
           },
+          "showPeopleAge": {
+            "type": "boolean"
+          },
           "showTagsDesc": {
             "type": "boolean"
           },
@@ -2470,6 +2476,14 @@
             "items": {
               "type": "string"
             },
+            "nullable": true
+          },
+          "calendarDaysAhead": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "slideshowOrder": {
+            "type": "string",
             "nullable": true
           },
           "refreshAlbumPeopleInterval": {
@@ -2970,6 +2984,21 @@
             "nullable": true
           },
           "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "excludedPeople": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          },
+          "excludedTags": {
             "type": "array",
             "items": {
               "type": "string"

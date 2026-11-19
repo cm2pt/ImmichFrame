@@ -53,6 +53,11 @@ const labels: Record<string, string> = {
 	ImagesUntilDate: 'Taken until',
 	Albums: 'Albums',
 	ExcludedAlbums: 'Never-show albums',
+	ExcludedPeople: 'Never-show people',
+	ExcludedTags: 'Never-show tags',
+	SlideshowOrder: 'Order',
+	CalendarDaysAhead: 'Calendar days ahead',
+	ShowPeopleAge: 'Ages',
 	People: 'People',
 	Tags: 'Tags',
 	Rating: 'Minimum rating'
@@ -62,7 +67,13 @@ const values: Record<string, Record<string, string>> = {
 	Layout: { single: 'One photo', splitview: 'Two portraits' },
 	Style: { blur: 'Frosted', solid: 'Solid', transition: 'Fade', none: 'None' },
 	ImageFill: { true: 'Fill screen', false: 'Fit whole photo' },
-	UnitSystem: { metric: 'Metric', imperial: 'Imperial' }
+	UnitSystem: { metric: 'Metric', imperial: 'Imperial' },
+	SlideshowOrder: {
+		random: 'Random',
+		shuffle: 'Shuffle',
+		oldest: 'Oldest First',
+		newest: 'Newest First'
+	}
 };
 
 function value(key: string, raw: string): string {

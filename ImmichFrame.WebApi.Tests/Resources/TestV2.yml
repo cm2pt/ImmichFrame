@@ -7,6 +7,8 @@ General:
   Webcalendars:
   - Webcalendars_TEST
   RefreshAlbumPeopleInterval: 7
+  CalendarDaysAhead: 7
+  SlideshowOrder: SlideshowOrder_TEST
   PhotoDateFormat: PhotoDateFormat_TEST
   ImageLocationFormat: ImageLocationFormat_TEST
   WeatherApiKey: WeatherApiKey_TEST
@@ -23,6 +25,7 @@ General:
   ShowPhotoDate: true
   ShowImageDesc: true
   ShowPeopleDesc: true
+  ShowPeopleAge: true
   ShowAlbumName: true
   ShowImageLocation: true
   PrimaryColor: PrimaryColor_TEST
@@ -58,6 +61,10 @@ Accounts:
   - 00000000-0000-0000-0000-000000000001
   Tags:
   - Account1.Tags_TEST
+  ExcludedPeople:
+  - 00000000-0000-0000-0000-000000000001
+  ExcludedTags:
+  - Account1.ExcludedTags_TEST
 - ImmichServerUrl: Account2.ImmichServerUrl_TEST
   ApiKey: Account2.ApiKey_TEST
   ApiKeyFile: Account2.ApiKeyFile_TEST
@@ -79,3 +86,7 @@ Accounts:
   - 00000000-0000-0000-0000-000000000001
   Tags:
   - Account2.Tags_TEST
+  ExcludedPeople:
+  - 00000000-0000-0000-0000-000000000001
+  ExcludedTags:
+  - Account2.ExcludedTags_TEST

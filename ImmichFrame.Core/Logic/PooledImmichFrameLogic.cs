@@ -50,7 +50,7 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
         // Memories-only skips the library search. Every other case needs it.
         if (!showMemories || hasSource)
         {
-            pools.Add(new AccountSearchPool(_apiCache, _immichApi, accountSettings));
+            pools.Add(new AccountSearchPool(_apiCache, _immichApi, accountSettings, () => _generalSettings.SlideshowOrder));
         }
 
         if (showMemories)
@@ -66,10 +66,20 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
         return (await _pool.GetAssets(1)).FirstOrDefault();
     }
 
+    public const int BatchSize = 25;
+
     public async Task<IEnumerable<AssetResponseDto>> GetAssets()
     {
-        return await _pool.GetAssets(25);
+        return await _pool.GetAssets(BatchSize);
     }
+
+    public bool KeepsOrder => SlideshowOrders.Normalize(_generalSettings.SlideshowOrder) != SlideshowOrders.Random;
+
+    public Task<IEnumerable<AssetResponseDto>> GetAssets(int count) => _pool.GetAssets(count);
+
+    public Task<IEnumerable<AssetResponseDto>> PeekAssets() => _pool.PeekAssets(BatchSize);
+
+    public Task<IEnumerable<AssetResponseDto>> PeekAssets(int count) => _pool.PeekAssets(count);
 
     public async Task<AssetResponseDto> GetAssetInfoById(Guid assetId) => await _immichApi.GetAssetInfoAsync(assetId, null, null);
 

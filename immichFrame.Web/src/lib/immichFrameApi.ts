@@ -43,6 +43,7 @@ export type GeneralSettings = {
     showPhotoDate?: boolean;
     showImageDesc?: boolean;
     showPeopleDesc?: boolean;
+    showPeopleAge?: boolean;
     showTagsDesc?: boolean;
     showAlbumName?: boolean;
     showImageLocation?: boolean;
@@ -59,6 +60,8 @@ export type GeneralSettings = {
     layout?: string | null;
     renewImagesDuration?: number;
     webcalendars?: string[] | null;
+    calendarDaysAhead?: number;
+    slideshowOrder?: string | null;
     refreshAlbumPeopleInterval?: number;
     weatherApiKey?: string | null;
     unitSystem?: string | null;
@@ -84,6 +87,8 @@ export type ServerAccountSettings = {
     excludedAlbums?: string[] | null;
     people?: string[] | null;
     tags?: string[] | null;
+    excludedPeople?: string[] | null;
+    excludedTags?: string[] | null;
     rating?: number | null;
 };
 export type ServerSettings = {
@@ -368,6 +373,7 @@ export type ClientSettingsDto = {
     photoDateFormat?: string | null;
     showImageDesc?: boolean;
     showPeopleDesc?: boolean;
+    showPeopleAge?: boolean;
     showTagsDesc?: boolean;
     showAlbumName?: boolean;
     showImageLocation?: boolean;

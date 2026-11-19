@@ -296,14 +296,14 @@ namespace ImmichFrame.WebApi.Controllers
         }
 
         /// <summary>
-        /// A sample of what the frame shows next, drawn from the same pool as the slideshow (one
-        /// pool request, like a screen asking for its next batch).
+        /// A sample of what the frame shows next, drawn from the same pool as the slideshow. In
+        /// the ordered slideshows it is exactly what comes next, and looking doesn't use it up.
         /// </summary>
         [HttpGet("Preview", Name = "GetAdminPreview")]
         public async Task<List<AdminPreviewAssetDto>> GetAdminPreview(int count = 4)
         {
             count = ClampPreviewCount(count);
-            var assets = (await _logic.GetAssets()).ToList();
+            var assets = (await _logic.PeekAssets()).ToList();
             return assets
                 .DistinctBy(a => a.Id)
                 .Take(count)
