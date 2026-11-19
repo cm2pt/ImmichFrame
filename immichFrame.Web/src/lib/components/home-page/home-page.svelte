@@ -32,6 +32,8 @@
 	const VIDEO_STALL_MS = 15000;
 	const CURSOR_HIDE_MS = 2000;
 	const RELOAD_ON_ERROR_MS = 30000;
+	// How often the frame checks whether the settings were saved again in the admin page.
+	const SETTINGS_CHECK_MS = 60000;
 
 	let assetHistory: api.AssetResponseDto[] = $state([]);
 	let assetBacklog: api.AssetResponseDto[] = $state([]);
@@ -72,6 +74,7 @@
 	let unsubscribeRestart: () => void;
 	let unsubscribeStop: () => void;
 	let refreshInterval: number;
+	let settingsInterval: number;
 
 	let cursorVisible = $state(true);
 
@@ -380,7 +383,8 @@
 			const albumReq = await api.getAlbumInfo(assetResponse.id, {
 				clientIdentifier: $clientIdentifierStore
 			});
-			album = albumReq.data ?? [];
+			// Immich can fail the lookup (e.g. for a partner's photo): show no album name then.
+			album = albumReq.status === 200 && Array.isArray(albumReq.data) ? albumReq.data : [];
 		}
 
 		// if the people array is already populated, there is no need to call the API again
@@ -451,7 +455,22 @@
 
 		getNextAssets();
 
+		// Follow saved settings: when the frame's config changes, reload to pick it up. A failed
+		// check is ignored; the error reload above covers a server that's gone.
+		const loadedConfig = JSON.stringify($configStore);
+		settingsInterval = window.setInterval(async () => {
+			try {
+				const res = await api.getConfig({ clientIdentifier: $clientIdentifierStore });
+				if (res.status === 200 && JSON.stringify(res.data) !== loadedConfig) {
+					window.location.reload();
+				}
+			} catch {
+				// Offline for a moment: try again next time.
+			}
+		}, SETTINGS_CHECK_MS);
+
 		return () => {
+			window.clearInterval(settingsInterval);
 			window.removeEventListener('mousemove', showCursor);
 			window.removeEventListener('click', showCursor);
 			window.clearInterval(refreshInterval);

@@ -484,7 +484,7 @@
 									<p class="text-label-2 text-[0.8125rem]">
 										{saveWarnings.length
 											? saveWarnings.join(' ')
-											: 'Screens update on their next reload.'}
+											: 'Screens in a browser update within a minute.'}
 									</p>
 								</div>
 							{/if}
