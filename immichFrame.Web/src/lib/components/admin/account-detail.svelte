@@ -18,12 +18,14 @@
 	interface Props {
 		account: ServerAccountSettings;
 		name: string;
+		/** Its place in the saved settings, for the Immich profile picture. */
+		index?: number | null;
 		status: AccountStatus | undefined;
 		ontest: () => void;
 		onremove: () => void;
 	}
 
-	let { account, name, status, ontest, onremove }: Props = $props();
+	let { account, name, index = null, status, ontest, onremove }: Props = $props();
 
 	// Initial values only: the sheet is created fresh each time it opens.
 	const initial = untrack(() => ({ key: account.apiKey, file: account.apiKeyFile }));
@@ -40,7 +42,7 @@
 </script>
 
 <div class="flex flex-col items-center gap-2 pt-1 text-center">
-	<Monogram name={name.startsWith('Account ') ? name.slice(8) : name} size={56} />
+	<Monogram name={name.startsWith('Account ') ? name.slice(8) : name} size={56} avatarOf={index} />
 	<p class="text-[1.0625rem] font-semibold">{name}</p>
 	<p class="text-label-2 flex items-center gap-1.5 text-[0.8125rem]">
 		{#if status?.testing}

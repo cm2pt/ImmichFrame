@@ -187,6 +187,42 @@ namespace ImmichFrame.WebApi.Tests.Controllers
             });
         }
 
+        private void ImmichAnswers(string pathPart, Func<HttpResponseMessage> response) =>
+            _immich.Protected()
+                .Setup<Task<HttpResponseMessage>>("SendAsync",
+                    ItExpr.Is<HttpRequestMessage>(r => r.RequestUri!.AbsolutePath.EndsWith(pathPart)),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(response);
+
+        private static HttpResponseMessage Json(string json) =>
+            new(HttpStatusCode.OK) { Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json") };
+
+        [TestCase("", HttpStatusCode.NotFound)]
+        [TestCase("upload/profile/me.jpg", HttpStatusCode.OK)]
+        public async Task Avatar_IsTheUsersProfilePicture_WhenTheyHaveOne(string profileImagePath, HttpStatusCode expected)
+        {
+            var admin = CreateAdminClient();
+            (await admin.PutAsJsonAsync("/api/Admin/Settings", SettingsBody("single"))).EnsureSuccessStatusCode();
+            var userId = Guid.NewGuid();
+            ImmichAnswers("/users/me", () => Json($$"""
+                {"id":"{{userId}}","name":"Alex","email":"a@example.com","profileImagePath":"{{profileImagePath}}",
+                 "avatarColor":"primary","clusterGroupId":"{{Guid.NewGuid()}}","createdAt":"2026-01-01T00:00:00Z",
+                 "updatedAt":"2026-01-01T00:00:00Z","profileChangedAt":"2026-01-01T00:00:00Z","deletedAt":null,
+                 "isAdmin":true,"license":null,"oauthId":"","quotaSizeInBytes":null,"quotaUsageInBytes":null,
+                 "shouldChangePassword":false,"status":"active","storageLabel":null}
+                """));
+            ImmichAnswers($"/users/{userId}/profile-image", () =>
+            {
+                var content = new ByteArrayContent(new byte[] { 1, 2, 3, 4 });
+                content.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = content };
+            });
+
+            var response = await admin.GetAsync("/api/Admin/Accounts/0/Avatar");
+
+            Assert.That(response.StatusCode, Is.EqualTo(expected));
+        }
+
         [Test]
         public async Task Thumbnail_UnknownAccount_IsNotFound_AndNeedsThePassword()
         {

@@ -97,13 +97,7 @@ async function inTurn<T>(task: () => Promise<T>): Promise<T> {
 
 export type ThumbnailKind = 'person' | 'asset';
 
-/** A saved account's face or asset thumbnail as an object URL, or null when Immich has none. */
-export function getThumbnailUrl(
-	accountIndex: number,
-	kind: ThumbnailKind,
-	id: string
-): Promise<string | null> {
-	const path = `/api/Admin/Accounts/${accountIndex}/${kind === 'person' ? 'People' : 'Assets'}/${encodeURIComponent(id)}/Thumbnail`;
+function cachedImage(path: string): Promise<string | null> {
 	let url = thumbnails.get(path);
 	if (!url) {
 		url = inTurn(async () => {
@@ -113,6 +107,22 @@ export function getThumbnailUrl(
 		thumbnails.set(path, url);
 	}
 	return url;
+}
+
+/** A saved account's Immich profile picture as an object URL, or null when there's none. */
+export function getAvatarUrl(accountIndex: number): Promise<string | null> {
+	return cachedImage(`/api/Admin/Accounts/${accountIndex}/Avatar`);
+}
+
+/** A saved account's face or asset thumbnail as an object URL, or null when Immich has none. */
+export function getThumbnailUrl(
+	accountIndex: number,
+	kind: ThumbnailKind,
+	id: string
+): Promise<string | null> {
+	return cachedImage(
+		`/api/Admin/Accounts/${accountIndex}/${kind === 'person' ? 'People' : 'Assets'}/${encodeURIComponent(id)}/Thumbnail`
+	);
 }
 
 // Drop empty values so the server falls back to its defaults instead of

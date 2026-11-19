@@ -607,6 +607,11 @@ export function getAssetThumbnail(index: number, id: string, opts?: Oazapfts.Req
         ...opts
     });
 }
+export function getAccountAvatar(index: number, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchText(`/api/Admin/Accounts/${encodeURIComponent(index)}/Avatar`, {
+        ...opts
+    });
+}
 export function getAdminPreviewImage(id: string, opts?: Oazapfts.RequestOpts) {
     return oazapfts.fetchText(`/api/Admin/Preview/${encodeURIComponent(id)}/Image`, {
         ...opts

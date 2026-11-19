@@ -342,6 +342,23 @@ namespace ImmichFrame.WebApi.Controllers
         public Task<IActionResult> GetAssetThumbnail(int index, Guid id) =>
             ProxyThumbnail(index, api => api.ViewAssetAsync(true, id, string.Empty, AssetMediaSize.Thumbnail, null, HttpContext.RequestAborted));
 
+        /// <summary>The Immich user's profile picture for a saved account; 404 when they haven't set one.</summary>
+        [HttpGet("Accounts/{index:int}/Avatar", Name = "GetAccountAvatar")]
+        [Produces("image/jpeg", "image/png", "image/webp")]
+        [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public Task<IActionResult> GetAccountAvatar(int index) =>
+            ProxyThumbnail(index, async api =>
+            {
+                var me = await api.GetMyUserAsync(HttpContext.RequestAborted);
+                if (string.IsNullOrEmpty(me.ProfileImagePath))
+                {
+                    throw new ApiException("No profile image", StatusCodes.Status404NotFound, null, new Dictionary<string, IEnumerable<string>>(), null);
+                }
+
+                return await api.GetProfileImageAsync(me.Id, HttpContext.RequestAborted);
+            });
+
         /// <summary>
         /// Fetches a thumbnail with a saved account's key, so the key never reaches the browser.
         /// Unknown accounts and anything Immich won't serve are a 404; the UI falls back to a monogram.

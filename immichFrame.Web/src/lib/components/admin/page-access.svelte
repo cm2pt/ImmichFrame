@@ -133,7 +133,7 @@
 				class="border-sep flex min-h-14 w-full items-center gap-3 border-t py-2 text-left first:border-t-0 focus-visible:outline-2 focus-visible:outline-primary"
 				onclick={() => (openAccount = index)}
 			>
-				<Monogram name={libraries[index]?.userName || String(index + 1)} />
+				<Monogram name={libraries[index]?.userName || String(index + 1)} avatarOf={index} />
 				<span class="min-w-0 flex-1">
 					<span class="block text-[0.9375rem] md:text-[0.875rem]"
 						>{accountName(account, index)}</span
@@ -175,6 +175,7 @@
 				<AccountDetail
 					account={settings.Accounts[openAccount]}
 					name={accountName(settings.Accounts[openAccount], openAccount)}
+					index={openAccount}
 					status={statuses[openAccount]}
 					ontest={() => openAccount !== null && test(openAccount)}
 					onremove={() => {

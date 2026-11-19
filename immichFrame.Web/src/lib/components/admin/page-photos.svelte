@@ -93,7 +93,7 @@
 				class="border-sep flex min-h-14 w-full items-center gap-3 border-t py-2 text-left first:border-t-0 focus-visible:outline-2 focus-visible:outline-primary"
 				onclick={() => (selected = i)}
 			>
-				<Monogram name={libraries[i]?.userName || String(i + 1)} />
+				<Monogram name={libraries[i]?.userName || String(i + 1)} avatarOf={i} />
 				<span class="min-w-0 flex-1">
 					<span class="block text-[0.9375rem] md:text-[0.875rem]"
 						>{libraries[i]?.userName || `Account ${i + 1}`}</span
@@ -124,7 +124,7 @@
 	{@const i = selected}
 	<!-- The shell titles the page with the account's name and puts "‹ Photos" above it. -->
 	<div class="-mt-3 flex items-center gap-3">
-		<Monogram name={libraries[i]?.userName || String(i + 1)} size={36} />
+		<Monogram name={libraries[i]?.userName || String(i + 1)} size={36} avatarOf={i} />
 		<p class="text-label-2 text-[0.9375rem]">
 			{matching[i] != null
 				? `${formatCount(matching[i])} photos in rotation, plus memories.`
