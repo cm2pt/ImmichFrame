@@ -182,5 +182,37 @@ namespace ImmichFrame.WebApi.Tests.Services
 
             Assert.That(await registry.GetScreensAsync(), Has.Count.EqualTo(ScreenRegistry.MaxScreens));
         }
+
+        [Test]
+        public async Task Rejected_KeepsTheKnownName_AndExpiresAfterAWeek()
+        {
+            var registry = CreateRegistry();
+            await registry.RecordAsync("kitchen", "iPad", "192.168.1.30");
+            await registry.RenameAsync("kitchen", "Kitchen iPad");
+
+            registry.RecordRejected("kitchen", "iPad", "192.168.1.30", sentSecret: true);
+            var rejected = (await registry.GetRejectedAsync()).Single();
+            Assert.Multiple(() =>
+            {
+                Assert.That(rejected.Name, Is.EqualTo("Kitchen iPad"));
+                Assert.That(rejected.Attempts, Is.EqualTo(1));
+                Assert.That(rejected.LastRejectedUtc, Is.EqualTo(Start.UtcDateTime));
+            });
+
+            _clock.Advance(ScreenRegistry.RejectedRetention + TimeSpan.FromMinutes(1));
+            Assert.That(await registry.GetRejectedAsync(), Is.Empty);
+        }
+
+        [Test]
+        public async Task Rejected_IsCapped()
+        {
+            var registry = CreateRegistry(withDb: false);
+            for (var i = 0; i < ScreenRegistry.MaxRejected + 10; i++)
+            {
+                registry.RecordRejected($"screen-{i}", null, null, sentSecret: false);
+            }
+
+            Assert.That(await registry.GetRejectedAsync(), Has.Count.EqualTo(ScreenRegistry.MaxRejected));
+        }
     }
 }

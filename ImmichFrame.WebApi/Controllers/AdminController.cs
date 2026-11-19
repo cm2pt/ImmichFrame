@@ -239,6 +239,21 @@ namespace ImmichFrame.WebApi.Controllers
             return await _screenRegistry.ForgetAsync(clientIdentifier) ? NoContent() : NotFound();
         }
 
+        /// <summary>Screens turned away in the past week for a wrong or missing frame secret, newest first.</summary>
+        [HttpGet("Screens/Rejected", Name = "GetRejectedScreens")]
+        public async Task<IReadOnlyList<RejectedScreenDto>> GetRejectedScreens()
+        {
+            return await _screenRegistry.GetRejectedAsync();
+        }
+
+        [HttpDelete("Screens/Rejected/{clientIdentifier}", Name = "DismissRejectedScreen")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult DismissRejectedScreen(string clientIdentifier)
+        {
+            return _screenRegistry.DismissRejected(clientIdentifier) ? NoContent() : NotFound();
+        }
+
         /// <summary>The current settings version and the kept previous ones, newest first.</summary>
         [HttpGet("Settings/History", Name = "GetSettingsHistory")]
         public async Task<List<SettingsHistoryEntryDto>> GetSettingsHistory()

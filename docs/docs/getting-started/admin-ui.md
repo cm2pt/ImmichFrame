@@ -27,7 +27,9 @@ of the four pages, like the Settings app.
 
 A screen appears under *Screens* once it sends a `clientIdentifier` (every web client does;
 set a readable one with `?client=Living%20room`). When a frame secret is set, only requests
-with the right secret are recorded.
+with the right secret are recorded. A screen that asks with a wrong secret, or none, is listed
+under *Turned away* instead (kept in memory for a week), so a device left with an old secret
+after you change it is easy to find. It leaves the list once it connects with the right one.
 
 ## Enabling the admin UI
 

@@ -122,6 +122,47 @@ namespace ImmichFrame.WebApi.Tests.Controllers
         }
 
         [Test]
+        public async Task ClientRequests_WithAWrongSecret_AreListedAsRejected_UntilTheyGetItRight()
+        {
+            var admin = CreateAdminClient();
+            (await admin.PutAsJsonAsync("/api/Admin/Settings", SettingsBody("single", secret: "frame-secret"))).EnsureSuccessStatusCode();
+
+            var stale = _factory.CreateClient();
+            stale.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "old-secret");
+            await stale.GetAsync("/api/Config?clientIdentifier=kitchen");
+            await stale.GetAsync("/api/Config?clientIdentifier=kitchen");
+            await _factory.CreateClient().GetAsync("/api/Config?clientIdentifier=hallway");
+
+            var rejected = JsonNode.Parse(await admin.GetStringAsync("/api/Admin/Screens/Rejected"))!.AsArray();
+            var kitchen = rejected.Single(r => (string)r!["clientIdentifier"]! == "kitchen")!;
+            var hallway = rejected.Single(r => (string)r!["clientIdentifier"]! == "hallway")!;
+            Assert.Multiple(() =>
+            {
+                Assert.That(rejected, Has.Count.EqualTo(2));
+                Assert.That((int)kitchen["attempts"]!, Is.EqualTo(2));
+                Assert.That((bool)kitchen["sentSecret"]!, Is.True);
+                Assert.That((bool)hallway["sentSecret"]!, Is.False);
+            });
+
+            // The kitchen screen gets the new secret: it leaves the rejected list and becomes a screen.
+            stale.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "frame-secret");
+            await stale.GetAsync("/api/Config?clientIdentifier=kitchen");
+            rejected = JsonNode.Parse(await admin.GetStringAsync("/api/Admin/Screens/Rejected"))!.AsArray();
+            Assert.That(rejected.Select(r => (string)r!["clientIdentifier"]!), Is.EqualTo(new[] { "hallway" }));
+
+            Assert.That((await admin.DeleteAsync("/api/Admin/Screens/Rejected/hallway")).StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+            Assert.That((await admin.DeleteAsync("/api/Admin/Screens/Rejected/hallway")).StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+            Assert.That(JsonNode.Parse(await admin.GetStringAsync("/api/Admin/Screens/Rejected"))!.AsArray(), Is.Empty);
+        }
+
+        [Test]
+        public async Task RejectedScreens_RequireTheAdminPassword()
+        {
+            var response = await _factory.CreateClient().GetAsync("/api/Admin/Screens/Rejected");
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+        }
+
+        [Test]
         public async Task Screens_RequireTheAdminPassword()
         {
             var response = await _factory.CreateClient().GetAsync("/api/Admin/Screens");

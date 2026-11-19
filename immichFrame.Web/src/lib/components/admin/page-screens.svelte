@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Input } from '@immich/ui';
-	import type { ScreenDto } from '$lib/immichFrameApi';
+	import type { RejectedScreenDto, ScreenDto } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import AddScreen from './add-screen.svelte';
 	import { describeDevice, relativeTime } from './admin-format';
@@ -21,6 +21,8 @@
 	let { secret, ongotoaccess, onscreens }: Props = $props();
 
 	let screens: ScreenDto[] | null = $state(null);
+	// Screens turned away for a wrong or missing secret; a hint, so a failed load just hides it.
+	let rejected: RejectedScreenDto[] = $state([]);
 	let error = $state('');
 	let loading = $state(false);
 	let renaming: string | null = $state(null);
@@ -36,6 +38,8 @@
 			if (res.status !== 200) throw new Error();
 			screens = res.data;
 			onscreens?.(res.data);
+			const turnedAway = await adminApi.getRejectedScreens().catch(() => null);
+			rejected = turnedAway?.status === 200 ? turnedAway.data : [];
 		} catch {
 			error = 'Couldn’t load the screens.';
 		} finally {
@@ -56,6 +60,16 @@
 		await load();
 	}
 
+	async function dismiss(screen: RejectedScreenDto) {
+		rejected = rejected.filter((r) => r.clientIdentifier !== screen.clientIdentifier);
+		await adminApi.dismissRejectedScreen(screen.clientIdentifier!);
+	}
+
+	function showHow() {
+		const target = document.querySelector<HTMLElement>('section[aria-label="Add a screen"]');
+		target?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+	}
+
 	async function forget(screen: ScreenDto) {
 		confirmForget = null;
 		await adminApi.forgetScreen(screen.clientIdentifier!);
@@ -71,6 +85,45 @@
 	const screenName = (screen: ScreenDto) => screen.name || screen.clientIdentifier || 'Screen';
 </script>
 
+{#if rejected.length}
+	<PageCard
+		title="Turned away"
+		footer={`${rejected.length === 1 ? 'This screen asks' : 'These screens ask'} for photos with a secret that doesn’t match the frame’s. Open the frame on ${rejected.length === 1 ? 'it' : 'them'} again with the current secret.`}
+	>
+		{#each rejected as screen (screen.clientIdentifier)}
+			{@const device = describeDevice(screen.userAgent)}
+			{@const tries = screen.attempts ?? 1}
+			<div class="border-sep flex min-h-14 items-center gap-3 border-t py-2 first:border-t-0">
+				<span
+					class="flex h-[29px] w-[29px] shrink-0 items-center justify-center rounded-[7px] bg-[#ff9f0a] text-white"
+				>
+					<Glyph name="triangleAlert" size={17} stroke={2} />
+				</span>
+				<div class="min-w-0 flex-1">
+					<p class="truncate text-[0.9375rem] md:text-[0.875rem]">
+						{screen.name || device.label}
+					</p>
+					<p class="text-label-2 truncate text-[0.8125rem] md:text-[0.75rem]">
+						{screen.sentSecret ? 'Old secret' : 'No secret'}&nbsp;·&ensp;{tries}
+						{tries === 1 ? 'try' : 'tries'}, last {relativeTime(
+							new Date(screen.lastRejectedUtc!).getTime(),
+							now
+						)}{screen.remoteAddress ? ` · ${screen.remoteAddress}` : ''}
+					</p>
+				</div>
+				<RowMenu
+					id={`rejected-menu-${screen.clientIdentifier}`}
+					label="Actions for {screen.name || device.label}"
+					items={[
+						{ label: 'Show How to Add It', onselect: showHow },
+						{ label: 'Dismiss', onselect: () => dismiss(screen) }
+					]}
+				/>
+			</div>
+		{/each}
+	</PageCard>
+{/if}
+
 <PageCard
 	title="Screens"
 	footer={screens?.length
@@ -80,7 +133,6 @@
 	{#snippet actions()}
 		<button type="button" class="text-primary disabled:opacity-40" disabled={loading} onclick={load}
 			>Refresh</button
-		>
 		>
 	{/snippet}
 

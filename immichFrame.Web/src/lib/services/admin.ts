@@ -48,6 +48,14 @@ export function forgetScreen(clientIdentifier: string) {
 	return api.forgetScreen(clientIdentifier, authOpts());
 }
 
+export function getRejectedScreens() {
+	return api.getRejectedScreens(authOpts());
+}
+
+export function dismissRejectedScreen(clientIdentifier: string) {
+	return api.dismissRejectedScreen(clientIdentifier, authOpts());
+}
+
 export function getSettingsHistory() {
 	return api.getSettingsHistory(authOpts());
 }

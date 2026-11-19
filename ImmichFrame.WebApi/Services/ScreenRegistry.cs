@@ -14,6 +14,21 @@ public class ScreenDto
     public string? RemoteAddress { get; set; }
 }
 
+/// <summary>A screen the frame turned away because it sent a wrong secret, or none.</summary>
+public class RejectedScreenDto
+{
+    public string ClientIdentifier { get; set; } = string.Empty;
+    /// <summary>The name given to it, when it was a known screen before its secret went stale.</summary>
+    public string? Name { get; set; }
+    public DateTime FirstRejectedUtc { get; set; }
+    public DateTime LastRejectedUtc { get; set; }
+    public int Attempts { get; set; }
+    /// <summary>False when it sent no secret at all; true when it sent one that didn't match.</summary>
+    public bool SentSecret { get; set; }
+    public string? UserAgent { get; set; }
+    public string? RemoteAddress { get; set; }
+}
+
 /// <summary>
 /// Remembers the devices showing the frame, keyed by the <c>clientIdentifier</c> they send.
 /// Every request updates memory; the database (when there is one) is written at most once per
@@ -27,6 +42,12 @@ public class ScreenRegistry
     /// <summary>A cap on remembered screens, so a misbehaving client cannot fill the database.</summary>
     public const int MaxScreens = 200;
 
+    /// <summary>A cap on remembered rejections, which are kept in memory only.</summary>
+    public const int MaxRejected = 50;
+
+    /// <summary>Rejections older than this are dropped: the screen has given up or been fixed.</summary>
+    public static readonly TimeSpan RejectedRetention = TimeSpan.FromDays(7);
+
     public const int MaxIdentifierLength = 100;
     private const int MaxUserAgentLength = 300;
     private const int MaxNameLength = 100;
@@ -35,6 +56,7 @@ public class ScreenRegistry
     private readonly TimeProvider _time;
     private readonly ILogger<ScreenRegistry> _logger;
     private readonly ConcurrentDictionary<string, Entry> _screens = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, RejectedScreenDto> _rejected = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _loadLock = new(1, 1);
     private readonly SemaphoreSlim _writeLock = new(1, 1);
     private volatile bool _loaded;
@@ -66,6 +88,9 @@ public class ScreenRegistry
         await EnsureLoadedAsync();
         var now = Now;
         userAgent = Truncate(userAgent, MaxUserAgentLength);
+
+        // It has the right secret now.
+        _rejected.TryRemove(id, out _);
 
         if (!_screens.TryGetValue(id, out var entry))
         {
@@ -99,6 +124,89 @@ public class ScreenRegistry
         if (persist)
         {
             await WriteAsync(snapshot);
+        }
+    }
+
+    /// <summary>
+    /// Records a request turned away for a wrong or missing secret. Kept in memory only, capped
+    /// at <see cref="MaxRejected"/>: it's a hint for the admin, not an audit log.
+    /// </summary>
+    public void RecordRejected(string clientIdentifier, string? userAgent, string? remoteAddress, bool sentSecret)
+    {
+        var id = Normalize(clientIdentifier);
+        if (id == null)
+        {
+            return;
+        }
+
+        var now = Now;
+        Prune(now);
+        if (!_rejected.ContainsKey(id) && _rejected.Count >= MaxRejected)
+        {
+            return;
+        }
+
+        var entry = _rejected.GetOrAdd(id, _ => new RejectedScreenDto
+        {
+            ClientIdentifier = id,
+            FirstRejectedUtc = now
+        });
+        lock (entry)
+        {
+            entry.LastRejectedUtc = now;
+            entry.Attempts++;
+            entry.SentSecret = sentSecret;
+            entry.UserAgent = Truncate(userAgent, MaxUserAgentLength) ?? entry.UserAgent;
+            entry.RemoteAddress = remoteAddress ?? entry.RemoteAddress;
+        }
+    }
+
+    public async Task<IReadOnlyList<RejectedScreenDto>> GetRejectedAsync()
+    {
+        await EnsureLoadedAsync();
+        Prune(Now);
+        return _rejected.Values
+            .Select(r =>
+            {
+                lock (r)
+                {
+                    string? name = null;
+                    if (_screens.TryGetValue(r.ClientIdentifier, out var known))
+                    {
+                        lock (known)
+                        {
+                            name = known.Record.Name;
+                        }
+                    }
+
+                    return new RejectedScreenDto
+                    {
+                        ClientIdentifier = r.ClientIdentifier,
+                        Name = name,
+                        FirstRejectedUtc = DateTime.SpecifyKind(r.FirstRejectedUtc, DateTimeKind.Utc),
+                        LastRejectedUtc = DateTime.SpecifyKind(r.LastRejectedUtc, DateTimeKind.Utc),
+                        Attempts = r.Attempts,
+                        SentSecret = r.SentSecret,
+                        UserAgent = r.UserAgent,
+                        RemoteAddress = r.RemoteAddress
+                    };
+                }
+            })
+            .OrderByDescending(r => r.LastRejectedUtc)
+            .ToList();
+    }
+
+    /// <summary>Clears a rejection. It comes back if the screen tries again with a wrong secret.</summary>
+    public bool DismissRejected(string clientIdentifier) => _rejected.TryRemove(clientIdentifier, out _);
+
+    private void Prune(DateTime now)
+    {
+        foreach (var (id, r) in _rejected)
+        {
+            if (now - r.LastRejectedUtc > RejectedRetention)
+            {
+                _rejected.TryRemove(id, out _);
+            }
         }
     }
 

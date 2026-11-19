@@ -135,6 +135,16 @@ export type ScreenDto = {
 export type ScreenRenameDto = {
     name?: string | null;
 };
+export type RejectedScreenDto = {
+    clientIdentifier?: string | null;
+    name?: string | null;
+    firstRejectedUtc?: string;
+    lastRejectedUtc?: string;
+    attempts?: number;
+    sentSecret?: boolean;
+    userAgent?: string | null;
+    remoteAddress?: string | null;
+};
 export type SettingsHistoryEntryDto = {
     version?: number;
     savedAtUtc?: string;
@@ -507,6 +517,31 @@ export function forgetScreen(clientIdentifier: string, opts?: Oazapfts.RequestOp
         status: 404;
         data: ProblemDetails;
     }>(`/api/Admin/Screens/${encodeURIComponent(clientIdentifier)}`, {
+        ...opts,
+        method: "DELETE"
+    });
+}
+export function getRejectedScreens(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: RejectedScreenDto[];
+    } | {
+        status: 401;
+        data: string;
+    }>("/api/Admin/Screens/Rejected", {
+        ...opts
+    });
+}
+export function dismissRejectedScreen(clientIdentifier: string, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 204;
+    } | {
+        status: 401;
+        data: string;
+    } | {
+        status: 404;
+        data: ProblemDetails;
+    }>(`/api/Admin/Screens/Rejected/${encodeURIComponent(clientIdentifier)}`, {
         ...opts,
         method: "DELETE"
     });
