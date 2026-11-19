@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { onMount } from 'svelte';
 	import type { ServerAccountSettings, ServerSettings } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import { accountDefaults, effective } from './admin-defaults';
@@ -13,17 +13,19 @@
 		settings: ServerSettings;
 		version: number;
 		onaddaccount: () => void;
+		/** The account drilled into, or null for the list. The shell titles the page with it. */
+		selected?: number | null;
 	}
 
-	let { settings, version, onaddaccount }: Props = $props();
+	let { settings, version, onaddaccount, selected = $bindable(null) }: Props = $props();
 
 	let accounts = $derived(settings.Accounts ?? []);
 	let libraries = $derived(accounts.map((account) => libraryFor(account)));
 	// The accounts list drills into one account, like a list in System Settings. With a single
 	// account there is nothing to choose, so it opens straight away.
-	let selected: number | null = $state(
-		untrack(() => ((settings.Accounts ?? []).length === 1 ? 0 : null))
-	);
+	onMount(() => {
+		if (selected === null && accounts.length === 1) selected = 0;
+	});
 
 	// The count the frame's own search draws from for each account's current choices,
 	// refreshed shortly after each change.
@@ -120,27 +122,14 @@
 	</PageCard>
 {:else}
 	{@const i = selected}
-	<div class="-mb-2 flex items-center gap-3">
-		<button
-			type="button"
-			class="flex items-center gap-0.5 rounded-md text-[0.9375rem] text-primary focus-visible:outline-2 focus-visible:outline-primary md:text-[0.875rem]"
-			onclick={() => (selected = null)}
-		>
-			<Glyph name="chevronLeft" size={18} stroke={2.2} /> Accounts
-		</button>
-	</div>
-	<div class="flex items-center gap-3">
-		<Monogram name={libraries[i]?.userName || String(i + 1)} size={44} />
-		<div class="min-w-0">
-			<h2 class="text-[1.25rem] leading-tight font-semibold tracking-[-0.01em]">
-				{libraries[i]?.userName || `Account ${i + 1}`}
-			</h2>
-			<p class="text-label-2 text-[0.8125rem]">
-				{matching[i] != null
-					? `${formatCount(matching[i])} photos in rotation, plus memories`
-					: summary(accounts[i], i)}
-			</p>
-		</div>
+	<!-- The shell titles the page with the account's name and puts "‹ Photos" above it. -->
+	<div class="-mt-3 flex items-center gap-3">
+		<Monogram name={libraries[i]?.userName || String(i + 1)} size={36} />
+		<p class="text-label-2 text-[0.9375rem]">
+			{matching[i] != null
+				? `${formatCount(matching[i])} photos in rotation, plus memories.`
+				: summary(accounts[i], i)}
+		</p>
 	</div>
 	{#key `${version}-${i}`}
 		<AccountPhotos account={accounts[i]} />

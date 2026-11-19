@@ -37,10 +37,15 @@
 		window.addEventListener('keydown', onKey);
 		const overflow = document.body.style.overflow;
 		document.body.style.overflow = 'hidden';
+		// The page behind steps back around the part of it in view (CSS applies it on phones).
+		const shell = document.querySelector<HTMLElement>('.if-shell');
+		if (shell) shell.style.transformOrigin = `50% ${window.scrollY + 100}px`;
+		document.body.classList.add('if-sheet-open');
 		return () => {
 			clearTimeout(timer);
 			window.removeEventListener('keydown', onKey);
 			document.body.style.overflow = overflow;
+			document.body.classList.remove('if-sheet-open');
 			if (returnId) requestAnimationFrame(() => document.getElementById(returnId)?.focus());
 		};
 	});
@@ -64,7 +69,7 @@
 		aria-modal="true"
 		aria-label={title}
 		tabindex="-1"
-		class="relative mt-[calc(env(safe-area-inset-top)+10px)] flex h-[calc(100%-env(safe-area-inset-top)-10px)] w-full flex-col overflow-hidden rounded-t-[10px] bg-[#f5f5f7] outline-none md:mt-0 md:h-auto md:max-h-[85dvh] md:w-[30rem] md:rounded-[12px] md:shadow-[0_24px_64px_rgb(0_0_0/0.3),0_0_0_0.5px_rgb(0_0_0/0.15)] dark:bg-[#1c1c1e] dark:md:shadow-[0_24px_64px_rgb(0_0_0/0.6),0_0_0_0.5px_rgb(255_255_255/0.12)]"
+		class="relative mt-[calc(env(safe-area-inset-top)+16px)] flex h-[calc(100%-env(safe-area-inset-top)-16px)] w-full flex-col overflow-hidden rounded-t-[10px] bg-[#f5f5f7] outline-none md:mt-0 md:h-auto md:max-h-[85dvh] md:w-[30rem] md:rounded-[12px] md:shadow-[0_24px_64px_rgb(0_0_0/0.3),0_0_0_0.5px_rgb(0_0_0/0.15)] dark:bg-[#1c1c1e] dark:md:shadow-[0_24px_64px_rgb(0_0_0/0.6),0_0_0_0.5px_rgb(255_255_255/0.12)]"
 		transition:fly={{ y: 24, duration: 220, easing: cubicOut }}
 	>
 		<!-- Phone: an iOS page sheet, with a grabber and a nav bar. Desktop: a macOS sheet, with

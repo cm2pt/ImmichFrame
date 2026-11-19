@@ -10,6 +10,7 @@
 	import type { GlyphName } from './glyphs';
 	import { invalidFormats } from './format-presets';
 	import type { AdminEditor } from './admin-editor.svelte';
+	import { libraryFor } from './admin-library.svelte';
 	import { AdminPreview } from './admin-preview.svelte';
 	import LivePreview from './live-preview.svelte';
 	import PageAccess from './page-access.svelte';
@@ -80,6 +81,23 @@
 		hashPage = id;
 		history.replaceState(null, '', id ? `#${id}` : location.pathname);
 		window.scrollTo({ top: 0 });
+	}
+
+	// Photos drills into one account: its name becomes the page's title, and back returns to
+	// the list (the sidebar or the phone's root list is one level further up).
+	let photosAccount: number | null = $state(null);
+	let drilledName = $derived.by(() => {
+		if (page !== 'photos' || photosAccount === null) return null;
+		const account = editor.settings.Accounts?.[photosAccount];
+		if (!account) return null;
+		return libraryFor(account).userName || `Account ${photosAccount + 1}`;
+	});
+	let title = $derived(drilledName ?? current.title);
+	function back() {
+		if (drilledName) {
+			photosAccount = null;
+			window.scrollTo({ top: 0 });
+		} else go(null);
 	}
 
 	// Search: switch page, then scroll to the row and highlight it, like System Settings.
@@ -205,7 +223,7 @@
 	</span>
 {/snippet}
 
-<div class="min-h-dvh">
+<div class="if-shell min-h-dvh">
 	<!-- Phone: the root list, then each page pushed with a back button. -->
 	<div class="md:hidden">
 		{#if hashPage === null}
@@ -266,15 +284,16 @@
 				<button
 					type="button"
 					class="flex items-center gap-0.5 justify-self-start rounded-md px-1 text-[1.0625rem] text-primary"
-					onclick={() => go(null)}
+					onclick={back}
 				>
-					<Glyph name="chevronLeft" size={22} stroke={2.2} /> ImmichFrame
+					<Glyph name="chevronLeft" size={22} stroke={2.2} />
+					{drilledName ? 'Photos' : 'ImmichFrame'}
 				</button>
 				<span
 					class="text-[1.0625rem] font-semibold transition-opacity duration-200 {scrolled
 						? 'opacity-100'
 						: 'opacity-0'}"
-					aria-hidden={!scrolled}>{current.title}</span
+					aria-hidden={!scrolled}>{title}</span
 				>
 				<span></span>
 			</header>
@@ -360,12 +379,26 @@
 			<div class="mx-auto max-w-[44rem]">
 				{#key page}
 					<div in:fly={{ y: 6, duration: 220, easing: cubicOut }}>
+						{#if drilledName}
+							<!-- Desktop only: the phone's nav bar already carries the back button. -->
+							<button
+								type="button"
+								class="-ml-1 mb-1 hidden items-center gap-0.5 rounded-md text-[0.875rem] text-primary focus-visible:outline-2 focus-visible:outline-primary md:inline-flex"
+								onclick={back}
+							>
+								<Glyph name="chevronLeft" size={18} stroke={2.2} /> Photos
+							</button>
+						{/if}
 						<h1
 							class="text-[1.75rem] leading-tight font-bold tracking-[-0.02em] md:text-[2rem] md:tracking-[-0.025em]"
 						>
-							{current.title}
+							{title}
 						</h1>
-						<p class="text-label-2 mt-1 mb-7 text-[0.9375rem]">{current.intro}</p>
+						{#if drilledName}
+							<div class="mb-7"></div>
+						{:else}
+							<p class="text-label-2 mt-1 mb-7 text-[0.9375rem]">{current.intro}</p>
+						{/if}
 
 						<div class="flex flex-col gap-7">
 							{#if page === 'photos'}
@@ -373,6 +406,7 @@
 									settings={editor.settings}
 									version={editor.version}
 									onaddaccount={addAccount}
+									bind:selected={photosAccount}
 								/>
 								<UpNext {preview} />
 							{:else if page === 'look'}
@@ -413,7 +447,7 @@
 			<!-- The save bar floats over the content column, in translucent material. -->
 			{#if barVisible}
 				<div
-					class="pointer-events-none fixed inset-x-0 bottom-0 z-40"
+					class="if-savebar pointer-events-none fixed inset-x-0 bottom-0 z-40"
 					transition:fly={{ y: 16, duration: 200 }}
 				>
 					<div class="p-4 md:pl-[15rem]">
