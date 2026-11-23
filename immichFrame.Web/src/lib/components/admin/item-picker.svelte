@@ -226,6 +226,7 @@
 								thumb={item.thumb}
 								{glyph}
 								size={phone ? 32 : 24}
+								onAccent={!phone && i === active && !elsewhere}
 							/>
 							<span class="min-w-0 truncate">{item.name}</span>
 						</span>

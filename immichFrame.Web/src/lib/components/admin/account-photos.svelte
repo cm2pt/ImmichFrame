@@ -91,7 +91,7 @@
 	</SettingRow>
 	<SettingRow
 		title="In any album"
-		description="Every photo you've put in an album, new albums included"
+		description="Every photo you’ve put in an album, new albums included"
 	>
 		{#snippet control()}
 			<Toggle
@@ -132,17 +132,28 @@
 	{/if}
 </PageCard>
 
-<PageCard title="Albums" footer="Every photo in these albums, favorite or not.">
-	<ItemList
-		noun="Album"
-		{accountIndex}
-		selected={(account.albums ?? []) as string[]}
-		items={library.albums}
-		{loading}
-		usedElsewhere={excludedMap}
-		manualPattern={guid}
-		onchange={(ids) => (account.albums = ids)}
-	/>
+<PageCard
+	title="Albums"
+	footer={get('showAssetsInAlbums')
+		? '“In any album” is on, so every album already shows.'
+		: 'Every photo in these albums, favorite or not.'}
+>
+	<!-- With "In any album" on, picking albums adds nothing: shown dimmed and inert. -->
+	<div
+		inert={get('showAssetsInAlbums')}
+		class="transition-opacity {get('showAssetsInAlbums') ? 'opacity-40' : ''}"
+	>
+		<ItemList
+			noun="Album"
+			{accountIndex}
+			selected={(account.albums ?? []) as string[]}
+			items={library.albums}
+			{loading}
+			usedElsewhere={excludedMap}
+			manualPattern={guid}
+			onchange={(ids) => (account.albums = ids)}
+		/>
+	</div>
 </PageCard>
 
 <PageCard title="People" footer="Any photo with one of them in it.">

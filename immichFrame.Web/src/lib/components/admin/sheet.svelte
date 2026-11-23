@@ -88,7 +88,7 @@
 			<span></span>
 			<h2
 				class="truncate text-[1.0625rem] font-semibold md:text-[0.9375rem] {hideTitle
-					? 'sr-only'
+					? 'invisible'
 					: ''}"
 			>
 				{title}

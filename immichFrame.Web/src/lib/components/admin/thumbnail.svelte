@@ -12,9 +12,18 @@
 		/** Shown instead of a monogram when there's no picture to load (e.g. tags). */
 		glyph?: GlyphName;
 		size?: number;
+		/** On a highlighted (accent) row: the glyph tile turns white so it stays visible. */
+		onAccent?: boolean;
 	}
 
-	let { name, accountIndex = null, thumb = null, glyph, size = 28 }: Props = $props();
+	let {
+		name,
+		accountIndex = null,
+		thumb = null,
+		glyph,
+		size = 28,
+		onAccent = false
+	}: Props = $props();
 
 	let src: string | null = $state(null);
 	let node: HTMLElement | undefined = $state();
@@ -55,7 +64,11 @@
 	{#if src}
 		<img {src} alt="" class="h-full w-full object-cover" />
 	{:else if glyph}
-		<span class="bg-fill text-label-2 flex h-full w-full items-center justify-center rounded-[6px]">
+		<span
+			class="flex h-full w-full items-center justify-center rounded-[6px] {onAccent
+				? 'bg-white/25 text-white'
+				: 'bg-fill text-label-2'}"
+		>
 			<Glyph name={glyph} size={Math.round(size * 0.55)} stroke={2} />
 		</span>
 	{:else if thumb?.kind === 'asset'}

@@ -74,7 +74,7 @@
 				<button
 					type="button"
 					role="menuitem"
-					class="block w-full rounded-[6px] px-3 py-1.5 text-left text-[0.875rem] hover:bg-accent focus:bg-accent focus:outline-none {item.destructive
+					class="block w-full rounded-[6px] px-3 py-1.5 text-left text-[0.875rem] hover:bg-[var(--if-accent-fill)] focus:bg-[var(--if-accent-fill)] focus:outline-none {item.destructive
 						? 'text-[#d70015] hover:text-white focus:text-white dark:text-[#ff6961]'
 						: ''}"
 					onclick={() => {

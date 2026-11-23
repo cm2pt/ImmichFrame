@@ -109,7 +109,7 @@
 				<button
 					type="button"
 					role="menuitem"
-					class="hover:bg-accent focus:bg-accent block w-full rounded-[5px] px-2.5 py-1 text-left text-[0.875rem] outline-none hover:text-white focus:text-white"
+					class="hover:bg-[var(--if-accent-fill)] focus:bg-[var(--if-accent-fill)] block w-full rounded-[5px] px-2.5 py-1 text-left text-[0.875rem] outline-none hover:text-white focus:text-white"
 					onclick={() => {
 						menuOpen = false;
 						picking = k;

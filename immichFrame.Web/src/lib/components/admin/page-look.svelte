@@ -340,7 +340,7 @@
 		</SettingRow>
 		<SettingRow
 			title="Full resolution"
-			description="Sharper on large screens. Needs full-size images turned on in Immich"
+			description="Sharper on large screens. Needs Immich’s Image Settings → Full-size image turned on"
 		>
 			{#snippet control()}
 				<Toggle
@@ -627,12 +627,15 @@
 
 	<PageCard
 		title="Calendars"
-		footer="Upcoming events in the top corner. Paste a calendar's .ics link; changes show within 15 minutes."
+		footer="Upcoming events in the top corner. Paste a calendar’s .ics link; changes show within 15 minutes."
 	>
 		<div data-setting="Calendars">
 			{#each general.webcalendars ?? [] as url, i (i)}
 				<div class="border-sep flex min-h-11 items-center gap-3 border-t py-1.5 first:border-t-0">
-					<span class="text-label-2 flex shrink-0"><Glyph name="calendarHeart" size={18} /></span>
+					<span
+						class="bg-fill text-label-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px]"
+						><Glyph name="calendarHeart" size={15} stroke={2} /></span
+					>
 					<span class="min-w-0 flex-1 truncate text-[0.9375rem] md:text-[0.875rem]"
 						>{calendarLabel(url)}</span
 					>
