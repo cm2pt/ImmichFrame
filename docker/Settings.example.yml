@@ -35,6 +35,7 @@ General:
   ImageZoom: true
   ImagePan: false
   ImageFill: false
+  UseFullResolution: false
   PlayAudio: false
   Layout: splitview
 Accounts:
@@ -48,6 +49,7 @@ Accounts:
     ShowOnThisDayMemories: true
     ShowBirthdayMemories: true
     ShowFavorites: false
+    ShowAssetsInAlbums: false
     ShowArchived: false
     ShowVideos: false
     ImagesFromDays: null

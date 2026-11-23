@@ -101,19 +101,19 @@
 				</span>
 				<div class="min-w-0 flex-1">
 					<p class="truncate text-[0.9375rem] md:text-[0.875rem]">
-						{screen.name || device.label}
+						{screen.name || screen.clientIdentifier}
 					</p>
-					<p class="text-label-2 truncate text-[0.8125rem] md:text-[0.75rem]">
-						{screen.sentSecret ? 'Old secret' : 'No secret'}&nbsp;·&ensp;{tries}
-						{tries === 1 ? 'try' : 'tries'}, last {relativeTime(
-							new Date(screen.lastRejectedUtc!).getTime(),
-							now
-						)}{screen.remoteAddress ? ` · ${screen.remoteAddress}` : ''}
+					<p class="text-label-2 text-[0.8125rem] md:text-[0.75rem]">
+						{[
+							device.label,
+							screen.sentSecret ? 'Wrong secret' : 'No secret',
+							`${tries} ${tries === 1 ? 'try' : 'tries'}, last ${relativeTime(new Date(screen.lastRejectedUtc!).getTime(), now)}`
+						].join(' · ')}
 					</p>
 				</div>
 				<RowMenu
 					id={`rejected-menu-${screen.clientIdentifier}`}
-					label="Actions for {screen.name || device.label}"
+					label="Actions for {screen.name || screen.clientIdentifier}"
 					items={[
 						{ label: 'Show How to Add It', onselect: showHow },
 						{ label: 'Dismiss', onselect: () => dismiss(screen) }

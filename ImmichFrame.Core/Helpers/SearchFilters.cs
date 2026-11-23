@@ -47,6 +47,7 @@ public static class SearchFilters
 
     public static bool HasConfiguredSource(IAccountSettings settings) =>
         settings.ShowFavorites
+        || settings.ShowAssetsInAlbums
         || settings.Albums is { Count: > 0 }
         || settings.People is { Count: > 0 }
         || settings.Tags is { Count: > 0 };
@@ -86,6 +87,11 @@ public static class SearchFilters
         if (settings.ShowFavorites)
         {
             branches.Add(new SearchFilterBranch { IsFavorite = new BoolFilter { Eq = true } });
+        }
+
+        if (settings.ShowAssetsInAlbums)
+        {
+            branches.Add(new SearchFilterBranch { HasAlbums = new BoolFilter { Eq = true } });
         }
 
         if (settings.Albums is { Count: > 0 } albums)

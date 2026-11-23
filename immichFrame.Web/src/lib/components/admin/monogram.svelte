@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getAvatarUrl } from '$lib/services/admin';
+	import Glyph from './glyph.svelte';
 
 	interface Props {
 		name: string;
@@ -19,6 +20,9 @@
 			.map((part) => part[0]?.toUpperCase())
 			.join('')
 	);
+
+	// A generic name ("Account 1" → "1") gets Apple's person silhouette instead of a digit.
+	let generic = $derived(initials === '' || /^\d+$/.test(initials));
 
 	let avatar: string | null = $state(null);
 	$effect(() => {
@@ -48,6 +52,11 @@
 	<span
 		class="flex shrink-0 items-center justify-center rounded-full bg-[linear-gradient(#a5abb8,#858994)] font-semibold text-white"
 		style="width:{size}px;height:{size}px;font-size:{Math.round(size * 0.42)}px"
-		aria-hidden="true">{initials}</span
+		aria-hidden="true"
+		>{#if generic}<Glyph
+				name="user"
+				size={Math.round(size * 0.55)}
+				stroke={2}
+			/>{:else}{initials}{/if}</span
 	>
 {/if}

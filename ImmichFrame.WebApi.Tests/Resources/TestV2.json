@@ -38,6 +38,7 @@
     "ImageZoom": true,
     "ImagePan": true,
     "ImageFill": true,
+    "UseFullResolution": true,
     "PlayAudio": true,
     "Layout": "Layout_TEST"
   },
@@ -51,6 +52,7 @@
       "ShowOnThisDayMemories": true,
       "ShowBirthdayMemories": true,
       "ShowFavorites": true,
+      "ShowAssetsInAlbums": true,
       "ShowArchived": true,
       "ShowVideos": true,
       "ImagesFromDays": 7,
@@ -84,6 +86,7 @@
       "ShowOnThisDayMemories": true,
       "ShowBirthdayMemories": true,
       "ShowFavorites": true,
+      "ShowAssetsInAlbums": true,
       "ShowArchived": true,
       "ShowVideos": true,
       "ImagesFromDays": 7,

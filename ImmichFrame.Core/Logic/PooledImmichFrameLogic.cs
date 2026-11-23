@@ -37,6 +37,7 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
     private IAssetPool BuildPool(IAccountSettings accountSettings)
     {
         var hasSource = accountSettings.ShowFavorites
+            || accountSettings.ShowAssetsInAlbums
             || (accountSettings.Albums?.Any() ?? false)
             || (accountSettings.People?.Any() ?? false)
             || (accountSettings.Tags?.Any() ?? false);
@@ -121,8 +122,13 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
 
         throw new AssetNotFoundException($"Asset {id} is not a supported media type ({assetType}).");
     }
+    /// <summary>The cache name of an image: full-size copies get their own, so the two never mix.</summary>
+    public static string CacheName(Guid id, bool fullResolution) => fullResolution ? $"{id}-full" : id.ToString();
+
     private async Task<(string fileName, string ContentType, Stream fileStream)> GetImageAsset(Guid id)
     {
+        var fullResolution = _generalSettings.UseFullResolution;
+        var cacheName = CacheName(id, fullResolution);
         if (_generalSettings.DownloadImages)
         {
             if (!Directory.Exists(_downloadLocation))
@@ -131,7 +137,7 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
             }
 
             var file = Directory.GetFiles(_downloadLocation)
-                .FirstOrDefault(x => Path.GetFileNameWithoutExtension(x) == id.ToString());
+                .FirstOrDefault(x => Path.GetFileNameWithoutExtension(x) == cacheName);
 
             if (!string.IsNullOrWhiteSpace(file))
             {
@@ -149,8 +155,20 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
         }
 
         // edited: true returns the version with Immich's crop or rotation applied (#680). Immich
-        // falls back to the original when an asset has no edits.
-        var data = await _immichApi.ViewAssetAsync(true, id, string.Empty, AssetMediaSize.Preview, null);
+        // falls back to the original when an asset has no edits. Full size (#614) is Immich's
+        // full-size image: the original for formats browsers show, a converted copy otherwise.
+        var size = fullResolution ? AssetMediaSize.Fullsize : AssetMediaSize.Preview;
+        FileResponse data;
+        try
+        {
+            data = await _immichApi.ViewAssetAsync(true, id, string.Empty, size, null);
+        }
+        catch (ApiException ex) when (fullResolution && ex.StatusCode is >= 300 and < 400)
+        {
+            // REGRESSION: with full-size generation off, Immich answers a full-size request with a
+            // redirect to the preview, which the generated client treats as an error.
+            data = await _immichApi.ViewAssetAsync(true, id, string.Empty, AssetMediaSize.Preview, null);
+        }
 
         if (data == null)
             throw new AssetNotFoundException($"Asset {id} was not found!");
@@ -161,8 +179,13 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
             contentType = data.Headers["Content-Type"].FirstOrDefault() ?? "";
         }
 
-        var ext = contentType.ToLower() == "image/webp" ? "webp" : "jpeg";
-        var fileName = $"{id}.{ext}";
+        var ext = contentType.ToLower() switch
+        {
+            "image/webp" => "webp",
+            "image/png" => "png",
+            _ => "jpeg"
+        };
+        var fileName = $"{cacheName}.{ext}";
 
         if (_generalSettings.DownloadImages)
         {

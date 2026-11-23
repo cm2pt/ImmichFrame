@@ -8,6 +8,8 @@
 	// Every setting by the title its row shows, with a few words people might type instead.
 	const index: { title: string; page: string; words?: string }[] = [
 		{ title: 'Favorites', page: 'photos', words: 'heart starred' },
+		{ title: 'In any album', page: 'photos', words: 'all albums every album' },
+		{ title: 'Full resolution', page: 'look', words: 'quality sharp 4k original high resolution' },
 		{ title: 'Memories', page: 'photos', words: 'on this day birthdays' },
 		{ title: 'Albums', page: 'photos' },
 		{ title: 'People', page: 'photos', words: 'faces persons' },

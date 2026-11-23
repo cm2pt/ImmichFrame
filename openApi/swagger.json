@@ -2441,6 +2441,9 @@
           "imageFill": {
             "type": "boolean"
           },
+          "useFullResolution": {
+            "type": "boolean"
+          },
           "playAudio": {
             "type": "boolean"
           },
@@ -2691,6 +2694,9 @@
             "type": "boolean"
           },
           "imageFill": {
+            "type": "boolean"
+          },
+          "useFullResolution": {
             "type": "boolean"
           },
           "playAudio": {
@@ -3174,6 +3180,9 @@
             "type": "boolean"
           },
           "showFavorites": {
+            "type": "boolean"
+          },
+          "showAssetsInAlbums": {
             "type": "boolean"
           },
           "showArchived": {

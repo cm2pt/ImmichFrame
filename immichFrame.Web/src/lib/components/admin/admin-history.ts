@@ -46,6 +46,8 @@ const labels: Record<string, string> = {
 	ShowOnThisDayMemories: 'On this day',
 	ShowBirthdayMemories: 'Birthdays',
 	ShowFavorites: 'Favorites',
+	ShowAssetsInAlbums: 'In any album',
+	UseFullResolution: 'Full resolution',
 	ShowArchived: 'Archived photos',
 	ShowVideos: 'Videos',
 	ImagesFromDays: 'Taken in the last … days',

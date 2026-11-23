@@ -11,9 +11,11 @@
 		children: Snippet;
 		/** Buttons for the bottom of the desktop sheet; defaults to a prominent Done. */
 		actions?: Snippet;
+		/** Leaves the phone nav bar untitled when the content already starts with the name. */
+		hideTitle?: boolean;
 	}
 
-	let { title, onclose, returnFocusTo, children, actions }: Props = $props();
+	let { title, onclose, returnFocusTo, children, actions, hideTitle = false }: Props = $props();
 
 	let panel: HTMLElement | undefined = $state();
 	// Captured when the sheet opens: props are live, and by the time it closes the opener's
@@ -39,7 +41,7 @@
 		document.body.style.overflow = 'hidden';
 		// The page behind steps back around the part of it in view (CSS applies it on phones).
 		const shell = document.querySelector<HTMLElement>('.if-shell');
-		if (shell) shell.style.transformOrigin = `50% ${window.scrollY + 100}px`;
+		if (shell) shell.style.transformOrigin = `50% ${window.scrollY + 150}px`;
 		document.body.classList.add('if-sheet-open');
 		return () => {
 			clearTimeout(timer);
@@ -69,7 +71,7 @@
 		aria-modal="true"
 		aria-label={title}
 		tabindex="-1"
-		class="relative mt-[calc(env(safe-area-inset-top)+16px)] flex h-[calc(100%-env(safe-area-inset-top)-16px)] w-full flex-col overflow-hidden rounded-t-[10px] bg-[#f5f5f7] outline-none md:mt-0 md:h-auto md:max-h-[85dvh] md:w-[30rem] md:rounded-[12px] md:shadow-[0_24px_64px_rgb(0_0_0/0.3),0_0_0_0.5px_rgb(0_0_0/0.15)] dark:bg-[#1c1c1e] dark:md:shadow-[0_24px_64px_rgb(0_0_0/0.6),0_0_0_0.5px_rgb(255_255_255/0.12)]"
+		class="relative mt-[calc(env(safe-area-inset-top)+24px)] flex h-[calc(100%-env(safe-area-inset-top)-24px)] w-full flex-col overflow-hidden rounded-t-[10px] bg-[#f5f5f7] outline-none md:mt-0 md:h-auto md:max-h-[85dvh] md:w-[30rem] md:rounded-[12px] md:shadow-[0_24px_64px_rgb(0_0_0/0.3),0_0_0_0.5px_rgb(0_0_0/0.15)] dark:bg-[#1c1c1e] dark:md:shadow-[0_24px_64px_rgb(0_0_0/0.6),0_0_0_0.5px_rgb(255_255_255/0.12)]"
 		transition:fly={{ y: 24, duration: 220, easing: cubicOut }}
 	>
 		<!-- Phone: an iOS page sheet, with a grabber and a nav bar. Desktop: a macOS sheet, with
@@ -84,7 +86,13 @@
 			class="border-sep grid grid-cols-[1fr_auto_1fr] items-center border-b px-3 py-2.5 md:hidden"
 		>
 			<span></span>
-			<h2 class="truncate text-[1.0625rem] font-semibold md:text-[0.9375rem]">{title}</h2>
+			<h2
+				class="truncate text-[1.0625rem] font-semibold md:text-[0.9375rem] {hideTitle
+					? 'sr-only'
+					: ''}"
+			>
+				{title}
+			</h2>
 			<button
 				type="button"
 				class="justify-self-end rounded-md px-2 py-1 text-[1.0625rem] font-semibold text-primary focus-visible:outline-2 focus-visible:outline-primary md:text-[0.875rem]"

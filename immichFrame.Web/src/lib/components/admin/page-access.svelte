@@ -170,6 +170,7 @@
 			<Sheet
 				title={accountName(settings.Accounts[openAccount], openAccount)}
 				returnFocusTo={`account-row-${openAccount}`}
+				hideTitle
 				onclose={() => (openAccount = null)}
 			>
 				<AccountDetail

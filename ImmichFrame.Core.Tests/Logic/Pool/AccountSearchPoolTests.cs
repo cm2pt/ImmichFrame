@@ -286,6 +286,21 @@ public class AccountSearchPoolTests
         VerifyRandom(dto => dto.Filter!.PersonIds == null && dto.Filter.TagIds == null);
     }
 
+    [Test]
+    public async Task GetAssets_ShowAssetsInAlbums_AddsAHasAlbumsBranch_AndKeepsExclusions()
+    {
+        var excluded = Guid.NewGuid();
+        _settings.SetupGet(s => s.ShowAssetsInAlbums).Returns(true);
+        _settings.SetupGet(s => s.ExcludedAlbums).Returns(new List<Guid> { excluded });
+
+        await _pool.GetAssets(1);
+
+        VerifyRandom(dto =>
+            dto.Filter!.Or!.Count == 1 &&
+            dto.Filter.Or.Single().HasAlbums!.Eq == true &&
+            dto.Filter.AlbumIds!.None.Contains(excluded));
+    }
+
     // --- Ordered slideshows: the deck ---
 
     private List<Guid> SetupLibrary(int count)

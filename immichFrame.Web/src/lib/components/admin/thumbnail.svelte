@@ -41,7 +41,9 @@
 	});
 
 	// People are round, like contacts; albums are rounded squares, like Photos.
-	let radius = $derived(thumb?.kind === 'asset' ? 'rounded-[6px]' : 'rounded-full');
+	let radius = $derived(
+		thumb?.kind === 'asset' || (!thumb && glyph) ? 'rounded-[6px]' : 'rounded-full'
+	);
 </script>
 
 <span
@@ -53,7 +55,7 @@
 	{#if src}
 		<img {src} alt="" class="h-full w-full object-cover" />
 	{:else if glyph}
-		<span class="bg-fill text-label-2 flex h-full w-full items-center justify-center {radius}">
+		<span class="bg-fill text-label-2 flex h-full w-full items-center justify-center rounded-[6px]">
 			<Glyph name={glyph} size={Math.round(size * 0.55)} stroke={2} />
 		</span>
 	{:else if thumb?.kind === 'asset'}

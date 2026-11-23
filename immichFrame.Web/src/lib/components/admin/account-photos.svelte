@@ -5,6 +5,7 @@
 	import { accountDefaults, effective } from './admin-defaults';
 	import { formatCount, libraryFor } from './admin-library.svelte';
 	import ItemList from './item-list.svelte';
+	import NeverShow from './never-show.svelte';
 	import PageCard from './page-card.svelte';
 	import Segmented from './segmented.svelte';
 	import SettingRow from './setting-row.svelte';
@@ -27,6 +28,7 @@
 
 	let hasSource = $derived(
 		get('showFavorites') ||
+			get('showAssetsInAlbums') ||
 			(account.albums?.length ?? 0) > 0 ||
 			(account.people?.length ?? 0) > 0 ||
 			(account.tags?.length ?? 0) > 0
@@ -84,6 +86,18 @@
 				aria-label="Favorites"
 				checked={get('showFavorites')}
 				onCheckedChange={(v) => (account.showFavorites = v)}
+			/>
+		{/snippet}
+	</SettingRow>
+	<SettingRow
+		title="In any album"
+		description="Every photo you've put in an album, new albums included"
+	>
+		{#snippet control()}
+			<Toggle
+				aria-label="In any album"
+				checked={get('showAssetsInAlbums')}
+				onCheckedChange={(v) => (account.showAssetsInAlbums = v)}
 			/>
 		{/snippet}
 	</SettingRow>
@@ -161,35 +175,12 @@
 	title="Never show"
 	footer="Photos in these albums, with these people or with these tags never show. Memories ignore this."
 >
-	<ItemList
-		noun="Album"
+	<NeverShow
+		{account}
+		{library}
+		{loading}
 		{accountIndex}
-		selected={(account.excludedAlbums ?? []) as string[]}
-		items={library.albums}
-		{loading}
-		usedElsewhere={includedMap}
-		manualPattern={guid}
-		onchange={(ids) => (account.excludedAlbums = ids)}
-	/>
-	<ItemList
-		noun="Person"
-		{accountIndex}
-		selected={(account.excludedPeople ?? []) as string[]}
-		items={library.people}
-		{loading}
-		usedElsewhere={includedPeopleMap}
-		manualPattern={guid}
-		onchange={(ids) => (account.excludedPeople = ids)}
-	/>
-	<ItemList
-		noun="Tag"
-		glyph="tag"
-		selected={account.excludedTags ?? []}
-		items={library.tags}
-		{loading}
-		usedElsewhere={includedTagsMap}
-		manualPlaceholder="Tag, e.g. Screenshots"
-		onchange={(ids) => (account.excludedTags = ids)}
+		shown={{ albums: includedMap, people: includedPeopleMap, tags: includedTagsMap }}
 	/>
 </PageCard>
 

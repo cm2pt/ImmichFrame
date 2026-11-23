@@ -56,6 +56,7 @@ export type GeneralSettings = {
     imageZoom?: boolean;
     imagePan?: boolean;
     imageFill?: boolean;
+    useFullResolution?: boolean;
     playAudio?: boolean;
     layout?: string | null;
     renewImagesDuration?: number;
@@ -78,6 +79,7 @@ export type ServerAccountSettings = {
     showOnThisDayMemories?: boolean;
     showBirthdayMemories?: boolean;
     showFavorites?: boolean;
+    showAssetsInAlbums?: boolean;
     showArchived?: boolean;
     showVideos?: boolean;
     imagesFromDays?: number | null;
@@ -388,6 +390,7 @@ export type ClientSettingsDto = {
     imageZoom?: boolean;
     imagePan?: boolean;
     imageFill?: boolean;
+    useFullResolution?: boolean;
     playAudio?: boolean;
     layout?: string | null;
     language?: string | null;

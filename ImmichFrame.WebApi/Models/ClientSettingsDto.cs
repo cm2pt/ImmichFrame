@@ -30,6 +30,7 @@ public class ClientSettingsDto(IClientSettings settings) : IClientSettings
     public bool ImageZoom => settings.ImageZoom;
     public bool ImagePan => settings.ImagePan;
     public bool ImageFill => settings.ImageFill;
+    public bool UseFullResolution => settings.UseFullResolution;
     public bool PlayAudio => settings.PlayAudio;
     public string Layout => settings.Layout;
     public string Language => settings.Language;

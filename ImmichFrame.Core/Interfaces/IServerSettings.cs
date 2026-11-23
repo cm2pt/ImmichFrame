@@ -17,6 +17,8 @@
         public bool ShowOnThisDayMemories { get; }
         public bool ShowBirthdayMemories { get; }
         public bool ShowFavorites { get; }
+        /// <summary>Every photo that is in at least one album (Immich's hasAlbums), minus excluded albums.</summary>
+        public bool ShowAssetsInAlbums { get; }
         public bool ShowArchived { get; }
         public bool ShowVideos { get; }
         public int? ImagesFromDays { get; }

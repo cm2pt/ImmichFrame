@@ -29,6 +29,8 @@ namespace ImmichFrame.Core.Interfaces
         public bool ImageZoom { get; }
         public bool ImagePan { get; }
         public bool ImageFill { get; }
+        /// <summary>Asks Immich for its full-size image instead of the preview: sharper on large screens, bigger downloads.</summary>
+        public bool UseFullResolution { get; }
         public bool PlayAudio { get; }
         public string Layout { get; }
         public string Language { get; }

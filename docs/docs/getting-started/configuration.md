@@ -160,6 +160,10 @@ General:
   ImagePan: false # boolean
   # Whether image should fill available space. Aspect ratio maintained but may be cropped.
   ImageFill: false # boolean
+  # Asks Immich for its full-size image instead of the preview: sharper on large (4K) screens,
+  # larger downloads. Needs Immich's full-size image generation (Administration → Settings →
+  # Image Settings); photos without a full-size copy fall back to the preview.
+  UseFullResolution: false # boolean
   # Whether to play audio for videos that have audio tracks.
   PlayAudio: false # boolean
   # Allow two portrait images to be displayed next to each other
@@ -183,6 +187,9 @@ Accounts:
     ShowBirthdayMemories: true # boolean
     # If this is set, favorites are displayed.
     ShowFavorites: false # boolean
+    # If this is set, every photo that's in at least one album is displayed (minus ExcludedAlbums),
+    # so new albums are picked up without listing them.
+    ShowAssetsInAlbums: false # boolean
     # If this is set, assets marked archived are displayed.
     ShowArchived: false # boolean
     # If this is set, video assets are included in the slideshow.

@@ -50,8 +50,12 @@
 
 	// Order: how the next photo is picked (the server's SlideshowOrder).
 	const orders = [
-		{ value: 'random', label: 'Random', description: 'Any photo, any time' },
-		{ value: 'shuffle', label: 'Shuffle', description: 'Every photo once, then a new shuffle' },
+		{
+			value: 'random',
+			label: 'Random',
+			description: 'Picks at random, so a photo can come back before others show'
+		},
+		{ value: 'shuffle', label: 'Shuffle', description: 'Every photo once, then a new order' },
 		{ value: 'oldest', label: 'Oldest First', description: 'By date taken, from the first photo' },
 		{ value: 'newest', label: 'Newest First', description: 'By date taken, from the latest photo' }
 	];
@@ -62,10 +66,21 @@
 		{ value: '1', label: 'Today' },
 		{ value: '2', label: 'Today and Tomorrow' },
 		{ value: '3', label: 'Next 3 Days' },
-		{ value: '7', label: 'Next Week' },
-		{ value: '14', label: 'Next 2 Weeks' },
-		{ value: '31', label: 'Next Month' }
+		{ value: '7', label: 'Next 7 Days' },
+		{ value: '14', label: 'Next 14 Days' },
+		{ value: '31', label: 'Next 31 Days' }
 	];
+
+	// A calendar row shows where it comes from, never the link itself (it can carry a password).
+	function calendarLabel(url: string) {
+		try {
+			const u = new URL(url.replace(/^webcal:/i, 'https:'));
+			const file = decodeURIComponent(u.pathname.split('/').filter(Boolean).pop() ?? '');
+			return file && !/^basic\.ics$/i.test(file) ? `${u.hostname} · ${file}` : u.hostname;
+		} catch {
+			return url;
+		}
+	}
 
 	// Movement maps onto two switches.
 	type Movement = 'zoom' | 'pan' | 'both' | 'still';
@@ -320,6 +335,18 @@
 						{ value: 'fill', label: 'Fill' }
 					]}
 					onchange={(v) => (general.imageFill = v === 'fill')}
+				/>
+			{/snippet}
+		</SettingRow>
+		<SettingRow
+			title="Full resolution"
+			description="Sharper on large screens. Needs full-size images turned on in Immich"
+		>
+			{#snippet control()}
+				<Toggle
+					aria-label="Full resolution"
+					checked={get('useFullResolution')}
+					onCheckedChange={(v) => (general.useFullResolution = v)}
 				/>
 			{/snippet}
 		</SettingRow>
@@ -602,25 +629,16 @@
 		title="Calendars"
 		footer="Upcoming events in the top corner. Paste a calendar's .ics link; changes show within 15 minutes."
 	>
-		{#if (general.webcalendars ?? []).length}
-			<SettingRow title="Show events for">
-				{#snippet control()}
-					<PopupSelect
-						label="Show events for"
-						options={calendarRanges}
-						value={String(get('calendarDaysAhead') ?? 1)}
-						onchange={(v) => (general.calendarDaysAhead = Number(v))}
-					/>
-				{/snippet}
-			</SettingRow>
-		{/if}
 		<div data-setting="Calendars">
 			{#each general.webcalendars ?? [] as url, i (i)}
-				<div class="border-sep flex min-h-11 items-center gap-3 border-t py-2 first:border-t-0">
-					<span class="min-w-0 flex-1 truncate text-[0.875rem]">{url}</span>
+				<div class="border-sep flex min-h-11 items-center gap-3 border-t py-1.5 first:border-t-0">
+					<span class="text-label-2 flex shrink-0"><Glyph name="calendarHeart" size={18} /></span>
+					<span class="min-w-0 flex-1 truncate text-[0.9375rem] md:text-[0.875rem]"
+						>{calendarLabel(url)}</span
+					>
 					<button
 						type="button"
-						class="text-label-3 -mr-1 rounded-full p-1 hover:text-[#d70015] focus-visible:outline-2 focus-visible:outline-primary dark:hover:text-[#ff6961]"
+						class="text-label-3 -my-2 -mr-3 rounded-full p-3 hover:text-[#d70015] focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-primary dark:hover:text-[#ff6961]"
 						aria-label="Remove calendar"
 						onclick={() =>
 							(general.webcalendars = (general.webcalendars ?? []).filter((_, j) => j !== i))}
@@ -665,5 +683,17 @@
 				>
 			{/if}
 		</div>
+		{#if (general.webcalendars ?? []).length}
+			<SettingRow title="Show events for">
+				{#snippet control()}
+					<PopupSelect
+						label="Show events for"
+						options={calendarRanges}
+						value={String(get('calendarDaysAhead') ?? 1)}
+						onchange={(v) => (general.calendarDaysAhead = Number(v))}
+					/>
+				{/snippet}
+			</SettingRow>
+		{/if}
 	</PageCard>
 </div>
