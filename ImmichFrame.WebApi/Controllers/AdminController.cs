@@ -218,6 +218,25 @@ namespace ImmichFrame.WebApi.Controllers
             return await ImmichAccountLibrary.Load(account, _httpClientFactory);
         }
 
+        /// <summary>
+        /// How many photos these account settings draw from (memories aside), for the live count
+        /// under Include. Takes the settings in the body, so unsaved changes count.
+        /// </summary>
+        [HttpPost("Library/Count", Name = "CountMatchingAssets")]
+        public async Task<MatchingCountDto> CountMatchingAssets([FromBody] ServerAccountSettings account)
+        {
+            try
+            {
+                account.ValidateAndInitialize(); // resolves ApiKeyFile if given
+            }
+            catch (Exception ex)
+            {
+                return new MatchingCountDto { Message = ex.Message };
+            }
+
+            return await ImmichAccountLibrary.CountMatching(account, _httpClientFactory);
+        }
+
         [HttpGet("Screens", Name = "GetScreens")]
         public async Task<IReadOnlyList<ScreenDto>> GetScreens()
         {

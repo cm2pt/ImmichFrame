@@ -36,6 +36,11 @@ export function getAccountLibrary(account: ServerAccountSettings) {
 	return api.getAccountLibrary(account, authOpts());
 }
 
+/** How many photos these (possibly unsaved) settings draw from, memories aside. */
+export function countMatchingAssets(account: ServerAccountSettings) {
+	return api.countMatchingAssets(account, authOpts());
+}
+
 export function getScreens() {
 	return api.getScreens(authOpts());
 }

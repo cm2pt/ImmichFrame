@@ -37,8 +37,8 @@
 			list.forEach(async (account, i) => {
 				if (!hasConnection(account)) return;
 				try {
-					const res = await adminApi.getAccountLibrary(account);
-					matching[i] = res.status === 200 ? (res.data.matchingAssets ?? null) : null;
+					const res = await adminApi.countMatchingAssets(account);
+					matching[i] = res.status === 200 ? (res.data.count ?? null) : null;
 				} catch {
 					matching[i] = null;
 				}
@@ -63,6 +63,11 @@
 			: null
 	);
 
+	const memoriesOn = (account: ServerAccountSettings) =>
+		!!effective(account, accountDefaults, 'showMemories');
+	const inRotation = (n: number, memories: boolean) =>
+		`${formatCount(n)} ${n === 1 ? 'photo' : 'photos'} in rotation${memories ? ', plus memories' : ''}.`;
+
 	function summary(account: ServerAccountSettings, i: number) {
 		const library = libraries[i];
 		if (!hasConnection(account)) return 'Not connected. Add it under Access & Accounts.';
@@ -85,7 +90,7 @@
 {#if selected === null || !accounts[selected]}
 	<PageCard
 		title="Accounts"
-		footer={total != null ? `${formatCount(total)} photos in rotation, plus memories.` : undefined}
+		footer={total != null ? inRotation(total, accounts.some(memoriesOn)) : undefined}
 	>
 		{#each accounts as account, i (i)}
 			<button
@@ -127,7 +132,7 @@
 		<Monogram name={libraries[i]?.userName || String(i + 1)} size={36} avatarOf={i} />
 		<p class="text-label-2 text-[0.9375rem]">
 			{matching[i] != null
-				? `${formatCount(matching[i])} photos in rotation, plus memories.`
+				? inRotation(matching[i]!, memoriesOn(accounts[i]))
 				: summary(accounts[i], i)}
 		</p>
 	</div>

@@ -186,5 +186,64 @@ namespace ImmichFrame.WebApi.Tests.Helpers
 
             Assert.That(library.MatchingAssets, Is.Null);
         }
+        [Test]
+        public async Task CountMatching_CountsWithTheAccountsFilter()
+        {
+            var immich = new FakeImmich();
+
+            var result = await ImmichAccountLibrary.CountMatching(Account(), new Factory(immich));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Count, Is.EqualTo(1302), result.Message);
+                Assert.That(immich.StatisticsBodies, Has.Count.EqualTo(1));
+            });
+        }
+
+        [Test]
+        public async Task CountMatching_ExcludedTagIsResolvedToItsId()
+        {
+            var immich = new FakeImmich();
+            var account = Account();
+            account.ExcludedTags = new List<string> { "Holidays/2025" };
+
+            await ImmichAccountLibrary.CountMatching(account, new Factory(immich));
+
+            Assert.That(immich.StatisticsBodies.Single(), Does.Contain(TagHolidays.ToString()));
+        }
+
+        [Test]
+        public async Task CountMatching_OnlyAnUnknownTag_IsZeroWithoutSearching()
+        {
+            var immich = new FakeImmich();
+            var account = new ServerAccountSettings
+            {
+                ImmichServerUrl = "http://immich.local", ApiKey = "key", ShowFavorites = false,
+                Tags = new List<string> { "No/Such/Tag" }
+            };
+
+            var result = await ImmichAccountLibrary.CountMatching(account, new Factory(immich));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Count, Is.EqualTo(0));
+                Assert.That(immich.StatisticsBodies, Is.Empty);
+            });
+        }
+
+        [Test]
+        public async Task CountMatching_FailingTags_ReportsInsteadOfCounting()
+        {
+            var account = Account();
+            account.Tags = new List<string> { "Holidays/2025" };
+
+            var result = await ImmichAccountLibrary.CountMatching(account, new Factory(new FakeImmich { FailTags = true }));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Count, Is.Null);
+                Assert.That(result.Message, Does.Contain("Could not count"));
+            });
+        }
     }
 }

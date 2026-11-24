@@ -34,6 +34,14 @@
 			(account.tags?.length ?? 0) > 0
 	);
 
+	let includeFooter = $derived.by(() => {
+		if (!hasSource)
+			return get('showMemories')
+				? 'Only memories: nothing else is picked.'
+				: 'Nothing is picked, so the frame shows the whole library.';
+		return 'Each source adds photos: a photo shows if it matches any of them.';
+	});
+
 	// One album, person or tag can't be both shown and hidden: each list marks the other's.
 	const marks = (ids: readonly unknown[] | null | undefined, reason: string) =>
 		new Map((ids ?? []).map((id) => [String(id).toLowerCase(), reason]));
@@ -67,14 +75,7 @@
 	const toIso = (raw: string) => (raw === '' ? null : new Date(raw).toISOString());
 </script>
 
-<PageCard
-	title="Include"
-	footer={hasSource
-		? undefined
-		: get('showMemories')
-			? 'Only memories: nothing else is picked.'
-			: 'Nothing is picked, so the frame shows the whole library.'}
->
+<PageCard title="Include" footer={includeFooter}>
 	<SettingRow
 		title="Favorites"
 		description={library.favoriteCount != null

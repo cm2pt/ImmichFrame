@@ -56,6 +56,13 @@ namespace ImmichFrame.WebApi.Helpers
         public List<LibraryTagDto> Tags { get; set; } = new();
     }
 
+    public class MatchingCountDto
+    {
+        /// <summary>Photos the library search draws from with these settings; null when it couldn't be counted.</summary>
+        public int? Count { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
+
     /// <summary>
     /// Reads what an account can pick from (albums, named people, tags) and two counts, so the
     /// admin UI can offer names instead of ids. Every part is best-effort: one failing Immich
@@ -191,6 +198,52 @@ namespace ImmichFrame.WebApi.Helpers
                 ? $"Read {result.Albums.Count} albums, {result.People.Count} named people and {result.Tags.Count} tags."
                 : $"Could not read everything from {account.ImmichServerUrl}: {Summarize(errors)}";
             return result;
+        }
+
+        /// <summary>
+        /// How many photos the frame's library search draws from with exactly these settings
+        /// (sources, Never show, date range, rating, videos, archive), counted the way the
+        /// slideshow counts it, for the admin page's live count. Memories are not included.
+        /// </summary>
+        public static async Task<MatchingCountDto> CountMatching(IAccountSettings account, IHttpClientFactory httpClientFactory)
+        {
+            var httpClient = httpClientFactory.CreateClient(ImmichApiHttpClientExtensions.ImmichApiAccountClient);
+            httpClient.UseApiKey(account.ApiKey);
+            var immichApi = new ImmichApi(account.ImmichServerUrl, httpClient);
+            using var cts = new CancellationTokenSource(RequestTimeout);
+            var token = cts.Token;
+
+            try
+            {
+                List<Guid> tagIds = [], excludedTagIds = [];
+                var wanted = account.Tags ?? [];
+                var excluded = account.ExcludedTags ?? [];
+                if (wanted.Count > 0 || excluded.Count > 0)
+                {
+                    // The settings hold tag values; the search needs their ids.
+                    var byValue = (await immichApi.GetAllTagsAsync(token))
+                        .Where(t => !string.IsNullOrEmpty(t.Value))
+                        .GroupBy(t => t.Value)
+                        .ToDictionary(g => g.Key, g => g.First().Id);
+                    tagIds = wanted.Where(byValue.ContainsKey).Select(v => byValue[v]).ToList();
+                    excludedTagIds = excluded.Where(byValue.ContainsKey).Select(v => byValue[v]).ToList();
+                }
+
+                if (SearchFilters.HasConfiguredSource(account) && !SearchFilters.HasMatchingBranch(account, tagIds))
+                {
+                    return new MatchingCountDto { Count = 0 };
+                }
+
+                var stats = await immichApi.SearchAssetStatisticsAsync(new StatisticsSearchDto
+                {
+                    Filter = SearchFilters.ForAccount(account, tagIds, excludedTagIds)
+                }, token);
+                return new MatchingCountDto { Count = ToInt(stats.Total) };
+            }
+            catch (Exception ex)
+            {
+                return new MatchingCountDto { Message = $"Could not count from {account.ImmichServerUrl}: {ex.Message}" };
+            }
         }
 
         private static SearchFilter TimelineImages() => new()

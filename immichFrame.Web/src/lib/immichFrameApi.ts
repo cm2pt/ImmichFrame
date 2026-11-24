@@ -132,6 +132,10 @@ export type AccountLibraryDto = {
     people?: LibraryPersonDto[] | null;
     tags?: LibraryTagDto[] | null;
 };
+export type MatchingCountDto = {
+    count?: number | null;
+    message?: string | null;
+};
 export type ScreenDto = {
     clientIdentifier?: string | null;
     name?: string | null;
@@ -486,6 +490,19 @@ export function getAccountLibrary(serverAccountSettings?: ServerAccountSettings,
         status: 401;
         data: string;
     }>("/api/Admin/Library", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: serverAccountSettings
+    }));
+}
+export function countMatchingAssets(serverAccountSettings?: ServerAccountSettings, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: MatchingCountDto;
+    } | {
+        status: 401;
+        data: string;
+    }>("/api/Admin/Library/Count", oazapfts.json({
         ...opts,
         method: "POST",
         body: serverAccountSettings
