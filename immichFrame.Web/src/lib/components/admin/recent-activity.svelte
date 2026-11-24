@@ -6,7 +6,7 @@
 	import * as adminApi from '$lib/services/admin';
 	import { relativeTime } from './admin-format';
 	import { humanizeChange } from './admin-history';
-	import { peekLibrary } from './admin-library.svelte';
+	import { accountLabel, peekLibrary } from './admin-library.svelte';
 	import InlineConfirm from './inline-confirm.svelte';
 
 	interface Props {
@@ -25,7 +25,7 @@
 	let confirming: number | null = $state(null);
 	let showAll = $state(false);
 
-	let names = $derived(accounts.map((a, i) => peekLibrary(a)?.userName || `Account ${i + 1}`));
+	let names = $derived(accounts.map((a, i) => accountLabel(a, i, peekLibrary(a))));
 
 	async function load() {
 		error = '';

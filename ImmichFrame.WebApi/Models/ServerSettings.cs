@@ -82,6 +82,8 @@ public class GeneralSettings : IGeneralSettings
 
 public class ServerAccountSettings : IAccountSettings
 {
+    /// <summary>What the admin page calls this account (e.g. "Family"). Only a label: the frame never shows it.</summary>
+    public string? Name { get; set; }
     public string ImmichServerUrl { get; set; } = string.Empty;
     public string ApiKey { get; set; } = string.Empty;
     public string? ApiKeyFile { get; set; } = null;

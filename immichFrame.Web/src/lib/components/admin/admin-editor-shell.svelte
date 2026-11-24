@@ -10,7 +10,7 @@
 	import type { GlyphName } from './glyphs';
 	import { invalidFormats } from './format-presets';
 	import type { AdminEditor } from './admin-editor.svelte';
-	import { libraryFor } from './admin-library.svelte';
+	import { accountLabel, libraryFor } from './admin-library.svelte';
 	import { AdminPreview } from './admin-preview.svelte';
 	import LivePreview from './live-preview.svelte';
 	import PageAccess from './page-access.svelte';
@@ -78,6 +78,7 @@
 	let current = $derived(pages.find((p) => p.id === page)!);
 
 	function go(id: PageId | null) {
+		if (id !== hashPage) lookCaptions = false;
 		hashPage = id;
 		history.replaceState(null, '', id ? `#${id}` : location.pathname);
 		window.scrollTo({ top: 0 });
@@ -85,17 +86,24 @@
 
 	// Photos drills into one account: its name becomes the page's title, and back returns to
 	// the list (the sidebar or the phone's root list is one level further up).
+	// Slideshow & Look drills into Clock & Captions the same way.
 	let photosAccount: number | null = $state(null);
-	let drilledName = $derived.by(() => {
-		if (page !== 'photos' || photosAccount === null) return null;
-		const account = editor.settings.Accounts?.[photosAccount];
-		if (!account) return null;
-		return libraryFor(account).userName || `Account ${photosAccount + 1}`;
+	let lookCaptions = $state(false);
+	let drill: { title: string; back: string } | null = $derived.by(() => {
+		if (page === 'photos' && photosAccount !== null) {
+			const account = editor.settings.Accounts?.[photosAccount];
+			if (account)
+				return { title: accountLabel(account, photosAccount, libraryFor(account)), back: 'Photos' };
+		}
+		if (page === 'look' && lookCaptions)
+			return { title: 'Clock & Captions', back: 'Slideshow & Look' };
+		return null;
 	});
-	let title = $derived(drilledName ?? current.title);
+	let title = $derived(drill?.title ?? current.title);
 	function back() {
-		if (drilledName) {
-			photosAccount = null;
+		if (drill) {
+			if (page === 'photos') photosAccount = null;
+			else lookCaptions = false;
 			window.scrollTo({ top: 0 });
 		} else go(null);
 	}
@@ -283,11 +291,11 @@
 			>
 				<button
 					type="button"
-					class="flex items-center gap-0.5 justify-self-start rounded-md px-1 text-[1.0625rem] text-primary"
+					class="flex items-center gap-0.5 justify-self-start rounded-md px-1 text-[1.0625rem] whitespace-nowrap text-primary"
 					onclick={back}
 				>
 					<Glyph name="chevronLeft" size={22} stroke={2.2} />
-					{drilledName ? 'Photos' : 'ImmichFrame'}
+					{(drill?.back ?? 'ImmichFrame').length > 12 ? 'Back' : (drill?.back ?? 'ImmichFrame')}
 				</button>
 				<span
 					class="text-[1.0625rem] font-semibold transition-opacity duration-200 {scrolled
@@ -379,14 +387,15 @@
 			<div class="mx-auto max-w-[44rem]">
 				{#key page}
 					<div in:fly={{ y: 6, duration: 220, easing: cubicOut }}>
-						{#if drilledName}
+						{#if drill}
 							<!-- Desktop only: the phone's nav bar already carries the back button. -->
 							<button
 								type="button"
 								class="-ml-1 mb-1 hidden items-center gap-0.5 rounded-md text-[0.875rem] text-primary focus-visible:outline-2 focus-visible:outline-primary md:inline-flex"
 								onclick={back}
 							>
-								<Glyph name="chevronLeft" size={18} stroke={2.2} /> Photos
+								<Glyph name="chevronLeft" size={18} stroke={2.2} />
+								{drill.back}
 							</button>
 						{/if}
 						<h1
@@ -394,7 +403,7 @@
 						>
 							{title}
 						</h1>
-						{#if drilledName}
+						{#if drill}
 							<div class="mb-7"></div>
 						{:else}
 							<p class="text-label-2 mt-1 mb-7 text-[0.9375rem]">{current.intro}</p>
@@ -412,7 +421,10 @@
 							{:else if page === 'look'}
 								<LivePreview general={editor.settings.General ?? {}} {preview} />
 								{#key editor.version}
-									<PageLook general={editor.settings.General ?? (editor.settings.General = {})} />
+									<PageLook
+										general={editor.settings.General ?? (editor.settings.General = {})}
+										bind:captions={lookCaptions}
+									/>
 								{/key}
 							{:else if page === 'screens'}
 								<PageScreens

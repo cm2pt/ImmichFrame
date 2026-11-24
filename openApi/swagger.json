@@ -488,6 +488,70 @@
         ]
       }
     },
+    "/api/Admin/Weather/Place": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "GetWeatherPlace",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeatherPlaceRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeatherPlaceRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeatherPlaceRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherPlaceDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherPlaceDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherPlaceDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ImmichFrameAdminScheme": [ ]
+          }
+        ]
+      }
+    },
     "/api/Admin/Screens": {
       "get": {
         "tags": [
@@ -3237,6 +3301,10 @@
       "ServerAccountSettings": {
         "type": "object",
         "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
           "immichServerUrl": {
             "type": "string",
             "nullable": true
@@ -3493,6 +3561,38 @@
           "additionalProperties": {
             "type": "object",
             "additionalProperties": { },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "WeatherPlaceDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "WeatherPlaceRequestDto": {
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "latLong": {
+            "type": "string",
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
             "nullable": true
           }
         },

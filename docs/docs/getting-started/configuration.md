@@ -171,7 +171,8 @@ General:
 
 # multiple accounts permitted
 Accounts:
-  - # The URL of your Immich server e.g. `http://photos.yourdomain.com` / `http://192.168.0.100:2283`.
+  - Name: "" # string, optional label for the account in the admin page; the frame never shows it
+    # The URL of your Immich server e.g. `http://photos.yourdomain.com` / `http://192.168.0.100:2283`.
     ImmichServerUrl: "REQUIRED" # string, required, no default
     # Read more about how to obtain an Immich API key: https://immich.app/docs/features/command-line-interface#obtain-the-api-key
     # Exactly one of ApiKey or ApiKeyFile must be set.

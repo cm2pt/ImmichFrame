@@ -72,6 +72,7 @@ export type GeneralSettings = {
     adminPassword?: string | null;
 };
 export type ServerAccountSettings = {
+    name?: string | null;
     immichServerUrl?: string | null;
     apiKey?: string | null;
     apiKeyFile?: string | null;
@@ -134,6 +135,15 @@ export type AccountLibraryDto = {
 };
 export type MatchingCountDto = {
     count?: number | null;
+    message?: string | null;
+};
+export type WeatherPlaceRequestDto = {
+    apiKey?: string | null;
+    latLong?: string | null;
+    language?: string | null;
+};
+export type WeatherPlaceDto = {
+    name?: string | null;
     message?: string | null;
 };
 export type ScreenDto = {
@@ -506,6 +516,19 @@ export function countMatchingAssets(serverAccountSettings?: ServerAccountSetting
         ...opts,
         method: "POST",
         body: serverAccountSettings
+    }));
+}
+export function getWeatherPlace(weatherPlaceRequestDto?: WeatherPlaceRequestDto, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.fetchJson<{
+        status: 200;
+        data: WeatherPlaceDto;
+    } | {
+        status: 401;
+        data: string;
+    }>("/api/Admin/Weather/Place", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: weatherPlaceRequestDto
     }));
 }
 export function getScreens(opts?: Oazapfts.RequestOpts) {

@@ -237,6 +237,11 @@ namespace ImmichFrame.WebApi.Controllers
             return await ImmichAccountLibrary.CountMatching(account, _httpClientFactory);
         }
 
+        /// <summary>The place name the frame will show for a weather location (unsaved values work).</summary>
+        [HttpPost("Weather/Place", Name = "GetWeatherPlace")]
+        public Task<WeatherPlaceDto> GetWeatherPlace([FromBody] WeatherPlaceRequestDto request)
+            => WeatherPlace.Lookup(request);
+
         [HttpGet("Screens", Name = "GetScreens")]
         public async Task<IReadOnlyList<ScreenDto>> GetScreens()
         {

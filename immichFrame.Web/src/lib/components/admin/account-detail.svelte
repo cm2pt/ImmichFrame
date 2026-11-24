@@ -4,6 +4,7 @@
 	import FieldRow from './field-row.svelte';
 	import InlineConfirm from './inline-confirm.svelte';
 	import Monogram from './monogram.svelte';
+	import { monogramOf } from './admin-library.svelte';
 	import PageCard from './page-card.svelte';
 	import SettingRow from './setting-row.svelte';
 	import Toggle from './toggle.svelte';
@@ -20,12 +21,14 @@
 		name: string;
 		/** Its place in the saved settings, for the Immich profile picture. */
 		index?: number | null;
+		/** The Immich user the key belongs to, suggested as the name. */
+		immichName?: string | null;
 		status: AccountStatus | undefined;
 		ontest: () => void;
 		onremove: () => void;
 	}
 
-	let { account, name, index = null, status, ontest, onremove }: Props = $props();
+	let { account, name, index = null, immichName, status, ontest, onremove }: Props = $props();
 
 	// Initial values only: the sheet is created fresh each time it opens.
 	const initial = untrack(() => ({ key: account.apiKey, file: account.apiKeyFile }));
@@ -42,7 +45,7 @@
 </script>
 
 <div class="flex flex-col items-center gap-2 pt-1 text-center">
-	<Monogram name={name.startsWith('Account ') ? name.slice(8) : name} size={56} avatarOf={index} />
+	<Monogram name={monogramOf(name)} size={56} avatarOf={index} />
 	<p class="text-[1.0625rem] font-semibold">{name}</p>
 	<p class="text-label-2 flex items-center gap-1.5 text-[0.8125rem]">
 		{#if status?.testing}
@@ -54,6 +57,15 @@
 		{/if}
 	</p>
 </div>
+
+<PageCard footer="Only for this page, e.g. Family or Joana. The frame never shows it.">
+	<FieldRow
+		title="Name"
+		placeholder={immichName || 'Optional'}
+		value={account.name}
+		oninput={(v) => (account.name = v.trim() ? v : null)}
+	/>
+</PageCard>
 
 <PageCard footer={status && !status.success && !status.testing ? status.message : undefined}>
 	<FieldRow

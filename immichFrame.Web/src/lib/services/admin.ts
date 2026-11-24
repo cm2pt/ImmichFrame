@@ -36,6 +36,15 @@ export function getAccountLibrary(account: ServerAccountSettings) {
 	return api.getAccountLibrary(account, authOpts());
 }
 
+/** The place name the frame will show for a weather location. */
+export function getWeatherPlace(request: {
+	apiKey: string;
+	latLong: string;
+	language?: string | null;
+}) {
+	return api.getWeatherPlace(request, authOpts());
+}
+
 /** How many photos these (possibly unsaved) settings draw from, memories aside. */
 export function countMatchingAssets(account: ServerAccountSettings) {
 	return api.countMatchingAssets(account, authOpts());

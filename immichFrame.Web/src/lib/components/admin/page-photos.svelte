@@ -3,7 +3,13 @@
 	import type { ServerAccountSettings, ServerSettings } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import { accountDefaults, effective } from './admin-defaults';
-	import { formatCount, hasConnection, libraryFor } from './admin-library.svelte';
+	import {
+		accountLabel,
+		formatCount,
+		hasConnection,
+		libraryFor,
+		monogramOf
+	} from './admin-library.svelte';
 	import AccountPhotos from './account-photos.svelte';
 	import Glyph from './glyph.svelte';
 	import Monogram from './monogram.svelte';
@@ -98,10 +104,10 @@
 				class="border-sep flex min-h-14 w-full items-center gap-3 border-t py-2 text-left first:border-t-0 focus-visible:outline-2 focus-visible:outline-primary"
 				onclick={() => (selected = i)}
 			>
-				<Monogram name={libraries[i]?.userName || String(i + 1)} avatarOf={i} />
+				<Monogram name={monogramOf(accountLabel(account, i, libraries[i]))} avatarOf={i} />
 				<span class="min-w-0 flex-1">
 					<span class="block text-[0.9375rem] md:text-[0.875rem]"
-						>{libraries[i]?.userName || `Account ${i + 1}`}</span
+						>{accountLabel(account, i, libraries[i])}</span
 					>
 					<span class="text-label-2 block truncate text-[0.8125rem] md:text-[0.75rem]"
 						>{summary(account, i)}</span
@@ -129,7 +135,11 @@
 	{@const i = selected}
 	<!-- The shell titles the page with the account's name and puts "‹ Photos" above it. -->
 	<div class="-mt-3 flex items-center gap-3">
-		<Monogram name={libraries[i]?.userName || String(i + 1)} size={36} avatarOf={i} />
+		<Monogram
+			name={monogramOf(accountLabel(accounts[i], i, libraries[i]))}
+			size={36}
+			avatarOf={i}
+		/>
 		<p class="text-label-2 text-[0.9375rem]">
 			{matching[i] != null
 				? inRotation(matching[i]!, memoriesOn(accounts[i]))

@@ -98,6 +98,18 @@ export function libraryFor(account: ServerAccountSettings, refresh = false): Acc
 	return library;
 }
 
+/** What an account is called: the name given here, else its Immich user, else "Account N". */
+export function accountLabel(
+	account: ServerAccountSettings,
+	index: number,
+	library?: AccountLibrary
+) {
+	return account.name?.trim() || library?.userName || `Account ${index + 1}`;
+}
+
+/** What the monogram spells: the label, or just the number for an unnamed "Account N". */
+export const monogramOf = (label: string) => (/^Account \d+$/.test(label) ? label.slice(8) : label);
+
 /** The cached library for an account, without starting a request (for labels while typing). */
 export function peekLibrary(account: ServerAccountSettings): AccountLibrary | undefined {
 	return cache.get(connectionKey(account));
