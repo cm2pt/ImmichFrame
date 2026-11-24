@@ -78,6 +78,7 @@
 	{#if useFile}
 		<FieldRow
 			title="Key file"
+			truncate="middle"
 			placeholder="/run/secrets/immich-api-key"
 			value={account.apiKeyFile}
 			oninput={(v) => (account.apiKeyFile = v)}

@@ -68,27 +68,62 @@
 		}
 	];
 
-	// The page lives in the URL hash. On phones an empty hash is the root list, like iOS Settings.
-	const readHash = (): PageId | null => {
-		const hash = typeof window === 'undefined' ? '' : window.location.hash.slice(1);
-		return (pages.find((p) => p.id === hash)?.id ?? null) as PageId | null;
+	// Where you are lives in the URL hash, one level per segment: "#look/captions",
+	// "#photos/account-2". On phones an empty hash is the root list, like iOS Settings. Every
+	// move is a history entry, so the browser's Back and the iPhone's swipe go up one level.
+	interface Place {
+		page: PageId | null;
+		account: number | null;
+		captions: boolean;
+	}
+	const readPlace = (): Place => {
+		const [id, sub = ''] =
+			typeof window === 'undefined' ? [''] : window.location.hash.slice(1).split('/');
+		const page = (pages.find((p) => p.id === id)?.id ?? null) as PageId | null;
+		const account =
+			page === 'photos' && /^account-\d+$/.test(sub) ? Number(sub.slice(8)) - 1 : null;
+		return { page, account, captions: page === 'look' && sub === 'captions' };
 	};
-	let hashPage: PageId | null = $state(readHash());
+	const hashOf = (p: Place) =>
+		p.page === null
+			? ''
+			: `#${p.page}${p.page === 'photos' && p.account !== null ? `/account-${p.account + 1}` : ''}${
+					p.page === 'look' && p.captions ? '/captions' : ''
+				}`;
+	const start = readPlace();
+	let hashPage: PageId | null = $state(start.page);
 	let page: PageId = $derived(hashPage ?? 'photos');
 	let current = $derived(pages.find((p) => p.id === page)!);
 
-	function go(id: PageId | null) {
-		if (id !== hashPage) lookCaptions = false;
-		hashPage = id;
-		history.replaceState(null, '', id ? `#${id}` : location.pathname);
-		window.scrollTo({ top: 0 });
+	// Photos drills into one account (when there are several): its name becomes the page's
+	// title. Slideshow & Look drills into Clock & Captions the same way.
+	let photosAccount: number | null = $state(start.account);
+	let lookCaptions = $state(start.captions);
+	// While search has a query, its results replace the sections list.
+	let phoneSearching = $state(false);
+	let sidebarSearching = $state(false);
+
+	// Any change of place becomes a history entry (marked, so Back knows it can go back).
+	$effect(() => {
+		const want = hashOf({ page: hashPage, account: photosAccount, captions: lookCaptions });
+		if (want === window.location.hash) return;
+		history.pushState({ immichFrameAdmin: true }, '', want || window.location.pathname);
+	});
+	function applyPlace() {
+		const p = readPlace();
+		hashPage = p.page;
+		photosAccount = p.account;
+		lookCaptions = p.captions;
 	}
 
-	// Photos drills into one account: its name becomes the page's title, and back returns to
-	// the list (the sidebar or the phone's root list is one level further up).
-	// Slideshow & Look drills into Clock & Captions the same way.
-	let photosAccount: number | null = $state(null);
-	let lookCaptions = $state(false);
+	function go(id: PageId | null) {
+		if (id !== hashPage) {
+			lookCaptions = false;
+			photosAccount = null;
+		}
+		hashPage = id;
+		window.scrollTo({ top: 0 });
+	}
 	let drill: { title: string; back: string } | null = $derived.by(() => {
 		if (page === 'photos' && photosAccount !== null) {
 			const account = editor.settings.Accounts?.[photosAccount];
@@ -101,11 +136,13 @@
 	});
 	let title = $derived(drill?.title ?? current.title);
 	function back() {
-		if (drill) {
+		// Opened straight at a deep link there's nothing of ours to go back to: go up instead.
+		if (history.state?.immichFrameAdmin) history.back();
+		else if (drill) {
 			if (page === 'photos') photosAccount = null;
 			else lookCaptions = false;
-			window.scrollTo({ top: 0 });
 		} else go(null);
+		window.scrollTo({ top: 0 });
 	}
 
 	// Search: switch page, then scroll to the row and highlight it, like System Settings.
@@ -146,7 +183,7 @@
 	let canSave = $derived(editor.dirty && !saving && invalidFormats.size === 0);
 
 	onMount(() => {
-		const onHash = () => (hashPage = readHash());
+		const onHash = () => applyPlace();
 		const onBeforeUnload = (e: BeforeUnloadEvent) => {
 			if (editor.dirty) e.preventDefault();
 		};
@@ -157,7 +194,7 @@
 				if (canSave) onsave();
 			}
 		};
-		window.addEventListener('hashchange', onHash);
+		window.addEventListener('popstate', onHash);
 		window.addEventListener('beforeunload', onBeforeUnload);
 		window.addEventListener('keydown', onKey);
 		adminApi
@@ -173,7 +210,7 @@
 			.then((res) => res.status === 200 && countLive(res.data))
 			.catch(() => {});
 		return () => {
-			window.removeEventListener('hashchange', onHash);
+			window.removeEventListener('popstate', onHash);
 			window.removeEventListener('beforeunload', onBeforeUnload);
 			window.removeEventListener('keydown', onKey);
 		};
@@ -217,8 +254,8 @@
 		liveScreens === null
 			? ''
 			: liveScreens
-				? `${plural(liveScreens, 'screen')} showing photos`
-				: 'No screen showing photos'
+				? `${plural(liveScreens, 'screen')} on`
+				: 'No screens on'
 	);
 </script>
 
@@ -237,49 +274,51 @@
 		{#if hashPage === null}
 			<div class="px-4 pt-10 pb-28" in:fade={{ duration: 150 }}>
 				<h1 class="mb-4 text-[2.125rem] leading-tight font-bold tracking-[-0.02em]">ImmichFrame</h1>
-				<SettingsSearch onpick={jumpTo} />
-				<nav class="bg-group rounded-group mt-5 px-4" aria-label="Sections">
-					{#each pages as p (p.id)}
-						<!-- iOS insets the separator to where the text starts, not under the icon. -->
-						<a
-							href="#{p.id}"
-							class="group flex min-h-11 items-center gap-3"
-							onclick={(e) => {
-								e.preventDefault();
-								go(p.id);
-							}}
-						>
-							{@render tile(p, 29)}
-							<span
-								class="border-sep flex min-h-11 flex-1 items-center border-t py-2 group-first:border-t-0"
+				<SettingsSearch onpick={jumpTo} variant="list" bind:searching={phoneSearching} />
+				{#if !phoneSearching}
+					<nav class="bg-group rounded-group mt-5 px-4" aria-label="Sections">
+						{#each pages as p (p.id)}
+							<!-- iOS insets the separator to where the text starts, not under the icon. -->
+							<a
+								href="#{p.id}"
+								class="group flex min-h-11 items-center gap-3"
+								onclick={(e) => {
+									e.preventDefault();
+									go(p.id);
+								}}
 							>
-								<span class="flex-1 text-[1.0625rem]">{p.title}</span>
-								<Glyph name="chevronRight" size={16} class="text-label-3" />
-							</span>
+								{@render tile(p, 29)}
+								<span
+									class="border-sep flex min-h-11 flex-1 items-center border-t py-2 group-first:border-t-0"
+								>
+									<span class="flex-1 text-[1.0625rem]">{p.title}</span>
+									<Glyph name="chevronRight" size={16} class="text-label-3" />
+								</span>
+							</a>
+						{/each}
+					</nav>
+					<div class="bg-group rounded-group mt-6 px-4">
+						<a
+							href={resolve('/')}
+							target="_blank"
+							class="flex min-h-11 items-center justify-between py-2 text-[1.0625rem] text-primary"
+						>
+							Open Frame <Glyph name="externalLink" size={16} />
 						</a>
-					{/each}
-				</nav>
-				<div class="bg-group rounded-group mt-6 px-4">
-					<a
-						href={resolve('/')}
-						target="_blank"
-						class="flex min-h-11 items-center justify-between py-2 text-[1.0625rem] text-primary"
-					>
-						Open Frame <Glyph name="externalLink" size={16} />
-					</a>
-					<button
-						type="button"
-						class="border-sep flex min-h-11 w-full items-center justify-between border-t py-2 text-left text-[1.0625rem] text-primary"
-						onclick={onlogout}
-					>
-						Lock <Glyph name="lock" size={16} />
-					</button>
-				</div>
-				<p class="text-label-2 mt-3 px-4 text-[0.8125rem]">
-					{statusText}{statusText && frameVersion ? ' · ' : ''}{frameVersion
-						? `ImmichFrame ${frameVersion}`
-						: ''}
-				</p>
+						<button
+							type="button"
+							class="border-sep flex min-h-11 w-full items-center justify-between border-t py-2 text-left text-[1.0625rem] text-primary"
+							onclick={onlogout}
+						>
+							Lock <Glyph name="lock" size={16} />
+						</button>
+					</div>
+					<p class="text-label-2 mt-3 px-4 text-[0.8125rem]">
+						{statusText}{statusText && frameVersion ? ' · ' : ''}{frameVersion
+							? `ImmichFrame ${frameVersion}`
+							: ''}
+					</p>
+				{/if}
 			</div>
 		{:else}
 			<!-- Transparent at the top; the small title, material and hairline fade in once the
@@ -318,26 +357,28 @@
 						<img src="/logo.svg" alt="" class="h-7 w-7" />
 						<span class="text-[0.9375rem] font-semibold tracking-tight">ImmichFrame</span>
 					</div>
-					<SettingsSearch onpick={jumpTo} />
-					<nav class="mt-3 flex flex-col gap-0.5" aria-label="Sections">
-						{#each pages as p (p.id)}
-							{@const selected = page === p.id}
-							<a
-								href="#{p.id}"
-								class="flex items-center gap-2.5 rounded-[6px] px-2 py-[5px] text-[0.875rem] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary {selected
-									? 'bg-accent'
-									: 'hover:bg-black/5 dark:hover:bg-white/10'}"
-								aria-current={selected ? 'page' : undefined}
-								onclick={(e) => {
-									e.preventDefault();
-									go(p.id);
-								}}
-							>
-								{@render tile(p, 24)}
-								{p.title}
-							</a>
-						{/each}
-					</nav>
+					<SettingsSearch onpick={jumpTo} bind:searching={sidebarSearching} />
+					{#if !sidebarSearching}
+						<nav class="mt-3 flex flex-col gap-0.5" aria-label="Sections">
+							{#each pages as p (p.id)}
+								{@const selected = page === p.id}
+								<a
+									href="#{p.id}"
+									class="flex items-center gap-2.5 rounded-[6px] px-2 py-[5px] text-[0.875rem] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary {selected
+										? 'bg-accent'
+										: 'hover:bg-black/5 dark:hover:bg-white/10'}"
+									aria-current={selected ? 'page' : undefined}
+									onclick={(e) => {
+										e.preventDefault();
+										go(p.id);
+									}}
+								>
+									{@render tile(p, 24)}
+									{p.title}
+								</a>
+							{/each}
+						</nav>
+					{/if}
 				</div>
 				<!-- Window actions as sidebar items; status and version as small print. -->
 				<div class="flex flex-col gap-0.5">
@@ -360,21 +401,24 @@
 						>
 						Lock
 					</button>
-					<div class="text-label-2 mt-2 px-2 text-[0.6875rem] leading-relaxed">
-						{#if statusText}
-							<button
-								type="button"
-								class="flex items-center gap-1.5 hover:underline"
-								onclick={() => go('screens')}
-							>
-								<span
-									class="h-1.5 w-1.5 rounded-full {liveScreens ? 'bg-[#30d158]' : 'bg-[#8e8e93]'}"
+					{#if statusText}
+						<!-- A sidebar item like the others: it opens Screens. -->
+						<button
+							type="button"
+							class="text-label-2 flex items-center gap-2.5 rounded-[6px] px-2 py-[5px] text-left text-[0.8125rem] hover:bg-black/5 dark:hover:bg-white/10"
+							onclick={() => go('screens')}
+						>
+							<span class="flex w-6 justify-center">
+								<span class="h-2 w-2 rounded-full {liveScreens ? 'bg-[#30d158]' : 'bg-[#8e8e93]'}"
 								></span>
-								{statusText}
-							</button>
-						{/if}
-						{#if frameVersion}<p>ImmichFrame {frameVersion}</p>{/if}
-					</div>
+							</span>
+							<span class="min-w-0 flex-1 truncate">{statusText}</span>
+							<Glyph name="chevronRight" size={12} stroke={2} />
+						</button>
+					{/if}
+					{#if frameVersion}<p class="text-label-3 mt-1 px-2 text-[0.6875rem]">
+							ImmichFrame {frameVersion}
+						</p>{/if}
 				</div>
 			</aside>
 		</div>
@@ -417,7 +461,7 @@
 									onaddaccount={addAccount}
 									bind:selected={photosAccount}
 								/>
-								<UpNext {preview} />
+								{#if photosAccount === null}<UpNext {preview} />{/if}
 							{:else if page === 'look'}
 								<LivePreview general={editor.settings.General ?? {}} {preview} />
 								{#key editor.version}
@@ -464,7 +508,7 @@
 				>
 					<div class="p-4 md:pl-[15rem]">
 						<div
-							class="pointer-events-auto mx-auto flex max-w-[44rem] flex-wrap items-center justify-between gap-3 rounded-2xl if-material bg-white/72 px-4 py-3 shadow-[0_8px_24px_rgb(0_0_0/0.12),0_0_0_0.5px_rgb(0_0_0/0.1)] backdrop-blur-[20px] backdrop-saturate-[180%] dark:bg-[rgb(30_30_30/0.72)] dark:shadow-[0_8px_24px_rgb(0_0_0/0.4),0_0_0_0.5px_rgb(255_255_255/0.12)]"
+							class="pointer-events-auto mx-auto flex max-w-[44rem] flex-wrap items-center justify-between gap-3 rounded-2xl if-material bg-white/90 px-4 py-3 shadow-[0_8px_24px_rgb(0_0_0/0.12),0_0_0_0.5px_rgb(0_0_0/0.1)] backdrop-blur-[20px] backdrop-saturate-[180%] dark:bg-[rgb(30_30_30/0.9)] dark:shadow-[0_8px_24px_rgb(0_0_0/0.4),0_0_0_0.5px_rgb(255_255_255/0.12)]"
 							role="region"
 							aria-label="Unsaved changes"
 							aria-live="polite"

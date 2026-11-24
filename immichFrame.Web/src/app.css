@@ -355,3 +355,23 @@ img.icon-weather {
 		background-color: #2c2c2e;
 	}
 }
+
+/* Focus rings, as on macOS: a soft accent ring just outside the control that follows its
+   shape. Unlayered on purpose, so it wins over the per-element outline utilities. Rows in a
+   grouped card get rounded corners for the ring (they have no radius of their own). */
+.if-admin :focus-visible,
+.if-admin .bg-fill:focus-within {
+	outline: 3px solid color-mix(in srgb, var(--if-accent-fill) 55%, transparent);
+	outline-offset: 1px;
+}
+/* Text goes in borderless fields: the ring belongs to the field around them (the search box),
+   and in a settings row the caret is enough, as in iOS Settings. */
+.if-admin
+	input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']):focus-visible {
+	outline: none;
+}
+.if-admin
+	.bg-group
+	:is(button, a):not([role='switch'], [role='radio'], [class*='rounded']):focus-visible {
+	border-radius: 6px;
+}

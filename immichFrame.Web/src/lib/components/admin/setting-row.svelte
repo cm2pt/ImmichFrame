@@ -26,7 +26,7 @@
 	<div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
 		<!-- A real basis (not flex-1's 0) so the control wraps under the title when both don't
 		     fit, instead of covering it. -->
-		<div class="flex min-w-0 flex-[1_1_12rem] items-center gap-3">
+		<div class="flex min-w-0 flex-[1_1_9rem] items-center gap-3">
 			{#if icon}{@render icon()}{/if}
 			<div class="min-w-0">
 				<p class="text-[0.9375rem] leading-snug md:text-[0.875rem]">{title}</p>

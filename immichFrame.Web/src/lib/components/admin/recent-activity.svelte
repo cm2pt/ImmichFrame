@@ -4,7 +4,7 @@
 	import PageCard from './page-card.svelte';
 	import type { ServerAccountSettings, SettingsHistoryEntryDto } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
-	import { relativeTime } from './admin-format';
+	import { savedAt } from './admin-format';
 	import { humanizeChange } from './admin-history';
 	import { accountLabel, peekLibrary } from './admin-library.svelte';
 	import InlineConfirm from './inline-confirm.svelte';
@@ -44,14 +44,52 @@
 		load();
 	});
 
-	/** Going back to the version saved just before entry `index`. */
-	async function restoreBefore(index: number) {
-		const target = entries?.[index + 1];
-		if (!target?.version) return;
-		busy = index;
+	/**
+	 * Rows are versions, newest first, as in Time Machine: each says what changed and when, and
+	 * Restore… brings back the settings as they were right after it. A run of saves that only
+	 * flipped the same setting back and forth is one row.
+	 */
+	interface Row {
+		version: number;
+		savedAtUtc: string;
+		lines: string[];
+		saves: number;
+	}
+	const arrow = /^(.*): (.*) → (.*)$/;
+	let rows: Row[] = $derived.by(() => {
+		const out: (Row & { key?: string; from?: string; to?: string })[] = [];
+		for (const entry of entries ?? []) {
+			const changes = entry.changes ?? [];
+			const m = changes.length === 1 ? arrow.exec(changes[0]) : null;
+			const last = out.at(-1);
+			if (m && last?.key === m[1]) {
+				// Older save of the same setting: the run now starts from its "from" value.
+				last.from = m[2];
+				last.saves += 1;
+				const line = `${m[1]}: ${last.from} → ${last.to}`;
+				last.lines = [
+					last.from === last.to
+						? `${humanizeChange(`${m[1]}: x → x`, names).replace(/: x → x$/, '')}: changed, then changed back`
+						: humanizeChange(line, names)
+				];
+				continue;
+			}
+			out.push({
+				version: entry.version!,
+				savedAtUtc: entry.savedAtUtc!,
+				lines: summary(entry),
+				saves: 1,
+				...(m ? { key: m[1], from: m[2], to: m[3] } : {})
+			});
+		}
+		return out;
+	});
+
+	async function restore(row: Row) {
+		busy = row.version;
 		confirming = null;
 		try {
-			const res = await adminApi.restoreSettingsVersion(target.version);
+			const res = await adminApi.restoreSettingsVersion(row.version);
 			if (res.status !== 200) throw new Error();
 			onrestored();
 		} catch {
@@ -61,9 +99,13 @@
 		}
 	}
 
+	// A setting going from "not set" to its own default ("off → off") changes nothing you'd see.
+	const noOp = (line: string) => /: (.+) → \1$/.test(line);
 	function summary(entry: SettingsHistoryEntryDto) {
-		const lines = (entry.changes ?? []).map((c) => humanizeChange(c, names));
-		return lines.length ? lines : ['Saved with no changes'];
+		const lines = (entry.changes ?? [])
+			.map((c) => humanizeChange(c, names))
+			.filter((l) => !noOp(l));
+		return lines.length ? lines : ['Saved with no visible changes'];
 	}
 </script>
 
@@ -86,55 +128,53 @@
 			</div>
 		{/each}
 	{:else}
-		{#each showAll ? entries : entries.slice(0, 6) as entry, index (entry.version)}
-			{@const lines = summary(entry)}
+		{#each showAll ? rows : rows.slice(0, 6) as row, index (row.version)}
+			{@const when = savedAt(new Date(row.savedAtUtc).getTime())}
 			<div class="border-sep border-t py-2.5 first:border-t-0">
 				<div class="flex items-center gap-3">
 					<div class="min-w-0 flex-1">
-						{#each lines.slice(0, 3) as line (line)}
+						{#each row.lines.slice(0, 3) as line (line)}
 							<p class="text-[0.9375rem] leading-snug md:text-[0.875rem]">{line}</p>
 						{/each}
-						{#if lines.length > 3}<p class="text-label-2 text-[0.8125rem]">
-								and {lines.length - 3} more
+						{#if row.lines.length > 3}<p class="text-label-2 text-[0.8125rem]">
+								and {row.lines.length - 3} more
 							</p>{/if}
 						<p class="text-label-2 mt-0.5 text-[0.8125rem] md:text-[0.75rem]">
-							{index === 0 ? 'Current\u00a0·\u2002' : ''}{relativeTime(
-								new Date(entry.savedAtUtc!).getTime()
-							)}
+							{when}{row.saves > 1 ? `\u00a0·\u2002${row.saves} saves` : ''}
 						</p>
 					</div>
-					{#if index < entries.length - 1 && confirming !== index}
+					{#if index === 0}
+						<span class="text-label-2 text-[0.8125rem]">Current</span>
+					{:else if confirming !== row.version}
 						<Btn
-							id={`history-${entry.version}`}
+							id={`history-${row.version}`}
 							size="small"
 							variant="outline"
 							color="secondary"
-							loading={busy === index}
-							onclick={() => (confirming = index)}
+							loading={busy === row.version}
+							onclick={() => (confirming = row.version)}
 						>
-							{index === 0 ? 'Undo' : 'Restore…'}
+							Restore…
 						</Btn>
 					{/if}
 				</div>
-				{#if confirming === index}
+				{#if confirming === row.version}
 					<InlineConfirm
-						message={(index === 0
-							? 'Undo the last save?'
-							: `Restore the settings from ${relativeTime(new Date(entries[index + 1].savedAtUtc!).getTime())}? The ${index + 1} saves after it are undone.`) +
+						message={`Go back to the settings as they were on ${when}? The ${index === 1 ? 'latest change is' : `${index} later changes are`} undone.` +
 							(dirty ? ' Your unsaved changes are lost too.' : '')}
-						confirmLabel={index === 0 ? 'Undo' : 'Restore'}
-						returnFocusTo={`history-${entry.version}`}
-						onconfirm={() => restoreBefore(index)}
+						confirmLabel="Restore"
+						returnFocusTo={`history-${row.version}`}
+						onconfirm={() => restore(row)}
 						oncancel={() => (confirming = null)}
 					/>
 				{/if}
 			</div>
 		{/each}
-		{#if entries.length > 6 && !showAll}
+		{#if rows.length > 6 && !showAll}
 			<button
 				type="button"
 				class="border-sep flex min-h-11 w-full items-center border-t py-2 text-left text-[0.875rem] text-primary"
-				onclick={() => (showAll = true)}>Show All {entries.length}</button
+				onclick={() => (showAll = true)}>Show All {rows.length}</button
 			>
 		{/if}
 	{/if}

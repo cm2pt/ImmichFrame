@@ -170,7 +170,7 @@
 	}
 
 	const material =
-		'if-material bg-white/92 backdrop-blur-[30px] backdrop-saturate-[180%] dark:bg-[rgb(44_44_46/0.92)]';
+		'if-material bg-white/95 backdrop-blur-[30px] backdrop-saturate-[180%] dark:bg-[rgb(44_44_46/0.95)]';
 </script>
 
 {#snippet body()}
@@ -316,7 +316,7 @@
 				aria-hidden="true"
 				class="absolute left-6 h-3 w-3 rotate-45 {place.up
 					? '-bottom-[6px] shadow-[0.5px_0.5px_0_rgb(0_0_0/0.12)]'
-					: '-top-[6px] shadow-[-0.5px_-0.5px_0_rgb(0_0_0/0.12)]'} bg-white/92 dark:bg-[rgb(44_44_46/0.92)]"
+					: '-top-[6px] shadow-[-0.5px_-0.5px_0_rgb(0_0_0/0.12)]'} bg-white/95 dark:bg-[rgb(44_44_46/0.95)]"
 			></span>
 			{@render body()}
 		</div>

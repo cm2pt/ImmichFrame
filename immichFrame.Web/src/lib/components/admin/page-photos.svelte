@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import type { ServerAccountSettings, ServerSettings } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import { accountDefaults, effective } from './admin-defaults';
@@ -27,11 +26,9 @@
 
 	let accounts = $derived(settings.Accounts ?? []);
 	let libraries = $derived(accounts.map((account) => libraryFor(account)));
-	// The accounts list drills into one account, like a list in System Settings. With a single
-	// account there is nothing to choose, so it opens straight away.
-	onMount(() => {
-		if (selected === null && accounts.length === 1) selected = 0;
-	});
+	// Several accounts: a list that drills into one, like a list in System Settings. A single
+	// account has nothing to choose from, so its settings are the page itself, with no extra level.
+	let single = $derived(accounts.length === 1);
 
 	// The count the frame's own search draws from for each account's current choices,
 	// refreshed shortly after each change.
@@ -56,7 +53,7 @@
 	$effect(() => {
 		const reveal = (e: Event) => {
 			const title = (e as CustomEvent<string>).detail;
-			if (selected === null && accounts.length && !['Accounts', 'Up next'].includes(title))
+			if (selected === null && accounts.length > 1 && !['Accounts', 'Up next'].includes(title))
 				selected = 0;
 		};
 		window.addEventListener('if-reveal', reveal);
@@ -93,7 +90,7 @@
 	}
 </script>
 
-{#if selected === null || !accounts[selected]}
+{#if !single && (selected === null || !accounts[selected])}
 	<PageCard
 		title="Accounts"
 		footer={total != null ? inRotation(total, accounts.some(memoriesOn)) : undefined}
@@ -132,19 +129,25 @@
 		</button>
 	</PageCard>
 {:else}
-	{@const i = selected}
-	<!-- The shell titles the page with the account's name and puts "‹ Photos" above it. -->
-	<div class="-mt-3 flex items-center gap-3">
+	{@const i = single ? 0 : selected!}
+	<!-- Drilled in, the shell titles the page with the account's name and puts "‹ Photos" above
+	     it; a single account sits under the Photos title. -->
+	<div class="flex items-center gap-3 {single ? '' : '-mt-3'}">
 		<Monogram
 			name={monogramOf(accountLabel(accounts[i], i, libraries[i]))}
 			size={36}
 			avatarOf={i}
 		/>
-		<p class="text-label-2 text-[0.9375rem]">
-			{matching[i] != null
-				? inRotation(matching[i]!, memoriesOn(accounts[i]))
-				: summary(accounts[i], i)}
-		</p>
+		<div class="min-w-0">
+			{#if single}
+				<p class="text-[0.9375rem] font-medium">{accountLabel(accounts[i], i, libraries[i])}</p>
+			{/if}
+			<p class="text-label-2 {single ? 'text-[0.8125rem]' : 'text-[0.9375rem]'}" aria-live="polite">
+				{matching[i] != null
+					? inRotation(matching[i]!, memoriesOn(accounts[i]))
+					: summary(accounts[i], i)}
+			</p>
+		</div>
 	</div>
 	{#key `${version}-${i}`}
 		<AccountPhotos account={accounts[i]} accountIndex={i} />

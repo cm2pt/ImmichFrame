@@ -1,3 +1,5 @@
+import { accountDefaults, generalDefaults } from './admin-defaults';
+
 // Turns the server's change summaries ("Layout: single → splitview", "Account 1: ExcludedAlbums
 // changed") into the words the admin pages use ("Layout: One photo → Two portraits",
 // "Alex: Never-show albums changed").
@@ -79,7 +81,16 @@ const values: Record<string, Record<string, string>> = {
 };
 
 function value(key: string, raw: string): string {
-	if (raw === '(empty)') return 'default';
+	if (raw === '(empty)') {
+		// Not set means the default: say what that is, not "default".
+		const camel = key[0].toLowerCase() + key.slice(1);
+		const fallback =
+			(generalDefaults as Record<string, unknown>)[camel] ??
+			(accountDefaults as Record<string, unknown>)[camel];
+		if (fallback === undefined || fallback === null || fallback === '') return 'not set';
+		if (Array.isArray(fallback)) return fallback.length ? fallback.join(', ') : 'none';
+		return value(key, String(fallback));
+	}
 	const mapped = values[key]?.[raw];
 	if (mapped) return mapped;
 	if (raw === 'true') return 'on';

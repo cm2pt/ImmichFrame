@@ -7,6 +7,8 @@
 		autocomplete?: HTMLInputElement['autocomplete'];
 		oninput: (value: string) => void;
 		id?: string;
+		/** Long paths: show the start and the end ("/run/…/immich.key") until the field is edited. */
+		truncate?: 'middle';
 	}
 
 	let {
@@ -16,9 +18,16 @@
 		type = 'text',
 		autocomplete = 'off',
 		oninput,
-		id
+		id,
+		truncate
 	}: Props = $props();
 	const uid = $props.id();
+	let focused = $state(false);
+	const shown = $derived.by(() => {
+		const v = value ?? '';
+		if (truncate !== 'middle' || focused || v.length <= 36) return v;
+		return `${v.slice(0, 14)}…${v.slice(-20)}`;
+	});
 </script>
 
 <!-- A label on the left and a borderless, right-aligned field: iOS Settings' text rows. -->
@@ -33,7 +42,10 @@
 		{type}
 		{placeholder}
 		{autocomplete}
-		value={value ?? ''}
+		value={shown}
+		title={truncate && value ? value : undefined}
+		onfocus={() => (focused = true)}
+		onblur={() => (focused = false)}
 		oninput={(e) => oninput(e.currentTarget.value)}
 		class="min-w-0 flex-1 bg-transparent py-2 text-right text-[0.9375rem] outline-none placeholder:text-[#8e8e93] focus:text-left md:text-[0.875rem]"
 	/>

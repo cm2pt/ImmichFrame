@@ -80,7 +80,7 @@
 			<Btn size="small" variant="outline" color="secondary" onclick={() => input?.click()}
 				>Restore from File…</Btn
 			>
-			<Btn size="small" variant="outline" color="secondary" onclick={download}>Download…</Btn>
+			<Btn size="small" variant="outline" color="secondary" onclick={download}>Download</Btn>
 		</span>
 		<input
 			bind:this={input}

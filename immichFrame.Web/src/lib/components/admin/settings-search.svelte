@@ -22,16 +22,20 @@
 		{ title: 'Minimum rating', page: 'photos', words: 'stars' },
 		{ title: 'Videos', page: 'photos' },
 		{ title: 'Archived photos', page: 'photos', words: 'archive' },
-		{ title: 'Time on each photo', page: 'look', words: 'interval seconds duration speed' },
+		{
+			title: 'Time on each photo',
+			page: 'look',
+			words: 'interval seconds duration speed delay how long'
+		},
 		{ title: 'Change between photos', page: 'look', words: 'transition fade' },
 		{ title: 'Progress bar', page: 'look' },
 		{ title: 'Layout', page: 'look', words: 'split view portrait two photos' },
 		{ title: 'Photo size', page: 'look', words: 'fit fill crop' },
-		{ title: 'Movement', page: 'look', words: 'zoom pan ken burns' },
+		{ title: 'Movement', page: 'look', words: 'zoom pan ken burns motion animation' },
 		{ title: 'Video sound', page: 'look', words: 'audio mute' },
 		{ title: 'Clock', page: 'look', words: 'time format' },
 		{ title: 'Date taken', page: 'look', words: 'photo date format' },
-		{ title: 'Place', page: 'look', words: 'location city country' },
+		{ title: 'Place', page: 'look', words: 'location city country where gps' },
 		{ title: 'Album name', page: 'look' },
 		{ title: 'Description', page: 'look', words: 'caption' },
 		{
@@ -52,6 +56,16 @@
 		{ title: 'Keep images on disk', page: 'access', words: 'cache download' },
 		{ title: 'Refresh albums and people', page: 'access', words: 'interval' },
 		{ title: 'Webhook', page: 'access', words: 'home assistant automation' },
+		{ title: 'Clock & Captions', page: 'look', words: 'overlay text corners info captions' },
+		{
+			title: 'Behind the clock and captions',
+			page: 'look',
+			words: 'background box blur frosted readable'
+		},
+		{ title: 'Location', page: 'look', words: 'weather city coordinates latitude longitude where' },
+		{ title: 'Units', page: 'look', words: 'celsius fahrenheit metric imperial temperature' },
+		{ title: 'Weather description', page: 'look', words: 'rain sunny forecast' },
+		{ title: 'Screens', page: 'screens', words: 'devices tv apple tv ipad frames connected' },
 		{ title: 'Recent changes', page: 'access', words: 'history undo restore' },
 		{ title: 'Backup', page: 'access', words: 'download export import restore' },
 		{ title: 'Preview', page: 'look', words: 'live preview' },
@@ -72,37 +86,55 @@
 	interface Props {
 		onpick: (hit: SearchHit) => void;
 		autofocus?: boolean;
+		/** True while there's a query: the results take the place of the sections list. */
+		searching?: boolean;
+		/** The phone's root list shows results as a grouped card; the sidebar as plain rows. */
+		variant?: 'sidebar' | 'list';
 	}
 
-	let { onpick, autofocus = false }: Props = $props();
+	let {
+		onpick,
+		autofocus = false,
+		searching = $bindable(false),
+		variant = 'sidebar'
+	}: Props = $props();
 
 	let query = $state('');
 	let active = $state(0);
 	let input: HTMLInputElement | undefined = $state();
 
+	// Every word typed must start a word of the title or its keywords ("zoom" finds Movement,
+	// "weather loc" finds Location). Title matches come first.
 	let hits: SearchHit[] = $derived.by(() => {
-		const q = query.trim().toLowerCase();
-		if (!q) return [];
+		const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+		if (!words.length) return [];
+		const starts = (text: string, w: string) =>
+			text.startsWith(w) || text.includes(` ${w}`) || text.includes(`-${w}`);
 		return index
 			.map((entry) => {
 				const title = entry.title.toLowerCase();
-				const score = title.startsWith(q)
-					? 0
-					: title.includes(q)
-						? 1
-						: entry.words?.includes(q)
-							? 2
-							: -1;
+				const all = `${title} ${entry.words ?? ''}`;
+				if (!words.every((w) => starts(all, w))) return null;
+				const score = title.startsWith(words[0]) ? 0 : words.every((w) => starts(title, w)) ? 1 : 2;
 				return { entry, score };
 			})
-			.filter((r) => r.score >= 0)
+			.filter((r): r is { entry: (typeof index)[number]; score: number } => r !== null)
 			.sort((a, b) => a.score - b.score)
-			.slice(0, 8)
 			.map(({ entry }) => ({
 				title: entry.title,
 				page: entry.page,
 				pageTitle: pageTitles[entry.page]
 			}));
+	});
+	// Shown grouped by page, in the sidebar's page order, as System Settings does.
+	let groups = $derived(
+		Object.keys(pageTitles)
+			.map((page) => ({ page, title: pageTitles[page], hits: hits.filter((h) => h.page === page) }))
+			.filter((g) => g.hits.length)
+	);
+	let ordered = $derived(groups.flatMap((g) => g.hits));
+	$effect(() => {
+		searching = query.trim().length > 0;
 	});
 
 	$effect(() => {
@@ -123,13 +155,13 @@
 	function onKeydown(e: KeyboardEvent) {
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
-			active = Math.min(active + 1, hits.length - 1);
+			active = Math.min(active + 1, ordered.length - 1);
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
 			active = Math.max(active - 1, 0);
-		} else if (e.key === 'Enter' && hits[active]) {
+		} else if (e.key === 'Enter' && ordered[active]) {
 			e.preventDefault();
-			pick(hits[active]);
+			pick(ordered[active]);
 		} else if (e.key === 'Escape') {
 			query = '';
 		}
@@ -146,9 +178,9 @@
 			placeholder="Search"
 			aria-label="Search settings"
 			role="combobox"
-			aria-expanded={hits.length > 0}
+			aria-expanded={ordered.length > 0}
 			aria-controls="settings-search-results"
-			aria-activedescendant={hits.length ? `search-hit-${active}` : undefined}
+			aria-activedescendant={ordered.length ? `search-hit-${active}` : undefined}
 			autocomplete="off"
 			class="w-full min-w-0 bg-transparent text-[0.875rem] outline-none placeholder:text-[#6e6e73] [&::-webkit-search-cancel-button]:hidden dark:placeholder:text-[#a1a1a6]"
 			onkeydown={onKeydown}
@@ -165,30 +197,50 @@
 		{/if}
 	</div>
 	{#if query.trim()}
-		<ul
+		<div
 			id="settings-search-results"
 			role="listbox"
-			class="bg-group border-sep absolute inset-x-0 top-full z-40 mt-1.5 overflow-hidden rounded-xl border p-1 shadow-xl"
+			aria-label="Search results"
+			class={variant === 'list' ? 'mt-5 flex flex-col gap-5' : 'mt-3 flex flex-col gap-3'}
 		>
-			{#each hits as hit, i (hit.page + hit.title)}
-				<li id="search-hit-{i}" role="option" aria-selected={i === active}>
-					<button
-						type="button"
-						class="flex w-full flex-col rounded-lg px-2.5 py-1.5 text-left {i === active
-							? 'bg-primary text-white dark:text-black'
-							: ''}"
-						onmouseenter={() => (active = i)}
-						onclick={() => pick(hit)}
+			{#each groups as group (group.page)}
+				<div role="group" aria-label={group.title}>
+					<p
+						class="text-label-2 mb-1 px-2 {variant === 'list'
+							? 'px-4 text-[0.8125rem] uppercase'
+							: 'text-[0.6875rem] font-semibold'}"
 					>
-						<span class="text-[0.875rem] font-medium">{hit.title}</span>
-						<span class="text-[0.75rem] {i === active ? 'opacity-80' : 'text-label-2'}"
-							>{hit.pageTitle}</span
-						>
-					</button>
-				</li>
+						{group.title}
+					</p>
+					<div class={variant === 'list' ? 'bg-group rounded-group px-4' : ''}>
+						{#each group.hits as hit (hit.page + hit.title)}
+							{@const i = ordered.indexOf(hit)}
+							<button
+								id="search-hit-{i}"
+								type="button"
+								role="option"
+								aria-selected={i === active}
+								class={variant === 'list'
+									? `border-sep flex min-h-11 w-full items-center justify-between border-t py-2 text-left text-[1.0625rem] first:border-t-0`
+									: `flex w-full rounded-[6px] px-2 py-[5px] text-left text-[0.875rem] ${i === active ? 'bg-accent' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
+								onmouseenter={() => (active = i)}
+								onclick={() => pick(hit)}
+							>
+								{hit.title}
+								{#if variant === 'list'}<Glyph
+										name="chevronRight"
+										size={16}
+										class="text-label-3"
+									/>{/if}
+							</button>
+						{/each}
+					</div>
+				</div>
 			{:else}
-				<li class="text-label-2 px-2.5 py-2 text-[0.8125rem]">No results</li>
+				<p class="text-label-2 px-2 py-2 text-center text-[0.875rem]">
+					No Results for “{query.trim()}”
+				</p>
 			{/each}
-		</ul>
+		</div>
 	{/if}
 </div>

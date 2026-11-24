@@ -548,20 +548,24 @@
 				: 'Portrait photos get dark bars at the sides of a wide screen.'}
 		>
 			<!-- Like Appearance in System Settings: only the selected thumbnail gets a ring. -->
-			<div class="flex justify-center gap-10 py-5" role="radiogroup" aria-label="Layout">
+			<div
+				class="flex justify-center gap-4 px-1 py-5 sm:gap-10"
+				role="radiogroup"
+				aria-label="Layout"
+			>
 				{#each [{ value: 'single', title: 'One Photo' }, { value: 'splitview', title: 'Two Portraits' }] as option (option.value)}
 					{@const selected = get('layout') === option.value}
 					<button
 						type="button"
 						role="radio"
 						aria-checked={selected}
-						class="group flex flex-col items-center gap-2 focus-visible:outline-none"
+						class="group flex max-w-[10.5rem] min-w-0 flex-1 flex-col items-center gap-2 focus-visible:outline-none"
 						onclick={() => (general.layout = option.value)}
 					>
 						<span
-							class="flex h-[5.5rem] w-40 items-stretch justify-center gap-1 rounded-[8px] bg-neutral-900 p-1.5 transition-shadow group-focus-visible:outline-2 group-focus-visible:outline-offset-4 group-focus-visible:outline-primary {selected
+							class="flex aspect-[16/9] w-full items-stretch justify-center gap-1 rounded-[8px] bg-neutral-900 p-1.5 transition-shadow group-focus-visible:outline-2 group-focus-visible:outline-offset-4 group-focus-visible:outline-primary {selected
 								? 'ring-[3px] ring-[var(--if-accent-fill)] ring-offset-2 ring-offset-white dark:ring-offset-[#1c1c1e]'
-								: 'shadow-[0_0_0_0.5px_rgb(0_0_0/0.2)] dark:shadow-[0_0_0_0.5px_rgb(255_255_255/0.18)]'}"
+								: 'shadow-[0_0_0_1px_rgb(0_0_0/0.16)] dark:shadow-[0_0_0_1px_rgb(255_255_255/0.24)]'}"
 						>
 							{#if option.value === 'single'}
 								<span class="w-[36%] rounded-[3px] bg-gradient-to-b from-sky-300/85 to-amber-200/75"
@@ -661,7 +665,7 @@
 			<FieldRow
 				title="API key"
 				type="password"
-				placeholder="Required"
+				placeholder="Paste key"
 				value={general.weatherApiKey}
 				oninput={(v) => (general.weatherApiKey = v)}
 			/>

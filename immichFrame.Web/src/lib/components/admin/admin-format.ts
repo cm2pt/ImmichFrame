@@ -30,3 +30,25 @@ export function relativeTime(then: number, now = Date.now()): string {
 	if (abs < 86400) return rtf.format(Math.round(seconds / 3600), 'hour');
 	return rtf.format(Math.round(seconds / 86400), 'day');
 }
+
+/**
+ * When a version was saved, the way Time Machine lists backups: "Today, 14:32",
+ * "Yesterday, 09:05", "Monday, 18:40", "12 Nov, 10:00" or "12 Nov 2025, 10:00".
+ */
+export function savedAt(then: number, now = Date.now()): string {
+	const date = new Date(then);
+	const time = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+	const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+	const days = Math.round((startOfDay(new Date(now)) - startOfDay(date)) / 86_400_000);
+	let day: string;
+	if (days === 0) day = 'Today';
+	else if (days === 1) day = 'Yesterday';
+	else if (days > 1 && days < 7) day = date.toLocaleDateString('en', { weekday: 'long' });
+	else
+		day = date.toLocaleDateString('en-GB', {
+			day: 'numeric',
+			month: 'short',
+			...(date.getFullYear() === new Date(now).getFullYear() ? {} : { year: 'numeric' })
+		});
+	return `${day}, ${time}`;
+}

@@ -24,7 +24,6 @@
 	// Screens turned away for a wrong or missing secret; a hint, so a failed load just hides it.
 	let rejected: RejectedScreenDto[] = $state([]);
 	let error = $state('');
-	let loading = $state(false);
 	let renaming: string | null = $state(null);
 	let renameValue = $state('');
 	let confirmForget: string | null = $state(null);
@@ -32,7 +31,6 @@
 
 	async function load() {
 		error = '';
-		loading = true;
 		try {
 			const res = await adminApi.getScreens();
 			if (res.status !== 200) throw new Error();
@@ -43,7 +41,6 @@
 		} catch {
 			error = 'Couldn’t load the screens.';
 		} finally {
-			loading = false;
 			now = Date.now();
 		}
 	}
@@ -125,17 +122,10 @@
 {/if}
 
 <PageCard
-	title="Screens"
 	footer={screens?.length
 		? `Updated ${relativeTime(now)}. A screen shows up after it first opens the frame.`
 		: 'A screen shows up here after it first opens the frame.'}
 >
-	{#snippet actions()}
-		<button type="button" class="text-primary disabled:opacity-40" disabled={loading} onclick={load}
-			>Refresh</button
-		>
-	{/snippet}
-
 	{#if error}
 		<div class="flex min-h-11 items-center justify-between gap-3 py-2">
 			<p class="text-[0.875rem]">{error}</p>

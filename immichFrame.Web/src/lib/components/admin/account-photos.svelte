@@ -102,7 +102,10 @@
 			/>
 		{/snippet}
 	</SettingRow>
-	<SettingRow title="Memories" description="“On this day” from past years, refreshed daily">
+	<SettingRow
+		title="Memories"
+		description="On this day and birthdays from past years, refreshed daily"
+	>
 		{#snippet control()}
 			<Toggle
 				aria-label="Memories"

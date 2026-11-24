@@ -59,7 +59,12 @@
 			>
 				{#if device === 'appletv'}
 					<li>On the Apple TV, install <strong>ImmichFrame</strong> from the App Store.</li>
-					<li>Open it and enter the server address{secret ? ' and secret' : ''} below.</li>
+					<li>
+						Open it and enter the server address{secret && !isLocal ? ' and secret' : ''} below{secret &&
+						isLocal
+							? ', and the frame secret from Access & Accounts'
+							: ''}.
+					</li>
 				{:else if device === 'ios'}
 					<li>Scan the code with the Camera app, or open the link in Safari.</li>
 					<li>Tap Share, then <em>Add to Home Screen</em>, for a full-screen frame.</li>
@@ -74,7 +79,12 @@
 							rel="noreferrer">Frameo guide</a
 						>.
 					</li>
-					<li>Open it and enter the server address{secret ? ' and secret' : ''} below.</li>
+					<li>
+						Open it and enter the server address{secret && !isLocal ? ' and secret' : ''} below{secret &&
+						isLocal
+							? ', and the frame secret from Access & Accounts'
+							: ''}.
+					</li>
 				{:else}
 					<li>Open the link on that screen, or scan the code.</li>
 					<li>Switch the browser to full screen and leave it running.</li>
