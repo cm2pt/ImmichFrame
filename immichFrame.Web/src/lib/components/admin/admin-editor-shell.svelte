@@ -254,8 +254,8 @@
 		liveScreens === null
 			? ''
 			: liveScreens
-				? `${plural(liveScreens, 'screen')} on`
-				: 'No screens on'
+				? `${plural(liveScreens, 'screen')} showing photos`
+				: 'No screens connected'
 	);
 </script>
 
@@ -401,24 +401,18 @@
 						>
 						Lock
 					</button>
-					{#if statusText}
-						<!-- A sidebar item like the others: it opens Screens. -->
-						<button
-							type="button"
-							class="text-label-2 flex items-center gap-2.5 rounded-[6px] px-2 py-[5px] text-left text-[0.8125rem] hover:bg-black/5 dark:hover:bg-white/10"
-							onclick={() => go('screens')}
-						>
-							<span class="flex w-6 justify-center">
-								<span class="h-2 w-2 rounded-full {liveScreens ? 'bg-[#30d158]' : 'bg-[#8e8e93]'}"
+					<!-- Status as small print, like the version: Screens in the list above has the details. -->
+					<div class="text-label-2 mt-2 px-2 text-[0.6875rem] leading-relaxed">
+						{#if statusText}
+							<p class="flex items-center gap-1.5">
+								<span
+									class="h-1.5 w-1.5 rounded-full {liveScreens ? 'bg-[#30d158]' : 'bg-[#8e8e93]'}"
 								></span>
-							</span>
-							<span class="min-w-0 flex-1 truncate">{statusText}</span>
-							<Glyph name="chevronRight" size={12} stroke={2} />
-						</button>
-					{/if}
-					{#if frameVersion}<p class="text-label-3 mt-1 px-2 text-[0.6875rem]">
-							ImmichFrame {frameVersion}
-						</p>{/if}
+								{statusText}
+							</p>
+						{/if}
+						{#if frameVersion}<p>ImmichFrame {frameVersion}</p>{/if}
+					</div>
 				</div>
 			</aside>
 		</div>
@@ -508,7 +502,7 @@
 				>
 					<div class="p-4 md:pl-[15rem]">
 						<div
-							class="pointer-events-auto mx-auto flex max-w-[44rem] flex-wrap items-center justify-between gap-3 rounded-2xl if-material bg-white/90 px-4 py-3 shadow-[0_8px_24px_rgb(0_0_0/0.12),0_0_0_0.5px_rgb(0_0_0/0.1)] backdrop-blur-[20px] backdrop-saturate-[180%] dark:bg-[rgb(30_30_30/0.9)] dark:shadow-[0_8px_24px_rgb(0_0_0/0.4),0_0_0_0.5px_rgb(255_255_255/0.12)]"
+							class="pointer-events-auto mx-auto flex max-w-[44rem] flex-wrap items-center justify-between gap-3 rounded-2xl if-material bg-white/94 px-4 py-3 shadow-[0_8px_24px_rgb(0_0_0/0.12),0_0_0_0.5px_rgb(0_0_0/0.1)] backdrop-blur-[20px] backdrop-saturate-[180%] dark:bg-[rgb(30_30_30/0.94)] dark:shadow-[0_8px_24px_rgb(0_0_0/0.4),0_0_0_0.5px_rgb(255_255_255/0.12)]"
 							role="region"
 							aria-label="Unsaved changes"
 							aria-live="polite"
@@ -553,7 +547,7 @@
 										disabled={saving}
 										onclick={() => editor.discard()}
 									>
-										Discard
+										{editor.changeCount > 3 ? `Discard ${editor.changeCount}` : 'Discard'}
 									</Btn>
 									<Btn
 										size="small"

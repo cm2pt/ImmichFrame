@@ -103,7 +103,7 @@
 			tabindex="-1"
 			aria-label="Never show"
 			onkeydown={onMenuKey}
-			class="absolute top-full left-0 z-30 mt-1 min-w-44 if-material rounded-[8px] bg-white/95 p-1 shadow-[0_10px_30px_rgb(0_0_0/0.18),0_0_0_0.5px_rgb(0_0_0/0.12)] backdrop-blur-[30px] backdrop-saturate-[180%] dark:bg-[rgb(44_44_46/0.95)] dark:shadow-[0_10px_30px_rgb(0_0_0/0.5),0_0_0_0.5px_rgb(255_255_255/0.12)]"
+			class="absolute top-full left-0 z-30 mt-1 min-w-44 rounded-[8px] bg-white p-1 shadow-[0_10px_30px_rgb(0_0_0/0.18),0_0_0_0.5px_rgb(0_0_0/0.12)] dark:bg-[#2c2c2e] dark:shadow-[0_10px_30px_rgb(0_0_0/0.5),0_0_0_0.5px_rgb(255_255_255/0.12)]"
 		>
 			{#each kinds as k (k.kind)}
 				<button

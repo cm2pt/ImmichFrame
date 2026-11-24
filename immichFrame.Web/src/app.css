@@ -360,7 +360,7 @@ img.icon-weather {
    shape. Unlayered on purpose, so it wins over the per-element outline utilities. Rows in a
    grouped card get rounded corners for the ring (they have no radius of their own). */
 .if-admin :focus-visible,
-.if-admin .bg-fill:focus-within {
+.if-admin .bg-fill:has(:focus-visible) {
 	outline: 3px solid color-mix(in srgb, var(--if-accent-fill) 55%, transparent);
 	outline-offset: 1px;
 }
@@ -374,4 +374,8 @@ img.icon-weather {
 	.bg-group
 	:is(button, a):not([role='switch'], [role='radio'], [class*='rounded']):focus-visible {
 	border-radius: 6px;
+}
+/* Containers that receive focus from code (sheets, menus) to move it along never show a ring. */
+.if-admin [tabindex='-1']:focus-visible {
+	outline: none;
 }

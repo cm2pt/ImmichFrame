@@ -495,6 +495,7 @@
 				{/snippet}
 			</SettingRow>
 			<SettingRow
+				wide
 				title="Time on each photo"
 				description="About {perHour} photos an hour{get('layout') === 'splitview'
 					? ', two at a time'
@@ -509,11 +510,11 @@
 						value={stepIndex}
 						aria-label="Time on each photo"
 						aria-valuetext={duration(steps[stepIndex])}
-						class="if-slider w-40 sm:w-52"
+						class="if-slider min-w-0 flex-1 sm:w-52 sm:flex-none"
 						style="--fill:{(stepIndex / (steps.length - 1)) * 100}%"
 						oninput={(e) => (general.interval = steps[Number(e.currentTarget.value)])}
 					/>
-					<span class="text-label-2 w-20 text-right text-[0.875rem] tabular-nums"
+					<span class="text-label-2 shrink-0 text-right text-[0.875rem] tabular-nums sm:w-20"
 						>{duration(interval)}</span
 					>
 				{/snippet}

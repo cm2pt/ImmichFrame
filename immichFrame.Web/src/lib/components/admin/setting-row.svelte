@@ -12,10 +12,21 @@
 		children?: Snippet;
 		/** Indent under a parent row (e.g. memory types under Memories). */
 		nested?: boolean;
+		/** A control that needs room (a slider): full width when it wraps under the title. */
+		wide?: boolean;
 		id?: string;
 	}
 
-	let { title, description, icon, control, children, nested = false, id }: Props = $props();
+	let {
+		title,
+		description,
+		icon,
+		control,
+		children,
+		nested = false,
+		wide = false,
+		id
+	}: Props = $props();
 </script>
 
 <div
@@ -26,7 +37,7 @@
 	<div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
 		<!-- A real basis (not flex-1's 0) so the control wraps under the title when both don't
 		     fit, instead of covering it. -->
-		<div class="flex min-w-0 flex-[1_1_9rem] items-center gap-3">
+		<div class="flex min-w-0 {nested ? 'flex-[1_1_4rem]' : 'flex-[1_1_8rem]'} items-center gap-3">
 			{#if icon}{@render icon()}{/if}
 			<div class="min-w-0">
 				<p class="text-[0.9375rem] leading-snug md:text-[0.875rem]">{title}</p>
@@ -38,7 +49,11 @@
 			</div>
 		</div>
 		{#if control}
-			<div class="flex max-w-full min-w-0 flex-wrap items-center gap-2.5 sm:justify-end">
+			<div
+				class="flex max-w-full min-w-0 flex-wrap items-center gap-2.5 sm:justify-end {wide
+					? 'w-full sm:w-auto'
+					: ''}"
+			>
 				{@render control()}
 			</div>
 		{/if}

@@ -67,11 +67,17 @@
 				last.from = m[2];
 				last.saves += 1;
 				const line = `${m[1]}: ${last.from} → ${last.to}`;
+				// Back where it started: say what it is now, not "off → off".
 				last.lines = [
 					last.from === last.to
-						? `${humanizeChange(`${m[1]}: x → x`, names).replace(/: x → x$/, '')}: changed, then changed back`
+						? `${humanizeChange(`${m[1]}: x → ${last.to}`, names).replace(': x → ', ': ')}, back where it started`
 						: humanizeChange(line, names)
 				];
+				continue;
+			}
+			// A save with nothing you'd see counts towards the newer row instead of being its own.
+			if (last && summary(entry)[0] === noChange) {
+				last.saves += 1;
 				continue;
 			}
 			out.push({
@@ -100,12 +106,13 @@
 	}
 
 	// A setting going from "not set" to its own default ("off → off") changes nothing you'd see.
+	const noChange = 'Saved with no visible changes';
 	const noOp = (line: string) => /: (.+) → \1$/.test(line);
 	function summary(entry: SettingsHistoryEntryDto) {
 		const lines = (entry.changes ?? [])
 			.map((c) => humanizeChange(c, names))
 			.filter((l) => !noOp(l));
-		return lines.length ? lines : ['Saved with no visible changes'];
+		return lines.length ? lines : [noChange];
 	}
 </script>
 
