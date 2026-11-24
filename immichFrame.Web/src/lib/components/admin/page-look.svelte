@@ -178,6 +178,9 @@
 		{ value: '#1f2937', name: 'Charcoal' },
 		{ value: '#ffffff', name: 'White' }
 	];
+	// The chosen swatch by name, shown in the row's subtitle (the swatches only show colour).
+	const colorName = (colors: { value: string; name: string }[], current: string) =>
+		colors.find((c) => c.value === current.toLowerCase())?.name ?? 'Custom';
 	const usesBox = $derived(get('style') === 'solid' || get('style') === 'transition');
 
 	// Languages: plain codes that both date-fns and .NET understand.
@@ -438,7 +441,13 @@
 				{/snippet}
 			</SettingRow>
 
-			<SettingRow title="Text color" description="The clock and the captions">
+			<SettingRow
+				title="Text color"
+				description="{colorName(
+					textColors,
+					general.primaryColor || '#f5deb3'
+				)} · The clock and the captions"
+			>
 				{#snippet control()}
 					{@render swatches(
 						'Text color',
@@ -449,7 +458,13 @@
 				{/snippet}
 			</SettingRow>
 			{#if usesBox}
-				<SettingRow title="Box color" description="The box behind the clock and captions">
+				<SettingRow
+					title="Box color"
+					description="{colorName(
+						boxColors,
+						general.secondaryColor || '#000000'
+					)} · The box behind the clock and captions"
+				>
 					{#snippet control()}
 						{@render swatches(
 							'Box color',
@@ -550,7 +565,7 @@
 		>
 			<!-- Like Appearance in System Settings: only the selected thumbnail gets a ring. -->
 			<div
-				class="flex justify-center gap-4 px-1 py-5 sm:gap-10"
+				class="flex justify-center gap-4 px-1 py-5 sm:justify-start sm:gap-8 sm:px-0"
 				role="radiogroup"
 				aria-label="Layout"
 			>
