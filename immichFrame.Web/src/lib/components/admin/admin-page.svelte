@@ -15,6 +15,7 @@
 
 	let pageState: PageState = $state('loading');
 	const editor = new AdminEditor();
+	adminApi.trackEditedAccounts(() => editor.settings.Accounts ?? []);
 	let loginError = $state('');
 	let setupError = $state('');
 	let saving = $state(false);
@@ -75,6 +76,7 @@
 			const res = await adminApi.getSettings();
 			if (res.status == 200) {
 				editor.load(res.data);
+				adminApi.setSavedAccounts(res.data.Accounts ?? []);
 				pageState = 'editor';
 				loginError = '';
 			} else {
@@ -112,7 +114,8 @@
 				if (sent.General?.adminPassword && sent.General.adminPassword !== get(adminPasswordStore)) {
 					adminPasswordStore.set(sent.General.adminPassword);
 				}
-				editor.markSaved();
+				editor.markSaved(sent);
+				adminApi.setSavedAccounts(sent.Accounts ?? []);
 				savedAt = Date.now();
 			} else if (res.status == 401) {
 				adminPasswordStore.set(null);

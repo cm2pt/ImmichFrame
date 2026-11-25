@@ -40,8 +40,10 @@ export class AdminEditor {
 		this.load(JSON.parse(this.saved));
 	}
 
-	markSaved() {
-		this.saved = normalize(this.settings);
+	/** What the server now holds: the snapshot that was sent, not the live settings, so an
+	 * edit made while the save was in flight stays unsaved. */
+	markSaved(sent: ServerSettings = this.settings) {
+		this.saved = normalize(sent);
 	}
 
 	snapshot(): ServerSettings {

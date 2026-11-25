@@ -99,17 +99,48 @@ const waiting: (() => void)[] = [];
 let inFlight = 0;
 
 async function inTurn<T>(task: () => Promise<T>): Promise<T> {
+	// A finishing task hands its slot straight to the next in line, so a newcomer can't slip in
+	// between and make seven.
 	if (inFlight >= 6) await new Promise<void>((resolve) => waiting.push(resolve));
-	inFlight++;
+	else inFlight++;
 	try {
 		return await task();
 	} finally {
-		inFlight--;
-		waiting.shift()?.();
+		const next = waiting.shift();
+		if (next) next();
+		else inFlight--;
 	}
 }
 
 export type ThumbnailKind = 'person' | 'asset';
+
+// The server finds an account by its place in the SAVED settings, while the page numbers them
+// as they are being edited (one removed or added shifts the rest). So the page's index is
+// mapped to the saved one by the account's identity, and an unsaved account gets no image.
+const identity = (account: ServerAccountSettings | undefined) =>
+	account
+		? [account.immichServerUrl ?? '', account.apiKey ?? '', account.apiKeyFile ?? ''].join('\n')
+		: null;
+let savedAccounts: string[] = [];
+let editedAccounts: () => ServerAccountSettings[] = () => [];
+
+/** After loading or saving: the accounts the server now holds. Forgets the cached images,
+ * whose paths now point at other places (the ones on screen stay valid: they're not revoked). */
+export function setSavedAccounts(accounts: ServerAccountSettings[]) {
+	savedAccounts = accounts.map((a) => identity(a) ?? '');
+	thumbnails.clear();
+}
+
+/** The accounts as the page is editing them, so an edited index can be mapped. */
+export function trackEditedAccounts(accounts: () => ServerAccountSettings[]) {
+	editedAccounts = accounts;
+}
+
+function savedIndex(editedIndex: number): number | null {
+	const id = identity(editedAccounts()[editedIndex]);
+	const i = id == null ? -1 : savedAccounts.indexOf(id);
+	return i >= 0 ? i : null;
+}
 
 function cachedImage(path: string): Promise<string | null> {
 	let url = thumbnails.get(path);
@@ -123,20 +154,25 @@ function cachedImage(path: string): Promise<string | null> {
 	return url;
 }
 
-/** A saved account's Immich profile picture as an object URL, or null when there's none. */
+/** An account's Immich profile picture as an object URL, or null when there's none (or it's
+ * not saved yet). The index is the account's place on the page. */
 export function getAvatarUrl(accountIndex: number): Promise<string | null> {
-	return cachedImage(`/api/Admin/Accounts/${accountIndex}/Avatar`);
+	const i = savedIndex(accountIndex);
+	return i == null ? Promise.resolve(null) : cachedImage(`/api/Admin/Accounts/${i}/Avatar`);
 }
 
-/** A saved account's face or asset thumbnail as an object URL, or null when Immich has none. */
+/** An account's face or asset thumbnail as an object URL, or null when Immich has none. */
 export function getThumbnailUrl(
 	accountIndex: number,
 	kind: ThumbnailKind,
 	id: string
 ): Promise<string | null> {
-	return cachedImage(
-		`/api/Admin/Accounts/${accountIndex}/${kind === 'person' ? 'People' : 'Assets'}/${encodeURIComponent(id)}/Thumbnail`
-	);
+	const i = savedIndex(accountIndex);
+	return i == null
+		? Promise.resolve(null)
+		: cachedImage(
+				`/api/Admin/Accounts/${i}/${kind === 'person' ? 'People' : 'Assets'}/${encodeURIComponent(id)}/Thumbnail`
+			);
 }
 
 // Drop empty values so the server falls back to its defaults instead of

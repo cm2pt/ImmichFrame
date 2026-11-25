@@ -67,10 +67,11 @@
 				last.from = m[2];
 				last.saves += 1;
 				const line = `${m[1]}: ${last.from} → ${last.to}`;
-				// Back where it started: say what it is now, not "off → off".
+				// Changed and changed back: say so plainly, with what it is now ("Full resolution
+				// changed, then set back to off"), not "off → off".
 				last.lines = [
 					last.from === last.to
-						? `${humanizeChange(`${m[1]}: x → ${last.to}`, names).replace(': x → ', ': ')}, back where it started`
+						? `${humanizeChange(`${m[1]}: x → ${last.to}`, names).replace(/: x → (.*)$/, ' changed, then set back to $1')}`
 						: humanizeChange(line, names)
 				];
 				continue;

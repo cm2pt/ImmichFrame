@@ -249,6 +249,27 @@
 	});
 
 	let barVisible = $derived(editor.dirty || justSaved || !!saveError);
+	// While the bar floats over the bottom of the page, keyboard focus must not land under it
+	// (WCAG 2.4.11): scrolling keeps a bar's height clear, and a control tabbed to behind it is
+	// scrolled up into view.
+	$effect(() => {
+		if (!barVisible) return;
+		const root = document.documentElement;
+		root.style.scrollPaddingBottom = '7rem';
+		const onFocus = (e: FocusEvent) => {
+			const target = e.target as HTMLElement | null;
+			const bar = document.querySelector('.if-savebar [class*="rounded-2xl"]');
+			if (!target?.getBoundingClientRect || !bar || bar.contains(target)) return;
+			const overlap =
+				target.getBoundingClientRect().bottom - (bar.getBoundingClientRect().top - 12);
+			if (overlap > 0) window.scrollBy({ top: overlap });
+		};
+		document.addEventListener('focusin', onFocus);
+		return () => {
+			root.style.scrollPaddingBottom = '';
+			document.removeEventListener('focusin', onFocus);
+		};
+	});
 	const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 	let statusText = $derived(
 		liveScreens === null

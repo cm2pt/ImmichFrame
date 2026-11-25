@@ -1,4 +1,5 @@
 import * as api from '$lib/immichFrameApi';
+import { setBearer } from '$lib';
 import { AdminUiState } from '$lib/immichFrameApi';
 import { configStore } from '$lib/stores/config.store.js';
 import { clientIdentifierStore } from '$lib/stores/persist.store';
@@ -12,6 +13,9 @@ export const load: PageLoad = async ({ url }) => {
 		clientIdentifierStore.set(clientParam);
 	}
 
+	// The secret goes on this first request too: without it a screen with the right secret
+	// was listed in the admin as turned away for sending none.
+	setBearer();
 	const [configRequest, adminState] = await Promise.all([
 		api.getConfig({ clientIdentifier: get(clientIdentifierStore) }),
 		// Never let the slideshow fail over a status check.

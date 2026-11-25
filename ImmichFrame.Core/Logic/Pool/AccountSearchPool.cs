@@ -28,6 +28,8 @@ public class AccountSearchPool(
     private List<Guid>? _deck;
     private string? _deckOrder;
     private int _position;
+    private List<Guid>? _nextDeck;
+    private string? _nextDeckOrder;
 
     private string Order => SlideshowOrders.Normalize(order?.Invoke());
 
@@ -88,29 +90,45 @@ public class AccountSearchPool(
         await _deckLock.WaitAsync(ct);
         try
         {
-            var position = _position;
+            // A peek (advance=false) works on local copies and never moves the screens' place.
+            // When it runs past the end it builds the next round and keeps it in _nextDeck, so the
+            // round the screens get is the one the admin previewed.
+            var deck = _deckOrder == currentOrder ? _deck : null;
+            var position = deck == null ? 0 : _position;
             // A deck that was emptied once, or a library with no matches, gives up after one rebuild.
             var rebuilt = false;
             while (dealt.Count < requested)
             {
-                if (_deck == null || _deckOrder != currentOrder || position >= _deck.Count)
+                if (deck == null || position >= deck.Count)
                 {
-                    if (rebuilt && position >= (_deck?.Count ?? 0))
+                    if (rebuilt)
                     {
                         break;
                     }
 
-                    _deck = await BuildDeck(currentOrder, filter, ct);
-                    _deckOrder = currentOrder;
-                    _position = position = 0;
+                    deck = _nextDeck != null && _nextDeckOrder == currentOrder
+                        ? _nextDeck
+                        : await BuildDeck(currentOrder, filter, ct);
+                    position = 0;
                     rebuilt = true;
-                    if (_deck.Count == 0)
+                    if (advance)
+                    {
+                        _nextDeck = null;
+                        _nextDeckOrder = null;
+                    }
+                    else
+                    {
+                        _nextDeck = deck;
+                        _nextDeckOrder = currentOrder;
+                    }
+
+                    if (deck.Count == 0)
                     {
                         break;
                     }
                 }
 
-                var batch = _deck.Skip(position).Take(requested - dealt.Count).ToList();
+                var batch = deck.Skip(position).Take(requested - dealt.Count).ToList();
                 position += batch.Count;
                 var assets = await Task.WhenAll(batch.Select(id => FetchAsset(id, ct)));
                 // Photos deleted since the deck was built are skipped.
@@ -119,6 +137,8 @@ public class AccountSearchPool(
 
             if (advance)
             {
+                _deck = deck;
+                _deckOrder = currentOrder;
                 _position = position;
             }
         }

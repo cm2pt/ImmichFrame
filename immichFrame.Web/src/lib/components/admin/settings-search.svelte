@@ -41,7 +41,7 @@
 		{
 			title: 'Behind the clock and captions',
 			page: 'look',
-			words: 'style blur frosted solid background'
+			words: 'style blur frosted solid background box readable'
 		},
 		{ title: 'Text color', page: 'look', words: 'colour primary' },
 		{ title: 'Box color', page: 'look', words: 'colour background secondary' },
@@ -57,11 +57,6 @@
 		{ title: 'Refresh albums and people', page: 'access', words: 'interval' },
 		{ title: 'Webhook', page: 'access', words: 'home assistant automation' },
 		{ title: 'Clock & Captions', page: 'look', words: 'overlay text corners info captions' },
-		{
-			title: 'Behind the clock and captions',
-			page: 'look',
-			words: 'background box blur frosted readable'
-		},
 		{ title: 'Location', page: 'look', words: 'weather city coordinates latitude longitude where' },
 		{ title: 'Units', page: 'look', words: 'celsius fahrenheit metric imperial temperature' },
 		{ title: 'Weather description', page: 'look', words: 'rain sunny forecast' },

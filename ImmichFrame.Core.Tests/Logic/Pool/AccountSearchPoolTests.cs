@@ -387,6 +387,23 @@ public class AccountSearchPoolTests
         Assert.That(dealt, Is.EqualTo(peeked), "what Up next showed is what the frame shows");
     }
 
+    // REGRESSION: a peek that ran past the end of the deck rebuilt it and reset the screens'
+    // place to 0, so the frame skipped the rest of the round.
+    [Test]
+    public async Task Peek_PastTheEndOfARound_DoesNotSkipTheRest()
+    {
+        var ids = SetupLibrary(5);
+        var pool = OrderedPool(SlideshowOrders.Shuffle);
+        var firstRound = (await pool.GetAssets(3)).Select(a => a.Id).ToList();
+
+        var peeked = (await pool.PeekAssets(4)).Select(a => a.Id).ToList();
+        var rest = (await pool.GetAssets(2)).Select(a => a.Id).ToList();
+        var nextRound = (await pool.GetAssets(2)).Select(a => a.Id).ToList();
+
+        Assert.That(firstRound.Concat(rest), Is.EquivalentTo(ids), "the round finishes");
+        Assert.That(peeked, Is.EqualTo(rest.Concat(nextRound)), "Up next matched what came next");
+    }
+
     [Test]
     public async Task Deck_SkipsPhotosDeletedSinceItWasBuilt()
     {

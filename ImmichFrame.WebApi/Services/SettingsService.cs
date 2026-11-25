@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using ImmichFrame.Core.Exceptions;
 using ImmichFrame.Core.Interfaces;
 using ImmichFrame.WebApi.Database;
@@ -355,7 +356,9 @@ public class SettingsService : ISettingsProvider
         await TrimHistoryAsync(db);
 
         var old = _raw;
-        var accountsChanged = Serialize(old.AccountsImpl) != Serialize(raw.AccountsImpl)
+        // An account's Name is only the admin page's label: renaming one mustn't rebuild the
+        // slideshow (that would restart an oldest/newest-first round).
+        var accountsChanged = AccountsForComparison(old) != AccountsForComparison(raw)
             || old.GeneralSettings.RefreshAlbumPeopleInterval != validated.GeneralSettings.RefreshAlbumPeopleInterval;
         var generalChanged = Serialize(old.GeneralSettingsImpl) != Serialize(raw.GeneralSettingsImpl);
 
@@ -546,6 +549,14 @@ public class SettingsService : ISettingsProvider
     }
 
     internal static string Serialize(object? value) => JsonSerializer.Serialize(value);
+
+    private static string AccountsForComparison(ServerSettings settings) =>
+        Serialize((settings.AccountsImpl ?? []).Select(account =>
+        {
+            var node = JsonSerializer.SerializeToNode(account)!.AsObject();
+            node.Remove(nameof(ServerAccountSettings.Name));
+            return node;
+        }));
 
     private static ServerSettings Deserialize(string json)
     {

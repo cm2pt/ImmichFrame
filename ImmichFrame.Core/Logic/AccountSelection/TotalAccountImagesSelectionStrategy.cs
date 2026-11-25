@@ -10,6 +10,8 @@ public class TotalAccountImagesSelectionStrategy(
     IAssetAccountTracker _tracker,
     IList<IAccountImmichFrameLogic> _accounts) : IAccountSelectionStrategy
 {
+    private readonly Dictionary<IAccountImmichFrameLogic, double> _carry = new(ReferenceEqualityComparer.Instance);
+
     public async Task<(IAccountImmichFrameLogic, AssetResponseDto)?> GetNextAsset()
     {
         if (_accounts.Count == 0)
@@ -74,10 +76,27 @@ public class TotalAccountImagesSelectionStrategy(
     {
         var proportions = await GetProportions(_accounts);
         var sum = proportions.Sum();
+        // Each account's fair part of a batch is rarely whole, so the fraction carries over to the
+        // next batch: a 3-photo account next to a 10,000-photo one gets a photo now and then, not
+        // one in every batch. A peek doesn't spend the carry.
+        var counts = new int[_accounts.Count];
+        lock (_carry)
+        {
+            for (var i = 0; i < _accounts.Count; i++)
+            {
+                var share = sum > 0 ? proportions[i] / sum : 0;
+                var due = (_carry.TryGetValue(_accounts[i], out var c) ? c : 0) + PooledImmichFrameLogic.BatchSize * share;
+                counts[i] = (int)Math.Floor(due + 1e-9);
+                if (!peek)
+                {
+                    _carry[_accounts[i]] = due - counts[i];
+                }
+            }
+        }
+
         var lists = await Task.WhenAll(_accounts.Select(async (account, i) =>
         {
-            var share = sum > 0 ? proportions[i] / sum : 0;
-            var count = share > 0 ? Math.Max(1, (int)Math.Round(PooledImmichFrameLogic.BatchSize * share)) : 0;
+            var count = counts[i];
             var assets = count == 0
                 ? []
                 : (peek ? await account.PeekAssets(count) : await account.GetAssets(count)).ToList();

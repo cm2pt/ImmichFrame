@@ -170,13 +170,18 @@ namespace ImmichFrame.WebApi.Helpers
                 }));
 
             // After the tags: the Tags setting holds tag values, the search needs their ids.
-            var tagsMissing = account.Tags is { Count: > 0 } && errors.Any(e => e.StartsWith("tags:"));
+            var tagsMissing = (account.Tags is { Count: > 0 } || account.ExcludedTags is { Count: > 0 })
+                && errors.Any(e => e.StartsWith("tags:"));
             if (!tagsMissing)
             {
                 await Try("matching photos", async () =>
                 {
                     var tagIds = result.Tags
                         .Where(t => account.Tags.Contains(t.Name))
+                        .Select(t => t.Id)
+                        .ToList();
+                    var excludedTagIds = result.Tags
+                        .Where(t => (account.ExcludedTags ?? []).Contains(t.Name))
                         .Select(t => t.Id)
                         .ToList();
                     if (SearchFilters.HasConfiguredSource(account) && !SearchFilters.HasMatchingBranch(account, tagIds))
@@ -187,7 +192,7 @@ namespace ImmichFrame.WebApi.Helpers
 
                     var stats = await immichApi.SearchAssetStatisticsAsync(new StatisticsSearchDto
                     {
-                        Filter = SearchFilters.ForAccount(account, tagIds)
+                        Filter = SearchFilters.ForAccount(account, tagIds, excludedTagIds)
                     }, token);
                     result.MatchingAssets = ToInt(stats.Total);
                 });

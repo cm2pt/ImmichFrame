@@ -49,7 +49,11 @@ export const setBaseUrl = (baseUrl: string) => {
 
 export const setBearer = () => {
 	defaults.headers = defaults.headers || {};
-	defaults.headers['Authorization'] = 'Bearer ' + get(authSecretStore);
+	const secret = get(authSecretStore);
+	// No secret saved: send no header rather than "Bearer null", so the admin page can tell
+	// a screen that has no secret from one with a wrong one.
+	if (secret) defaults.headers['Authorization'] = 'Bearer ' + secret;
+	else delete defaults.headers['Authorization'];
 };
 
 export const getAssetStreamUrl = (

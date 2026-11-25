@@ -75,6 +75,11 @@
 		value={account.immichServerUrl}
 		oninput={(v) => (account.immichServerUrl = v)}
 	/>
+	<SettingRow title="Use key file" description="Read the key from a file on the server instead">
+		{#snippet control()}
+			<Toggle aria-label="Use key file" checked={useFile} onCheckedChange={setUseFile} />
+		{/snippet}
+	</SettingRow>
 	{#if useFile}
 		<FieldRow
 			title="Key file"
@@ -104,11 +109,6 @@
 			oninput={(v) => (account.apiKey = v)}
 		/>
 	{/if}
-	<SettingRow title="Use key file" description="Read the key from a file on the server instead">
-		{#snippet control()}
-			<Toggle aria-label="Use key file" checked={useFile} onCheckedChange={setUseFile} />
-		{/snippet}
-	</SettingRow>
 </PageCard>
 
 <PageCard

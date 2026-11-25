@@ -71,6 +71,21 @@
 		account.imagesFromDays = value === 'any' ? null : Number(value);
 	}
 
+	// Custom is either a moving window ("the last 90 days") or fixed dates, never both: the
+	// server lets a From date override the days, which a page showing both couldn't explain.
+	let customDatesPicked = $state(false);
+	let customMode: 'days' | 'dates' = $derived(
+		customDatesPicked || account.imagesFromDate || account.imagesUntilDate ? 'dates' : 'days'
+	);
+	function setCustomMode(mode: 'days' | 'dates') {
+		customDatesPicked = mode === 'dates';
+		if (mode === 'dates') account.imagesFromDays = null;
+		else {
+			account.imagesFromDate = null;
+			account.imagesUntilDate = null;
+		}
+	}
+
 	const dateOnly = (iso: string | null | undefined) => (iso ?? '').substring(0, 10);
 	const toIso = (raw: string) => (raw === '' ? null : new Date(raw).toISOString());
 </script>
@@ -216,37 +231,61 @@
 		{/snippet}
 	</SettingRow>
 	{#if taken === 'custom'}
-		<div class="border-sep ml-6 grid gap-3 border-t py-2.5 sm:grid-cols-3">
-			<label class="text-[0.8125rem]">
-				<span class="mb-1 block font-medium">Last … days</span>
-				<Input
-					type="number"
-					min="1"
-					value={account.imagesFromDays?.toString() ?? ''}
-					disabled={!!account.imagesFromDate}
-					oninput={(e) => {
-						const v = e.currentTarget.value;
-						account.imagesFromDays = v === '' ? null : Number(v);
-					}}
+		<SettingRow title="Range" nested>
+			{#snippet control()}
+				<Segmented
+					label="Range"
+					value={customMode}
+					options={[
+						{ value: 'days', label: 'Last Days' },
+						{ value: 'dates', label: 'Between Dates' }
+					]}
+					onchange={setCustomMode}
 				/>
-			</label>
-			<label class="text-[0.8125rem]">
-				<span class="mb-1 block font-medium">From</span>
-				<Input
-					type="date"
-					value={dateOnly(account.imagesFromDate)}
-					oninput={(e) => (account.imagesFromDate = toIso(e.currentTarget.value))}
-				/>
-			</label>
-			<label class="text-[0.8125rem]">
-				<span class="mb-1 block font-medium">Until</span>
-				<Input
-					type="date"
-					value={dateOnly(account.imagesUntilDate)}
-					oninput={(e) => (account.imagesUntilDate = toIso(e.currentTarget.value))}
-				/>
-			</label>
-		</div>
+			{/snippet}
+		</SettingRow>
+		{#if customMode === 'days'}
+			<SettingRow title="Taken in the last" nested>
+				{#snippet control()}
+					<span class="flex items-center gap-2">
+						<Input
+							type="number"
+							min="1"
+							placeholder="90"
+							aria-label="Number of days"
+							class="w-24 text-right"
+							value={account.imagesFromDays?.toString() ?? ''}
+							oninput={(e) => {
+								const v = e.currentTarget.value;
+								account.imagesFromDays = v === '' ? null : Number(v);
+							}}
+						/>
+						<span class="text-label-2 text-[0.875rem]">days</span>
+					</span>
+				{/snippet}
+			</SettingRow>
+		{:else}
+			<SettingRow title="From" nested>
+				{#snippet control()}
+					<Input
+						type="date"
+						aria-label="From"
+						value={dateOnly(account.imagesFromDate)}
+						oninput={(e) => (account.imagesFromDate = toIso(e.currentTarget.value))}
+					/>
+				{/snippet}
+			</SettingRow>
+			<SettingRow title="Until" nested>
+				{#snippet control()}
+					<Input
+						type="date"
+						aria-label="Until"
+						value={dateOnly(account.imagesUntilDate)}
+						oninput={(e) => (account.imagesUntilDate = toIso(e.currentTarget.value))}
+					/>
+				{/snippet}
+			</SettingRow>
+		{/if}
 	{/if}
 	<SettingRow title="Minimum rating">
 		{#snippet control()}

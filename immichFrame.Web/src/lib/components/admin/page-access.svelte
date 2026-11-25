@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Btn from './btn.svelte';
 	import Toggle from './toggle.svelte';
-	import { Input, NumberInput } from '@immich/ui';
+	import PopupSelect from './popup-select.svelte';
 	import Glyph from './glyph.svelte';
 	import type { ServerSettings } from '$lib/immichFrameApi';
 	import { effective, generalDefaults } from './admin-defaults';
@@ -17,6 +17,28 @@
 	import InlineConfirm from './inline-confirm.svelte';
 	import PageCard from './page-card.svelte';
 	import SettingRow from './setting-row.svelte';
+
+	// Pop-up choices, like macOS, with a value set by hand elsewhere kept as one more option.
+	const refreshOptions = [
+		{ value: '1', label: 'Every Hour' },
+		{ value: '6', label: 'Every 6 Hours' },
+		{ value: '12', label: 'Every 12 Hours' },
+		{ value: '24', label: 'Once a Day' }
+	];
+	const renewOptions = [
+		{ value: '1', label: '1 Day' },
+		{ value: '7', label: '1 Week' },
+		{ value: '30', label: '30 Days' },
+		{ value: '90', label: '90 Days' }
+	];
+	function withCurrent(
+		options: { value: string; label: string }[],
+		current: number | null | undefined,
+		label: (n: number) => string
+	) {
+		if (current == null || options.some((o) => o.value === String(current))) return options;
+		return [...options, { value: String(current), label: label(current) }];
+	}
 
 	interface Props {
 		settings: ServerSettings;
@@ -347,20 +369,20 @@
 						/>
 					{/snippet}
 					{#if get('downloadImages')}
-						<label class="flex items-center gap-3 text-sm">
-							Download again after
-							<span class="w-24">
-								<NumberInput
-									value={get('renewImagesDuration')}
-									min={1}
-									onchange={(e) =>
-										(general.renewImagesDuration = Number(
-											(e.currentTarget as HTMLInputElement).value
-										))}
+						<SettingRow title="Download again after" nested>
+							{#snippet control()}
+								<PopupSelect
+									label="Download again after"
+									options={withCurrent(
+										renewOptions,
+										get('renewImagesDuration'),
+										(n) => `${n} days`
+									)}
+									value={String(get('renewImagesDuration'))}
+									onchange={(v) => (general.renewImagesDuration = Number(v))}
 								/>
-							</span>
-							days
-						</label>
+							{/snippet}
+						</SettingRow>
 					{/if}
 				</SettingRow>
 				<SettingRow
@@ -368,30 +390,26 @@
 					description="How often the frame re-reads what's in them"
 				>
 					{#snippet control()}
-						<span class="w-24">
-							<NumberInput
-								value={get('refreshAlbumPeopleInterval')}
-								min={0}
-								onchange={(e) =>
-									(general.refreshAlbumPeopleInterval = Number(
-										(e.currentTarget as HTMLInputElement).value
-									))}
-							/>
-						</span>
-						<span class="text-label-2 text-[0.875rem]">hours</span>
+						<PopupSelect
+							label="Refresh albums and people"
+							options={withCurrent(refreshOptions, get('refreshAlbumPeopleInterval'), (n) =>
+								n === 0 ? 'Every Request' : `Every ${n} Hours`
+							)}
+							value={String(get('refreshAlbumPeopleInterval'))}
+							onchange={(v) => (general.refreshAlbumPeopleInterval = Number(v))}
+						/>
 					{/snippet}
 				</SettingRow>
-				<SettingRow
+				<FieldRow
 					title="Webhook"
-					description="Called each time a screen shows a photo, for home automation"
-				>
-					<Input
-						placeholder="https://…"
-						aria-label="Webhook address"
-						value={general.webhook ?? ''}
-						oninput={(e) => (general.webhook = e.currentTarget.value)}
-					/>
-				</SettingRow>
+					type="url"
+					placeholder="https://…"
+					value={general.webhook ?? ''}
+					oninput={(v) => (general.webhook = v)}
+				/>
+				<p class="text-label-2 pb-2 text-[0.75rem]">
+					Called each time a screen shows a photo, for home automation.
+				</p>
 			</div>
 		{/if}
 	</PageCard>

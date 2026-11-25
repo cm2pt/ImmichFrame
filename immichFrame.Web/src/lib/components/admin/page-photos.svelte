@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { ServerAccountSettings, ServerSettings } from '$lib/immichFrameApi';
 	import * as adminApi from '$lib/services/admin';
 	import { accountDefaults, effective } from './admin-defaults';
@@ -36,18 +37,28 @@
 	$effect(() => {
 		const snapshot = JSON.stringify(accounts);
 		const list: ServerAccountSettings[] = JSON.parse(snapshot);
+		// Only this run may write the counts: an older, slower answer must not overwrite a newer
+		// one. Removed or disconnected accounts lose their old number at once.
+		let current = true;
+		const previous = untrack(() => matching);
+		matching = list.map((account, i) => (hasConnection(account) ? (previous[i] ?? null) : null));
 		const timer = setTimeout(() => {
 			list.forEach(async (account, i) => {
 				if (!hasConnection(account)) return;
+				let count: number | null = null;
 				try {
 					const res = await adminApi.countMatchingAssets(account);
-					matching[i] = res.status === 200 ? (res.data.count ?? null) : null;
+					count = res.status === 200 ? (res.data.count ?? null) : null;
 				} catch {
-					matching[i] = null;
+					count = null;
 				}
+				if (current) matching[i] = count;
 			});
 		}, 800);
-		return () => clearTimeout(timer);
+		return () => {
+			current = false;
+			clearTimeout(timer);
+		};
 	});
 	// Search can jump to an account's setting: open the first account if none is open.
 	$effect(() => {

@@ -135,6 +135,32 @@ namespace ImmichFrame.Core.Tests.Logic.AccountSelection
             Assert.That(assets.Where(small.Contains), Is.EqualTo(small));
         }
 
+        // REGRESSION: every account got at least one photo per 25-photo batch, so a tiny account
+        // cycled its few photos every batch, far above its share.
+        [Test]
+        public async Task GetAssets_OrderedAccounts_TinyAccountGetsItsShareAcrossBatches()
+        {
+            var a = new Mock<IAccountImmichFrameLogic>();
+            a.Setup(x => x.GetTotalAssets()).ReturnsAsync(9900);
+            a.SetupGet(x => x.KeepsOrder).Returns(true);
+            a.Setup(x => x.GetAssets(It.IsAny<int>())).ReturnsAsync((int n) => Enumerable.Range(0, n).Select(_ => CreateAsset()));
+            var b = new Mock<IAccountImmichFrameLogic>();
+            b.Setup(x => x.GetTotalAssets()).ReturnsAsync(100);
+            b.SetupGet(x => x.KeepsOrder).Returns(true);
+            b.Setup(x => x.GetAssets(It.IsAny<int>())).ReturnsAsync((int n) => Enumerable.Range(0, n).Select(_ => CreateAsset()));
+            var strategy = CreateStrategy(a.Object, b.Object);
+
+            var total = 0;
+            for (var batch = 0; batch < 8; batch++)
+            {
+                total += (await strategy.GetAssets()).Count();
+            }
+
+            // 1% of 8 × 25 = 2 photos, not 8.
+            b.Verify(x => x.GetAssets(1), Times.Exactly(2));
+            Assert.That(total, Is.EqualTo(200), "the carried fractions add up to whole batches");
+        }
+
         [Test]
         public async Task PeekAssets_OrderedAccounts_PeekInsteadOfDealing()
         {

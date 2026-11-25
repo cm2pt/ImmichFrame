@@ -36,9 +36,20 @@
 			? 'This page is open on localhost, so the address only works on this computer. Open the admin page using this server’s IP address and port to get an address and code other devices can use.'
 			: !secret
 				? 'There’s no frame secret, so anyone who can reach this address can see the photos.'
-				: 'Scan the code with a phone or tablet to open the frame, already signed in.'
+				: usesApp
+					? 'The app lists itself in Screens once it shows its first photo.'
+					: 'Scan the code with a phone or tablet to open the frame, already signed in.'
 	);
 </script>
+
+{#snippet enterAddress()}
+	Open it and enter the server address{secret && !isLocal ? ' and secret' : ''} below{#if secret && isLocal},
+		and the frame secret from <button
+			type="button"
+			class="text-primary underline-offset-2 hover:underline"
+			onclick={ongotoaccess}>Access &amp; Accounts</button
+		>{/if}.
+{/snippet}
 
 <PageCard title="Add a screen" footer={note}>
 	<div class="py-3">
@@ -59,12 +70,7 @@
 			>
 				{#if device === 'appletv'}
 					<li>On the Apple TV, install <strong>ImmichFrame</strong> from the App Store.</li>
-					<li>
-						Open it and enter the server address{secret && !isLocal ? ' and secret' : ''} below{secret &&
-						isLocal
-							? ', and the frame secret from Access & Accounts'
-							: ''}.
-					</li>
+					<li>{@render enterAddress()}</li>
 				{:else if device === 'ios'}
 					<li>Scan the code with the Camera app, or open the link in Safari.</li>
 					<li>Tap Share, then <em>Add to Home Screen</em>, for a full-screen frame.</li>
@@ -79,19 +85,15 @@
 							rel="noreferrer">Frameo guide</a
 						>.
 					</li>
-					<li>
-						Open it and enter the server address{secret && !isLocal ? ' and secret' : ''} below{secret &&
-						isLocal
-							? ', and the frame secret from Access & Accounts'
-							: ''}.
-					</li>
+					<li>{@render enterAddress()}</li>
 				{:else}
 					<li>Open the link on that screen, or scan the code.</li>
 					<li>Switch the browser to full screen and leave it running.</li>
 				{/if}
-				<li>Give it a name so you can find it in Screens.</li>
+				{#if !usesApp}<li>Give it a name so you can find it in Screens.</li>{/if}
 			</ol>
-			{#if !isLocal}
+			<!-- The code opens the frame in a browser: no use to the TV and Android apps. -->
+			{#if !isLocal && !usesApp}
 				<div class="hidden w-28 shrink-0 sm:block">
 					<div class="rounded-[8px] bg-white p-2 shadow-[0_0_0_0.5px_rgb(0_0_0/0.15)]">
 						<QrCode data={frameUrl} isResponsive />
@@ -100,19 +102,19 @@
 			{/if}
 		</div>
 	</div>
-	<FieldRow
-		title="Name"
-		placeholder="Optional"
-		value={screenName}
-		oninput={(v) => (screenName = v)}
-	/>
 	{#if usesApp}
 		<ValueRow title="Server address" value={origin} copyable={!isLocal} />
 		{#if secret && !isLocal}<ValueRow title="Secret" value={secret} secret />{/if}
 	{:else}
+		<FieldRow
+			title="Name"
+			placeholder="Optional"
+			value={screenName}
+			oninput={(v) => (screenName = v)}
+		/>
 		<ValueRow title="Link" value={frameUrl} secret={!!secret} copyable={!isLocal} />
 	{/if}
-	{#if !isLocal}
+	{#if !isLocal && !usesApp}
 		<div class="border-sep flex justify-center border-t py-4 sm:hidden">
 			<div class="w-40 rounded-[8px] bg-white p-2 shadow-[0_0_0_0.5px_rgb(0_0_0/0.15)]">
 				<QrCode data={frameUrl} isResponsive />

@@ -186,6 +186,31 @@ namespace ImmichFrame.WebApi.Tests.Helpers
 
             Assert.That(library.MatchingAssets, Is.Null);
         }
+
+        // REGRESSION: Load's MatchingAssets left out Never-show tags, unlike the slideshow.
+        [Test]
+        public async Task Load_MatchingCount_LeavesOutNeverShowTags()
+        {
+            var immich = new FakeImmich();
+            var account = Account();
+            account.ExcludedTags = new List<string> { "Holidays/2025" };
+
+            await ImmichAccountLibrary.Load(account, new Factory(immich));
+
+            Assert.That(immich.StatisticsBodies.Any(b => b.Contains(TagHolidays.ToString())), Is.True);
+        }
+
+        [Test]
+        public async Task Load_NeverShowTagsAndFailingTags_SkipsTheMatchingCount()
+        {
+            var account = Account();
+            account.ExcludedTags = new List<string> { "Holidays/2025" };
+
+            var library = await ImmichAccountLibrary.Load(account, new Factory(new FakeImmich { FailTags = true }));
+
+            Assert.That(library.MatchingAssets, Is.Null);
+        }
+
         [Test]
         public async Task CountMatching_CountsWithTheAccountsFilter()
         {

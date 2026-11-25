@@ -234,6 +234,29 @@ namespace ImmichFrame.WebApi.Tests.Services
             });
         }
 
+        // REGRESSION: renaming an account (an admin-only label) rebuilt the slideshow, which
+        // restarted an oldest/newest-first round from its first photo.
+        [Test]
+        public async Task UpdateAsync_RenamingAnAccount_DoesNotFlagAccounts()
+        {
+            WriteSettingsJson(ValidV2Json);
+            var service = CreateService();
+            await service.InitializeAsync();
+
+            SettingsChangedEventArgs? received = null;
+            service.SettingsChanged += (_, args) => received = args;
+
+            var settings = service.GetRawSettings();
+            settings.AccountsImpl.First().Name = "Family";
+            await service.UpdateAsync(settings);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(received!.AccountsChanged, Is.False);
+                Assert.That(service.GetRawSettings().AccountsImpl.First().Name, Is.EqualTo("Family"));
+            });
+        }
+
         [Test]
         public async Task UpdateAsync_InvalidSettings_ThrowsAndKeepsCurrent()
         {

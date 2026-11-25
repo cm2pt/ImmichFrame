@@ -333,9 +333,11 @@ img.icon-weather {
 	.dark body.if-sheet-open .if-shell {
 		background: #1c1c1e;
 	}
-	body.if-sheet-open .if-savebar {
-		visibility: hidden;
-	}
+}
+/* A sheet is modal: the save bar behind it looked usable but took no clicks. It comes back
+   when the sheet closes. */
+body.if-sheet-open .if-savebar {
+	visibility: hidden;
 }
 @media (prefers-reduced-motion: reduce) {
 	.if-shell {
