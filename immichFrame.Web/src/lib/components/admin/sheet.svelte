@@ -13,9 +13,20 @@
 		actions?: Snippet;
 		/** Leaves the phone nav bar untitled when the content already starts with the name. */
 		hideTitle?: boolean;
+		/** A sheet that creates something: Cancel and this button (e.g. Add) instead of Done,
+		 * in the phone's nav bar and at the bottom right on desktop. */
+		confirm?: { label: string; disabled?: boolean; onconfirm: () => void };
 	}
 
-	let { title, onclose, returnFocusTo, children, actions, hideTitle = false }: Props = $props();
+	let {
+		title,
+		onclose,
+		returnFocusTo,
+		children,
+		actions,
+		hideTitle = false,
+		confirm
+	}: Props = $props();
 
 	let panel: HTMLElement | undefined = $state();
 	// Captured when the sheet opens: props are live, and by the time it closes the opener's
@@ -85,7 +96,15 @@
 		<header
 			class="border-sep grid grid-cols-[1fr_auto_1fr] items-center border-b px-3 py-2.5 md:hidden"
 		>
-			<span></span>
+			{#if confirm}
+				<button
+					type="button"
+					class="justify-self-start rounded-md px-2 py-1 text-[1.0625rem] text-primary focus-visible:outline-2 focus-visible:outline-primary"
+					onclick={onclose}>Cancel</button
+				>
+			{:else}
+				<span></span>
+			{/if}
 			<h2
 				class="truncate text-[1.0625rem] font-semibold md:text-[0.9375rem] {hideTitle
 					? 'invisible'
@@ -95,8 +114,9 @@
 			</h2>
 			<button
 				type="button"
-				class="justify-self-end rounded-md px-2 py-1 text-[1.0625rem] font-semibold text-primary focus-visible:outline-2 focus-visible:outline-primary md:text-[0.875rem]"
-				onclick={onclose}>Done</button
+				class="justify-self-end rounded-md px-2 py-1 text-[1.0625rem] font-semibold text-primary focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-35 md:text-[0.875rem]"
+				disabled={confirm?.disabled}
+				onclick={confirm ? confirm.onconfirm : onclose}>{confirm?.label ?? 'Done'}</button
 			>
 		</header>
 		<div class="flex-1 overflow-y-auto px-4 py-5 md:px-5 md:pt-6">
@@ -107,6 +127,18 @@
 		<footer class="hidden justify-end gap-2 px-5 pt-1 pb-5 md:flex">
 			{#if actions}
 				{@render actions()}
+			{:else if confirm}
+				<button
+					type="button"
+					class="bg-fill h-7 rounded-[6px] px-4 text-[0.8125rem] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+					onclick={onclose}>Cancel</button
+				>
+				<button
+					type="button"
+					class="bg-accent h-7 rounded-[6px] px-4 text-[0.8125rem] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-40"
+					disabled={confirm.disabled}
+					onclick={confirm.onconfirm}>{confirm.label}</button
+				>
 			{:else}
 				<button
 					type="button"

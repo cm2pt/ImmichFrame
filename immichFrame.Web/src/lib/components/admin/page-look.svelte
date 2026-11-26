@@ -185,6 +185,7 @@
 
 	// Languages: plain codes that both date-fns and .NET understand.
 	const names = new Intl.DisplayNames(['en'], { type: 'language' });
+	const extraLanguageNames: Record<string, string> = { se: 'Northern Sami' };
 	const languageOptions = $derived.by(() => {
 		const codes = Object.keys(locales).filter((code) => /^[a-z]{2,3}$/.test(code));
 		const current = get('language') ?? 'en';
@@ -197,6 +198,8 @@
 				} catch {
 					// keep the code
 				}
+				// Some browsers don't know every code date-fns has: name those by hand.
+				if (label === code) label = extraLanguageNames[code] ?? code;
 				return { value: code, label };
 			})
 			.sort((a, b) => a.label.localeCompare(b.label));
@@ -306,13 +309,13 @@
 				{/snippet}
 			</SettingRow>
 			{#if get('showClock')}
-				<SettingRow title="Time" nested>
+				<SettingRow title="Time format" nested>
 					{#snippet control()}<SettingField
 							field={generalField('clockFormat', '')}
 							{target}
 						/>{/snippet}
 				</SettingRow>
-				<SettingRow title="Date" nested>
+				<SettingRow title="Date format" nested>
 					{#snippet control()}<SettingField
 							field={generalField('clockDateFormat', '')}
 							{target}
@@ -718,7 +721,7 @@
 					</p>
 				{:else if general.weatherLatLong}
 					<!-- Bare numbers mean little: say what they are until a place name can replace them. -->
-					<p class="text-label-2 -mt-1 pb-2 text-right text-[0.75rem]">
+					<p class="text-label-2 -mt-1 pb-2 text-[0.75rem]">
 						Latitude, longitude. The place name shows once there’s an API key.
 					</p>
 				{/if}

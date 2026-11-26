@@ -43,7 +43,12 @@
 	interface Props {
 		settings: ServerSettings;
 		version: number;
-		onaddaccount: () => void;
+		/** Appends a finished account (from the Add sheet). */
+		onaddaccount: (account: ServerAccountSettings) => void;
+		/** Opens the Add sheet straight away (Photos' Add Account goes through here). */
+		startNew?: boolean;
+		/** Told once the Add sheet has opened, so a later visit doesn't reopen it. */
+		onstartednew?: () => void;
 		onremoveaccount: (index: number) => void;
 		/** IMMICHFRAME_ADMIN_PASSWORD is set on the server, so the password here has no effect. */
 		passwordFromEnvironment?: boolean;
@@ -53,6 +58,8 @@
 		settings,
 		version,
 		onaddaccount,
+		startNew = false,
+		onstartednew,
 		onremoveaccount,
 		passwordFromEnvironment = false
 	}: Props = $props();
@@ -93,28 +100,46 @@
 	const accountName = (account: ServerAccountSettings, i: number) =>
 		accountLabel(account, i, libraries[i]);
 
+	async function check(account: ServerAccountSettings): Promise<AccountStatus> {
+		try {
+			const res = await adminApi.testAccount(JSON.parse(JSON.stringify(account)));
+			return res.status === 200
+				? {
+						testing: false,
+						success: !!res.data.success,
+						message: res.data.message ?? '',
+						version: res.data.version
+					}
+				: { testing: false, success: false, message: 'The test request failed.' };
+		} catch {
+			return { testing: false, success: false, message: 'Couldn’t reach the ImmichFrame server.' };
+		}
+	}
+
 	async function test(i: number) {
 		const account = settings.Accounts?.[i];
 		if (!account) return;
 		statuses[i] = { testing: true };
-		try {
-			const res = await adminApi.testAccount(JSON.parse(JSON.stringify(account)));
-			statuses[i] =
-				res.status === 200
-					? {
-							testing: false,
-							success: !!res.data.success,
-							message: res.data.message ?? '',
-							version: res.data.version
-						}
-					: { testing: false, success: false, message: 'The test request failed.' };
-		} catch {
-			statuses[i] = {
-				testing: false,
-				success: false,
-				message: 'Couldn’t reach the ImmichFrame server.'
-			};
-		}
+		statuses[i] = await check(account);
+	}
+
+	// A new account lives in this draft until Add: Cancel (or Escape) leaves nothing behind.
+	let draft = $state<ServerAccountSettings | null>(null);
+	let draftStatus: AccountStatus | undefined = $state();
+	let draftReady = $derived(
+		!!draft?.immichServerUrl?.trim() && !!(draft?.apiKey?.trim() || draft?.apiKeyFile?.trim())
+	);
+	function startNewAccount() {
+		draft = {};
+		draftStatus = undefined;
+	}
+	function addDraft() {
+		if (!draft || !draftReady) return;
+		const account = $state.snapshot(draft) as ServerAccountSettings;
+		const status = draftStatus;
+		draft = null;
+		onaddaccount(account);
+		if (status) statuses[(settings.Accounts?.length ?? 1) - 1] = status;
 	}
 
 	onMount(() => {
@@ -123,10 +148,12 @@
 		});
 	});
 
-	function addAndOpen() {
-		onaddaccount();
-		openAccount = (settings.Accounts?.length ?? 1) - 1;
-	}
+	onMount(() => {
+		if (startNew) {
+			startNewAccount();
+			onstartednew?.();
+		}
+	});
 
 	let advancedOpen = $state(false);
 	// Search can jump to a setting inside Advanced: open it first.
@@ -179,9 +206,10 @@
 			</button>
 		{/each}
 		<button
+			id="add-account"
 			type="button"
 			class="border-sep flex min-h-11 w-full items-center border-t py-2 text-left text-[0.9375rem] text-primary first:border-t-0 md:text-[0.875rem]"
-			onclick={addAndOpen}
+			onclick={startNewAccount}
 		>
 			Add Immich Account…
 		</button>
@@ -211,6 +239,26 @@
 				/>
 			</Sheet>
 		{/key}
+	{/if}
+
+	{#if draft}
+		<Sheet
+			title="New Account"
+			returnFocusTo="add-account"
+			onclose={() => (draft = null)}
+			confirm={{ label: 'Add', disabled: !draftReady, onconfirm: addDraft }}
+		>
+			<AccountDetail
+				account={draft}
+				name="New Account"
+				status={draftStatus}
+				ontest={async () => {
+					if (!draft) return;
+					draftStatus = { testing: true };
+					draftStatus = await check(draft);
+				}}
+			/>
+		</Sheet>
 	{/if}
 
 	<PageCard

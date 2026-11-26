@@ -67,11 +67,11 @@
 				last.from = m[2];
 				last.saves += 1;
 				const line = `${m[1]}: ${last.from} → ${last.to}`;
-				// Changed and changed back: say so plainly, with what it is now ("Full resolution
-				// changed, then set back to off"), not "off → off".
+				// Changed and changed back: say what it is now ("Full resolution: off, as before"),
+				// not "off → off".
 				last.lines = [
 					last.from === last.to
-						? `${humanizeChange(`${m[1]}: x → ${last.to}`, names).replace(/: x → (.*)$/, ' changed, then set back to $1')}`
+						? `${humanizeChange(`${m[1]}: x → ${last.to}`, names).replace(/: x → (.*)$/, ': $1, as before')}`
 						: humanizeChange(line, names)
 				];
 				continue;
@@ -104,6 +104,15 @@
 		} finally {
 			busy = null;
 		}
+	}
+
+	// Each row can stand for several saves (repeated toggles of one setting), so count saves.
+	function restoreMessage(index: number, when: string) {
+		const undone = rows.slice(0, index).reduce((n, r) => n + r.saves, 0);
+		return (
+			`Go back to the settings from ${when}? This undoes ${undone === 1 ? 'the save' : `${undone} saves`} since then.` +
+			(dirty ? ' Your unsaved changes are lost too.' : '')
+		);
 	}
 
 	// A setting going from "not set" to its own default ("off → off") changes nothing you'd see.
@@ -148,7 +157,7 @@
 								and {row.lines.length - 3} more
 							</p>{/if}
 						<p class="text-label-2 mt-0.5 text-[0.8125rem] md:text-[0.75rem]">
-							{when}{row.saves > 1 ? `\u00a0·\u2002${row.saves} saves` : ''}
+							{when}{row.saves > 1 ? `\u00a0·\u2002saved ${row.saves} times` : ''}
 						</p>
 					</div>
 					{#if index === 0}
@@ -168,8 +177,7 @@
 				</div>
 				{#if confirming === row.version}
 					<InlineConfirm
-						message={`Go back to the settings as they were on ${when}? The ${index === 1 ? 'latest change is' : `${index} later changes are`} undone.` +
-							(dirty ? ' Your unsaved changes are lost too.' : '')}
+						message={restoreMessage(index, when)}
 						confirmLabel="Restore"
 						returnFocusTo={`history-${row.version}`}
 						onconfirm={() => restore(row)}

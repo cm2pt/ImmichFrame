@@ -41,6 +41,7 @@ const labels: Record<string, string> = {
 	Webhook: 'Webhook',
 	AuthenticationSecret: 'Frame secret',
 	AdminPassword: 'Admin password',
+	Name: 'Name',
 	ImmichServerUrl: 'Server address',
 	ApiKey: 'API key',
 	ApiKeyFile: 'API key file',
@@ -128,4 +129,20 @@ export function humanizeChange(line: string, accountNames: string[]): string {
 		return `${prefix}${labels[key] ?? key} ${what === 'set' ? 'added' : what}`;
 	}
 	return line;
+}
+
+/**
+ * The save bar's words for one unsaved change, from an editor key ("General.showClock" →
+ * "Clock changed"); null when it can't be named plainly (then the bar just counts).
+ */
+export function describeUnsavedChange(key: string, accountNames: string[]): string | null {
+	if (key === 'Accounts.length') return null;
+	const m = /^(General|Accounts\.(\d+))\.(\w+)$/.exec(key);
+	if (!m) return null;
+	const field = m[3][0].toUpperCase() + m[3].slice(1);
+	const label = labels[field];
+	if (!label) return null;
+	const account =
+		m[2] !== undefined && accountNames.length > 1 ? `${accountNames[Number(m[2])]}: ` : '';
+	return `${account}${label} changed`;
 }

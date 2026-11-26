@@ -7,14 +7,22 @@
 
 	// Every setting by the title its row shows, with a few words people might type instead.
 	const index: { title: string; page: string; words?: string }[] = [
-		{ title: 'Favorites', page: 'photos', words: 'heart starred' },
+		{
+			title: 'Favorites',
+			page: 'photos',
+			words: 'favourites favourite favorite heart starred liked'
+		},
 		{ title: 'In any album', page: 'photos', words: 'all albums every album' },
 		{ title: 'Full resolution', page: 'look', words: 'quality sharp 4k original high resolution' },
 		{ title: 'Memories', page: 'photos', words: 'on this day birthdays' },
 		{ title: 'Albums', page: 'photos' },
 		{ title: 'People', page: 'photos', words: 'faces persons' },
 		{ title: 'Tags', page: 'photos' },
-		{ title: 'Never show', page: 'photos', words: 'hide exclude albums people tags screenshots' },
+		{
+			title: 'Never show',
+			page: 'photos',
+			words: 'hide exclude remove block private albums people tags screenshots'
+		},
 		{ title: 'Order', page: 'look', words: 'shuffle random chronological oldest newest repeat' },
 		{ title: 'Ages', page: 'look', words: 'age birthday years old' },
 		{ title: 'Show events for', page: 'look', words: 'calendar days ahead week upcoming' },
@@ -41,16 +49,20 @@
 		{
 			title: 'Behind the clock and captions',
 			page: 'look',
-			words: 'style blur frosted solid background box readable'
+			words: 'style blur frosted solid background box readable dark contrast'
 		},
-		{ title: 'Text color', page: 'look', words: 'colour primary' },
-		{ title: 'Box color', page: 'look', words: 'colour background secondary' },
+		{ title: 'Text color', page: 'look', words: 'colour primary theme dark light white' },
+		{ title: 'Box color', page: 'look', words: 'colour background secondary theme dark' },
 		{ title: 'Text size', page: 'look', words: 'font size bigger' },
 		{ title: 'Language', page: 'look', words: 'locale' },
 		{ title: 'Weather', page: 'look', words: 'openweathermap temperature' },
 		{ title: 'Calendars', page: 'look', words: 'ics events appointments' },
 		{ title: 'Add a screen', page: 'screens', words: 'device apple tv ipad qr code new' },
-		{ title: 'Immich accounts', page: 'access', words: 'api key server account connection' },
+		{
+			title: 'Immich accounts',
+			page: 'access',
+			words: 'api key server account connection user add delete remove'
+		},
 		{ title: 'Frame secret', page: 'access', words: 'authentication password screens' },
 		{ title: 'Admin password', page: 'access', words: 'login sign in' },
 		{ title: 'Keep images on disk', page: 'access', words: 'cache download' },

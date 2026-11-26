@@ -265,20 +265,22 @@
 				{/snippet}
 			</SettingRow>
 		{:else}
-			<SettingRow title="From" nested>
+			<SettingRow title="From" description="Empty: from the oldest photo" nested>
 				{#snippet control()}
 					<Input
 						type="date"
+						class="h-8 py-0"
 						aria-label="From"
 						value={dateOnly(account.imagesFromDate)}
 						oninput={(e) => (account.imagesFromDate = toIso(e.currentTarget.value))}
 					/>
 				{/snippet}
 			</SettingRow>
-			<SettingRow title="Until" nested>
+			<SettingRow title="Until" description="Empty: up to today" nested>
 				{#snippet control()}
 					<Input
 						type="date"
+						class="h-8 py-0"
 						aria-label="Until"
 						value={dateOnly(account.imagesUntilDate)}
 						oninput={(e) => (account.imagesUntilDate = toIso(e.currentTarget.value))}

@@ -64,6 +64,17 @@
 			]}
 			onchange={(v) => (device = v)}
 		/>
+		{#if !usesApp}
+			<!-- First: the name goes into the link and the code, so it has to come before scanning. -->
+			<div class="mt-3 -mb-1">
+				<FieldRow
+					title="Name"
+					placeholder="Optional, e.g. Kitchen iPad"
+					value={screenName}
+					oninput={(v) => (screenName = v)}
+				/>
+			</div>
+		{/if}
 		<div class="mt-4 flex gap-5">
 			<ol
 				class="min-w-0 flex-1 list-inside list-decimal space-y-0.5 text-[0.8125rem] leading-[1.45]"
@@ -72,7 +83,7 @@
 					<li>On the Apple TV, install <strong>ImmichFrame</strong> from the App Store.</li>
 					<li>{@render enterAddress()}</li>
 				{:else if device === 'ios'}
-					<li>Scan the code with the Camera app, or open the link in Safari.</li>
+					<li>Name it above, then scan the code with the Camera app or open the link in Safari.</li>
 					<li>Tap Share, then <em>Add to Home Screen</em>, for a full-screen frame.</li>
 					<li>Turn off Auto-Lock in Settings → Display &amp; Brightness if it stays plugged in.</li>
 				{:else if device === 'android'}
@@ -87,10 +98,9 @@
 					</li>
 					<li>{@render enterAddress()}</li>
 				{:else}
-					<li>Open the link on that screen, or scan the code.</li>
+					<li>Name it above, then open the link on that screen or scan the code.</li>
 					<li>Switch the browser to full screen and leave it running.</li>
 				{/if}
-				{#if !usesApp}<li>Give it a name so you can find it in Screens.</li>{/if}
 			</ol>
 			<!-- The code opens the frame in a browser: no use to the TV and Android apps. -->
 			{#if !isLocal && !usesApp}
@@ -106,12 +116,6 @@
 		<ValueRow title="Server address" value={origin} copyable={!isLocal} />
 		{#if secret && !isLocal}<ValueRow title="Secret" value={secret} secret />{/if}
 	{:else}
-		<FieldRow
-			title="Name"
-			placeholder="Optional"
-			value={screenName}
-			oninput={(v) => (screenName = v)}
-		/>
 		<ValueRow title="Link" value={frameUrl} secret={!!secret} copyable={!isLocal} />
 	{/if}
 	{#if !isLocal && !usesApp}

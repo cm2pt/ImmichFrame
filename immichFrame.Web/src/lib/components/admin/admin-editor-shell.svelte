@@ -10,7 +10,8 @@
 	import type { GlyphName } from './glyphs';
 	import { invalidFormats } from './format-presets';
 	import type { AdminEditor } from './admin-editor.svelte';
-	import { accountLabel, libraryFor } from './admin-library.svelte';
+	import { accountLabel, libraryFor, peekLibrary } from './admin-library.svelte';
+	import { describeUnsavedChange } from './admin-history';
 	import { AdminPreview } from './admin-preview.svelte';
 	import LivePreview from './live-preview.svelte';
 	import PageAccess from './page-access.svelte';
@@ -135,6 +136,7 @@
 		return null;
 	});
 	let title = $derived(drill?.title ?? current.title);
+	let backLabel = $derived(drill?.back ?? 'ImmichFrame');
 	function back() {
 		// Opened straight at a deep link there's nothing of ours to go back to: go up instead.
 		if (history.state?.immichFrameAdmin) history.back();
@@ -156,6 +158,15 @@
 			document.querySelector<HTMLElement>(`section[aria-label="${CSS.escape(hit.title)}"]`);
 		if (!target) return;
 		target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+		// Keyboard and VoiceOver users land on the setting too: its first control, or the row.
+		const control = target.querySelector<HTMLElement>(
+			'button:not([disabled]), input:not([disabled]), select:not([disabled]), [role=switch], [role=radio][tabindex="0"], a[href]'
+		);
+		if (control) control.focus({ preventScroll: true });
+		else {
+			target.tabIndex = -1;
+			target.focus({ preventScroll: true });
+		}
 		target.classList.add('if-flash');
 		setTimeout(() => target.classList.remove('if-flash'), 1100);
 	}
@@ -223,8 +234,11 @@
 
 	let savedSettings: ServerSettings = $derived(JSON.parse(editor.saved));
 
+	// Photos' "Add Account" opens the Add sheet on Access & Accounts; nothing is added until
+	// that sheet's Add.
+	let startNewAccount = $state(false);
 	function addAccount() {
-		editor.settings.Accounts = [...(editor.settings.Accounts ?? []), {}];
+		startNewAccount = true;
 		go('access');
 	}
 
@@ -290,8 +304,10 @@
 {/snippet}
 
 <div class="if-shell min-h-dvh">
-	<!-- Phone: the root list, then each page pushed with a back button. -->
-	<div class="md:hidden">
+	<!-- Phone: the root list, then each page pushed with a back button. On a page this wrapper
+	     holds only the nav bar, so it is what sticks (a sticky child of a box its own height
+	     scrolled away with it). -->
+	<div class="md:hidden {hashPage === null ? '' : 'sticky top-0 z-30'}">
 		{#if hashPage === null}
 			<div class="px-4 pt-10 pb-28" in:fade={{ duration: 150 }}>
 				<h1 class="mb-4 text-[2.125rem] leading-tight font-bold tracking-[-0.02em]">ImmichFrame</h1>
@@ -345,20 +361,24 @@
 			<!-- Transparent at the top; the small title, material and hairline fade in once the
 			     large title scrolls under the bar, as in iOS. -->
 			<header
-				class="sticky top-0 z-30 grid grid-cols-[1fr_auto_1fr] items-center border-b px-2 py-2.5 transition-[background-color,border-color] duration-200 {scrolled
-					? 'border-sep bg-[rgb(249_249_249/0.8)] backdrop-blur-[20px] backdrop-saturate-[180%] dark:bg-[rgb(22_22_22/0.8)]'
+				class="sticky top-0 z-30 grid grid-cols-[1fr_minmax(0,auto)_1fr] items-center border-b px-2 py-2.5 transition-[background-color,border-color] duration-200 {scrolled
+					? 'border-sep bg-[rgb(249_249_249/0.92)] backdrop-blur-[20px] backdrop-saturate-[180%] dark:bg-[rgb(22_22_22/0.92)]'
 					: 'border-transparent'}"
 			>
 				<button
 					type="button"
-					class="flex items-center gap-0.5 justify-self-start rounded-md px-1 text-[1.0625rem] whitespace-nowrap text-primary"
+					class="flex min-w-0 items-center gap-0.5 justify-self-start rounded-md px-1 text-[1.0625rem] whitespace-nowrap text-primary"
 					onclick={back}
 				>
 					<Glyph name="chevronLeft" size={22} stroke={2.2} />
-					{(drill?.back ?? 'ImmichFrame').length > 12 ? 'Back' : (drill?.back ?? 'ImmichFrame')}
+					<!-- The parent's name, as iOS does; once the centred title shows and both won't fit,
+					     only the chevron stays (the name is still read out). -->
+					<span class={scrolled && backLabel.length + title.length > 24 ? 'sr-only' : 'truncate'}
+						>{backLabel}</span
+					>
 				</button>
 				<span
-					class="text-[1.0625rem] font-semibold transition-opacity duration-200 {scrolled
+					class="min-w-0 truncate text-center text-[1.0625rem] font-semibold transition-opacity duration-200 {scrolled
 						? 'opacity-100'
 						: 'opacity-0'}"
 					aria-hidden={!scrolled}>{title}</span
@@ -496,8 +516,10 @@
 									<PageAccess
 										settings={editor.settings}
 										version={editor.version}
-										onaddaccount={() =>
-											(editor.settings.Accounts = [...(editor.settings.Accounts ?? []), {}])}
+										onaddaccount={(account) =>
+											(editor.settings.Accounts = [...(editor.settings.Accounts ?? []), account])}
+										startNew={startNewAccount}
+										onstartednew={() => (startNewAccount = false)}
 										onremoveaccount={removeAccount}
 										{passwordFromEnvironment}
 									/>
@@ -538,7 +560,14 @@
 								<p class="text-label-2 min-w-0 flex-1 text-[0.8125rem]">
 									{invalidFormats.size > 0
 										? 'Fix the invalid date or clock pattern to save'
-										: plural(Math.max(editor.changeCount, 1), 'unsaved change')}
+										: editor.changeCount === 1
+											? (describeUnsavedChange(
+													editor.changedKeys[0],
+													(editor.settings.Accounts ?? []).map((a, i) =>
+														accountLabel(a, i, peekLibrary(a))
+													)
+												) ?? '1 unsaved change')
+											: plural(Math.max(editor.changeCount, 1), 'unsaved change')}
 								</p>
 							{:else}
 								<div class="flex min-w-0 flex-1 flex-col">

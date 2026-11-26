@@ -57,7 +57,8 @@
 
 	let look = $derived.by(() => {
 		if (variant === 'filled') {
-			if (color === 'danger') return 'bg-[#ff3b30] text-white hover:brightness-110';
+			// A deeper red than #ff3b30, so white text passes 4.5:1 at button size.
+			if (color === 'danger') return 'bg-[#d70015] text-white hover:brightness-110';
 			if (color === 'secondary') return 'bg-fill hover:brightness-95 dark:hover:brightness-125';
 			return 'bg-accent hover:brightness-110';
 		}

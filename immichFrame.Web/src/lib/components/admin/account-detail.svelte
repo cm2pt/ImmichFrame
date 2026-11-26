@@ -25,7 +25,8 @@
 		immichName?: string | null;
 		status: AccountStatus | undefined;
 		ontest: () => void;
-		onremove: () => void;
+		/** Absent for an account being added: there's nothing to remove yet. */
+		onremove?: () => void;
 	}
 
 	let { account, name, index = null, immichName, status, ontest, onremove }: Props = $props();
@@ -112,7 +113,9 @@
 </PageCard>
 
 <PageCard
-	footer="Read access to assets, albums, people, memories and tags is enough. Create a key in Immich under Account Settings → API Keys."
+	footer={useFile
+		? 'The file holds an Immich API key with read access to assets, albums, people, memories and tags. The path is on the ImmichFrame server, e.g. a Docker secret.'
+		: 'Read access to assets, albums, people, memories and tags is enough. Create a key in Immich under Account Settings → API Keys.'}
 >
 	<button
 		type="button"
@@ -124,24 +127,29 @@
 	</button>
 </PageCard>
 
-<PageCard>
-	{#if confirmRemove}
-		<div class="pb-3">
-			<InlineConfirm
-				message={`Remove ${name}? Its photos leave the frame when you save.`}
-				confirmLabel="Remove"
-				danger
-				onconfirm={onremove}
-				oncancel={() => (confirmRemove = false)}
-			/>
-		</div>
-	{:else}
-		<button
-			type="button"
-			class="flex min-h-11 w-full items-center py-2 text-left text-[0.9375rem] text-[#d70015] md:text-[0.875rem] dark:text-[#ff6961]"
-			onclick={() => (confirmRemove = true)}
-		>
-			Remove Account…
-		</button>
-	{/if}
-</PageCard>
+{#if onremove}
+	<p class="text-label-2 -mt-3 px-4 text-[0.75rem] md:px-0">
+		Changes here are saved with the page’s Save button.
+	</p>
+	<PageCard>
+		{#if confirmRemove}
+			<div class="pb-3">
+				<InlineConfirm
+					message={`Remove ${name}? Its photos leave the frame when you save.`}
+					confirmLabel="Remove"
+					danger
+					onconfirm={onremove}
+					oncancel={() => (confirmRemove = false)}
+				/>
+			</div>
+		{:else}
+			<button
+				type="button"
+				class="flex min-h-11 w-full items-center py-2 text-left text-[0.9375rem] text-[#d70015] md:text-[0.875rem] dark:text-[#ff6961]"
+				onclick={() => (confirmRemove = true)}
+			>
+				Remove Account…
+			</button>
+		{/if}
+	</PageCard>
+{/if}

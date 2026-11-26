@@ -13,16 +13,20 @@ export class AdminEditor {
 
 	dirty = $derived(normalize(this.settings) !== this.saved);
 
-	/** How many individual settings differ from the saved copy (for "3 unsaved changes"). */
-	changeCount = $derived.by(() => {
-		if (!this.dirty) return 0;
+	/** The individual settings that differ from the saved copy, as flat keys
+	 * ("General.showClock", "Accounts.0.albums", "Accounts.length"). */
+	changedKeys = $derived.by(() => {
+		if (!this.dirty) return [];
 		const before = flatten(JSON.parse(this.saved));
 		const after = flatten(JSON.parse(normalize(this.settings)));
 		const keys = [...Object.keys(before), ...Object.keys(after)].filter(
 			(k, i, all) => all.indexOf(k) === i
 		);
-		return keys.filter((key) => before[key] !== after[key]).length;
+		return keys.filter((key) => before[key] !== after[key]);
 	});
+
+	/** How many individual settings differ from the saved copy (for "3 unsaved changes"). */
+	changeCount = $derived(this.changedKeys.length);
 
 	load(settings: ServerSettings) {
 		// Unfinished format drafts belong to the document being replaced (reload, discard, restore).

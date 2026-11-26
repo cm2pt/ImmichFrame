@@ -94,7 +94,7 @@
 		aria-expanded={menuOpen}
 		onclick={() => (menuOpen = !menuOpen)}
 	>
-		Add…
+		Add Album, Person or Tag…
 	</button>
 	{#if menuOpen}
 		<div

@@ -2,7 +2,13 @@
 	import PopupSelect from './popup-select.svelte';
 	import { untrack } from 'svelte';
 	import type { AnyFieldDef } from './admin-fields';
-	import { CUSTOM_FORMAT, formatDrafts, formatExample, invalidFormats } from './format-presets';
+	import {
+		CUSTOM_FORMAT,
+		formatDrafts,
+		formatExample,
+		formatHint,
+		invalidFormats
+	} from './format-presets';
 	import {
 		Checkbox,
 		Field,
@@ -81,10 +87,11 @@
 	});
 
 	let formatOptions = $derived([
-		...presets.map((pattern) => ({
-			value: pattern,
-			label: formatExample(pattern, target.language, field.localized === true) ?? pattern
-		})),
+		...presets.map((pattern) => {
+			const example = formatExample(pattern, target.language, field.localized === true) ?? pattern;
+			const hint = formatHint(pattern);
+			return { value: pattern, label: hint ? `${example} · ${hint}` : example };
+		}),
 		{ value: CUSTOM_FORMAT, label: 'Custom…' }
 	]);
 	let formatPreview = $derived(
