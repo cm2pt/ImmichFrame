@@ -67,11 +67,11 @@
 				last.from = m[2];
 				last.saves += 1;
 				const line = `${m[1]}: ${last.from} → ${last.to}`;
-				// Changed and changed back: say what it is now ("Full resolution: off, as before"),
-				// not "off → off".
+				// Changed and changed back: say the run came to nothing ("Full resolution: no net
+				// change, still off"), not "off → off".
 				last.lines = [
 					last.from === last.to
-						? `${humanizeChange(`${m[1]}: x → ${last.to}`, names).replace(/: x → (.*)$/, ': $1, as before')}`
+						? `${humanizeChange(`${m[1]}: x → ${last.to}`, names).replace(/: x → (.*)$/, ': no net change, still $1')}`
 						: humanizeChange(line, names)
 				];
 				continue;

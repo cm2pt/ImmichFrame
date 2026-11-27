@@ -4,6 +4,9 @@
 	interface Option {
 		value: string;
 		label: string;
+		/** What the button shows on a phone when the label is long ("14:30" for
+		 * "14:30 · 24-hour"); the menu always lists the full label. */
+		short?: string;
 	}
 
 	interface Props {
@@ -15,7 +18,9 @@
 	}
 
 	let { options, value, label, onchange, disabled = false }: Props = $props();
-	let current = $derived(options.find((o) => o.value === value)?.label ?? '');
+	let chosen = $derived(options.find((o) => o.value === value));
+	let current = $derived(chosen?.label ?? '');
+	let short = $derived(chosen?.short ?? current);
 </script>
 
 <!-- Apple's pop-up button: the current value and an up-down chevron. A native <select>
@@ -25,7 +30,12 @@
 		? 'pointer-events-none opacity-40'
 		: ''}"
 >
-	<span class="truncate">{current}</span>
+	{#if short !== current}
+		<span class="truncate sm:hidden">{short}</span>
+		<span class="hidden truncate sm:inline">{current}</span>
+	{:else}
+		<span class="truncate">{current}</span>
+	{/if}
 	<Glyph name="chevronsUpDown" size={13} stroke={2} class="text-label-2" />
 	<select
 		class="absolute inset-0 cursor-pointer opacity-0"

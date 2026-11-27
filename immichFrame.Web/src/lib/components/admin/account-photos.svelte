@@ -52,6 +52,9 @@
 	let includedTagsMap = $derived(marks(account.tags, 'Shown'));
 	let excludedTagsMap = $derived(marks(account.excludedTags, 'In Never show'));
 
+	const dateOnly = (iso: string | null | undefined) => (iso ?? '').substring(0, 10);
+	const toIso = (raw: string) => (raw === '' ? null : new Date(raw).toISOString());
+
 	// "Taken" maps onto ImagesFromDays / ImagesFromDate / ImagesUntilDate.
 	type Taken = 'any' | '365' | '1825' | 'custom';
 	let takenCustom = $state(false);
@@ -63,9 +66,19 @@
 		return 'custom';
 	});
 
+	// Choosing Custom commits a real window straight away (the last 90 days), so the save bar
+	// shows and the choice survives leaving the page; a placeholder alone would be lost.
+	const DEFAULT_DAYS = 90;
 	function setTaken(value: Taken) {
+		const wasCustom = taken === 'custom';
 		takenCustom = value === 'custom';
-		if (value === 'custom') return;
+		if (value === 'custom') {
+			if (!wasCustom) {
+				customDatesPicked = false;
+				account.imagesFromDays = DEFAULT_DAYS;
+			}
+			return;
+		}
 		account.imagesFromDate = null;
 		account.imagesUntilDate = null;
 		account.imagesFromDays = value === 'any' ? null : Number(value);
@@ -77,17 +90,24 @@
 	let customMode: 'days' | 'dates' = $derived(
 		customDatesPicked || account.imagesFromDate || account.imagesUntilDate ? 'dates' : 'days'
 	);
+	// Each mode starts from a real value: the window becomes From that many days ago, and back.
 	function setCustomMode(mode: 'days' | 'dates') {
+		if (mode === customMode) return;
 		customDatesPicked = mode === 'dates';
-		if (mode === 'dates') account.imagesFromDays = null;
-		else {
+		if (mode === 'dates') {
+			const days = account.imagesFromDays ?? DEFAULT_DAYS;
+			account.imagesFromDays = null;
+			const from = new Date(Date.now() - days * 86_400_000);
+			// As the date field would send it: the calendar day, at midnight UTC.
+			const day = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}-${String(from.getDate()).padStart(2, '0')}`;
+			account.imagesFromDate = toIso(day);
+			account.imagesUntilDate = null;
+		} else {
 			account.imagesFromDate = null;
 			account.imagesUntilDate = null;
+			account.imagesFromDays = DEFAULT_DAYS;
 		}
 	}
-
-	const dateOnly = (iso: string | null | undefined) => (iso ?? '').substring(0, 10);
-	const toIso = (raw: string) => (raw === '' ? null : new Date(raw).toISOString());
 </script>
 
 <PageCard title="Include" footer={includeFooter}>
@@ -251,7 +271,7 @@
 						<Input
 							type="number"
 							min="1"
-							placeholder="90"
+							placeholder={String(DEFAULT_DAYS)}
 							aria-label="Number of days"
 							class="w-24 text-right"
 							value={account.imagesFromDays?.toString() ?? ''}

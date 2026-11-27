@@ -90,7 +90,7 @@
 		...presets.map((pattern) => {
 			const example = formatExample(pattern, target.language, field.localized === true) ?? pattern;
 			const hint = formatHint(pattern);
-			return { value: pattern, label: hint ? `${example} · ${hint}` : example };
+			return { value: pattern, label: hint ? `${example} · ${hint}` : example, short: example };
 		}),
 		{ value: CUSTOM_FORMAT, label: 'Custom…' }
 	]);

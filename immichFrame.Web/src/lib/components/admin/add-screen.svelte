@@ -14,7 +14,7 @@
 	let { secret, ongotoaccess }: Props = $props();
 
 	type Device = 'appletv' | 'ios' | 'android' | 'browser';
-	let device: Device = $state('appletv');
+	let device = $state<Device>('appletv');
 	let screenName = $state('');
 
 	const origin = typeof window === 'undefined' ? '' : window.location.origin;
@@ -31,6 +31,8 @@
 	});
 
 	let usesApp = $derived(device === 'appletv' || device === 'android');
+	// The name's example fits the device being added (only the web devices have a Name field).
+	let nameExample = $derived(device === 'ios' ? 'Kitchen iPad' : 'Hallway Display');
 	let note = $derived(
 		isLocal
 			? 'This page is open on localhost, so the address only works on this computer. Open the admin page using this server’s IP address and port to get an address and code other devices can use.'
@@ -69,7 +71,7 @@
 			<div class="mt-3 -mb-1">
 				<FieldRow
 					title="Name"
-					placeholder="Optional, e.g. Kitchen iPad"
+					placeholder={`Optional, e.g. ${nameExample}`}
 					value={screenName}
 					oninput={(v) => (screenName = v)}
 				/>

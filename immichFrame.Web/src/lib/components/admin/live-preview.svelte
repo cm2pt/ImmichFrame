@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Btn from './btn.svelte';
 	import { onMount } from 'svelte';
 	import PageCard from './page-card.svelte';
 	import type { GeneralSettings } from '$lib/immichFrameApi';
@@ -23,7 +22,18 @@
 	let width = $state(360);
 	let scale = $derived(width / STAGE_W);
 	let expanded = $state(false);
-	let bigWidth = $state(1280);
+	// The large preview fills the screen. A phone held upright gets it turned sideways, as a TV
+	// would be, so the 16:9 frame uses the screen's height rather than its narrow width.
+	let viewW = $state(1280);
+	let viewH = $state(800);
+	let sideways = $derived(viewH > viewW && viewW < 700);
+	let bigWidth = $derived(
+		Math.floor(
+			sideways
+				? Math.min(viewH - 84, (viewW - 24) * (16 / 9), 1280)
+				: Math.min(viewW - 32, (viewH - 96) * (16 / 9), 1280)
+		)
+	);
 	$effect(() => {
 		if (!expanded) return;
 		// After the portal has moved the overlay (moving an element drops its focus).
@@ -158,7 +168,7 @@
 	{#snippet actions()}
 		<button
 			type="button"
-			class="text-primary"
+			class="if-hit text-primary"
 			aria-label="Show the preview larger"
 			onclick={() => (expanded = true)}>Larger</button
 		>
@@ -177,10 +187,14 @@
 	</div>
 </PageCard>
 
+<svelte:window bind:innerWidth={viewW} bind:innerHeight={viewH} />
+
 {#if expanded}
 	<div
 		use:portal
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+		class="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-black/80 p-4 backdrop-blur-sm {sideways
+			? 'pt-16'
+			: ''}"
 		role="dialog"
 		aria-modal="true"
 		aria-label="Larger preview"
@@ -188,23 +202,43 @@
 		onkeydown={(e) => e.key === 'Escape' && (expanded = false)}
 		onclick={(e) => e.target === e.currentTarget && (expanded = false)}
 	>
-		<div class="w-[min(92vw,1280px)]">
+		{#if sideways}
+			<!-- Close stays upright at the top, where a thumb expects it. -->
+			<div
+				class="absolute top-0 right-0 left-0 flex justify-end p-4 pt-[max(1rem,env(safe-area-inset-top))]"
+			>
+				{@render done()}
+			</div>
+		{/if}
+		<div style="width:{bigWidth}px;{sideways ? 'transform:rotate(90deg)' : ''}" class="shrink-0">
 			<div
 				class="relative overflow-hidden rounded-xl bg-black shadow-2xl"
-				style="aspect-ratio:16/9"
-				bind:clientWidth={bigWidth}
+				style="width:{bigWidth}px;height:{Math.round((bigWidth * 9) / 16)}px"
 			>
 				{@render stage(bigWidth / STAGE_W)}
 			</div>
-			<div class="mt-3 flex items-center justify-between gap-3 text-sm text-white/80">
-				<span>{summary}</span>
-				<Btn size="small" color="secondary" id="preview-close" onclick={() => (expanded = false)}
-					>Close</Btn
-				>
-			</div>
 		</div>
+		{#if !sideways}
+			<div
+				class="mt-3 flex items-center justify-between gap-3 text-sm text-white/80"
+				style="width:{bigWidth}px"
+			>
+				<span class="truncate">{summary}</span>
+				{@render done()}
+			</div>
+		{/if}
 	</div>
 {/if}
+
+<!-- Over the dark backdrop in either appearance: a light, frosted pill, as in Photos. -->
+{#snippet done()}
+	<button
+		type="button"
+		id="preview-close"
+		class="min-h-11 rounded-full bg-white/20 px-5 text-[0.9375rem] font-semibold text-white backdrop-blur-md hover:bg-white/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+		onclick={() => (expanded = false)}>Done</button
+	>
+{/snippet}
 
 {#snippet stage(stageScale: number)}
 	<div

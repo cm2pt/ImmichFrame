@@ -21,28 +21,6 @@
 
 	let { general, captions = $bindable(false) }: Props = $props();
 
-	// What Clock & Captions holds, so a search hit for one of these opens that screen.
-	const captionSettings = [
-		'Clock',
-		'Date taken',
-		'Place',
-		'Ages',
-		'Album name',
-		'Description',
-		'Behind the clock and captions',
-		'Text color',
-		'Box color',
-		'Text size',
-		'Language'
-	];
-	$effect(() => {
-		const reveal = (e: Event) => {
-			const title = (e as CustomEvent<string>).detail;
-			captions = captionSettings.includes(title);
-		};
-		window.addEventListener('if-reveal', reveal);
-		return () => window.removeEventListener('if-reveal', reveal);
-	});
 	function openCaptions() {
 		captions = true;
 		window.scrollTo({ top: 0 });
@@ -268,7 +246,7 @@
 				aria-label={color.name}
 				title={color.name}
 				{disabled}
-				class="h-[30px] w-[30px] rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.18)] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-40 md:h-6 md:w-6 dark:shadow-[inset_0_0_0_1px_rgb(255_255_255/0.3)] {selected
+				class="h-[30px] w-[30px] rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.18)] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-40 md:h-6 md:w-6 dark:shadow-[inset_0_0_0_1.5px_rgb(255_255_255/0.5)] {selected
 					? 'outline-2 outline-offset-2 outline-primary'
 					: ''}"
 				style="background:{color.value}"
@@ -276,7 +254,7 @@
 			></button>
 		{/each}
 		<label
-			class="relative h-[30px] w-[30px] cursor-pointer rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.18)] md:h-6 md:w-6 dark:shadow-[inset_0_0_0_0.5px_rgb(255_255_255/0.25)] {custom
+			class="relative h-[30px] w-[30px] cursor-pointer rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.18)] md:h-6 md:w-6 dark:shadow-[inset_0_0_0_1.5px_rgb(255_255_255/0.5)] {custom
 				? 'outline-2 outline-offset-2 outline-primary'
 				: ''} {disabled ? 'pointer-events-none opacity-40' : ''}"
 			style="background:{custom

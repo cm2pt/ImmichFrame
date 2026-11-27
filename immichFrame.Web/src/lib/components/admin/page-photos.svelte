@@ -34,6 +34,9 @@
 	// The count the frame's own search draws from for each account's current choices,
 	// refreshed shortly after each change.
 	let matching: (number | null)[] = $state([]);
+	// While a change is being counted the old number stays, dimmed, so it's clear a new one is
+	// on its way (instead of a number that seems not to react).
+	let recounting = $state(false);
 	$effect(() => {
 		const snapshot = JSON.stringify(accounts);
 		const list: ServerAccountSettings[] = JSON.parse(snapshot);
@@ -42,19 +45,23 @@
 		let current = true;
 		const previous = untrack(() => matching);
 		matching = list.map((account, i) => (hasConnection(account) ? (previous[i] ?? null) : null));
-		const timer = setTimeout(() => {
-			list.forEach(async (account, i) => {
-				if (!hasConnection(account)) return;
-				let count: number | null = null;
-				try {
-					const res = await adminApi.countMatchingAssets(account);
-					count = res.status === 200 ? (res.data.count ?? null) : null;
-				} catch {
-					count = null;
-				}
-				if (current) matching[i] = count;
-			});
-		}, 800);
+		recounting = list.some(hasConnection);
+		const timer = setTimeout(async () => {
+			await Promise.all(
+				list.map(async (account, i) => {
+					if (!hasConnection(account)) return;
+					let count: number | null = null;
+					try {
+						const res = await adminApi.countMatchingAssets(account);
+						count = res.status === 200 ? (res.data.count ?? null) : null;
+					} catch {
+						count = null;
+					}
+					if (current) matching[i] = count;
+				})
+			);
+			if (current) recounting = false;
+		}, 500);
 		return () => {
 			current = false;
 			clearTimeout(timer);
@@ -123,7 +130,9 @@
 				</span>
 				{#if matching[i] != null}
 					<span
-						class="text-label-2 text-[0.875rem] tabular-nums"
+						class="text-label-2 text-[0.875rem] tabular-nums transition-opacity {recounting
+							? 'opacity-40'
+							: ''}"
 						title="Photos these choices match, not counting memories"
 						>{formatCount(matching[i])}</span
 					>
@@ -153,7 +162,13 @@
 			{#if single}
 				<p class="text-[0.9375rem] font-medium">{accountLabel(accounts[i], i, libraries[i])}</p>
 			{/if}
-			<p class="text-label-2 {single ? 'text-[0.8125rem]' : 'text-[0.9375rem]'}" aria-live="polite">
+			<p
+				class="text-label-2 transition-opacity {single
+					? 'text-[0.8125rem]'
+					: 'text-[0.9375rem]'} {recounting && matching[i] != null ? 'opacity-40' : ''}"
+				aria-live="polite"
+				aria-busy={recounting}
+			>
 				{matching[i] != null
 					? inRotation(matching[i]!, memoriesOn(accounts[i]))
 					: summary(accounts[i], i)}

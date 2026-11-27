@@ -21,7 +21,7 @@
 	{#snippet actions()}
 		<button
 			type="button"
-			class="text-primary disabled:opacity-40"
+			class="if-hit text-primary disabled:opacity-40"
 			disabled={preview.state === 'loading'}
 			onclick={() => preview.load(4)}>Shuffle</button
 		>

@@ -203,6 +203,20 @@ img.icon-weather {
 .if-admin .if-flash + * {
 	border-color: transparent !important;
 }
+/* A text button smaller than a fingertip (a group header's "Shuffle", "Larger") keeps its look
+   but gets a 44-point touch area, as Apple's guidelines ask. */
+.if-admin .if-hit {
+	position: relative;
+}
+.if-admin .if-hit::after {
+	content: '';
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: max(100%, 44px);
+	height: max(100%, 44px);
+	transform: translate(-50%, -50%);
+}
 /* Fields and menus from @immich/ui use blue-tinted grays; inside the admin, use neutral ones. */
 .if-admin {
 	--color-gray-100: #f2f2f7;

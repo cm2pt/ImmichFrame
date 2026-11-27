@@ -45,9 +45,17 @@
 	}
 </script>
 
+<!-- The header follows what's typed. An account being added has no initials to show until it
+     has a name (the Immich user's, once tested), so it shows the person silhouette, as Contacts does. -->
 <div class="flex flex-col items-center gap-2 pt-1 text-center">
-	<Monogram name={monogramOf(name)} size={56} avatarOf={index} />
-	<p class="text-[1.0625rem] font-semibold">{name}</p>
+	<Monogram
+		name={account.name?.trim() || immichName || (onremove ? monogramOf(name) : '')}
+		size={56}
+		avatarOf={index}
+	/>
+	<p class="text-[1.0625rem] font-semibold">
+		{onremove ? name : account.name?.trim() || immichName || 'New Account'}
+	</p>
 	<p class="text-label-2 flex items-center gap-1.5 text-[0.8125rem]">
 		{#if status?.testing}
 			Checking…
@@ -128,10 +136,7 @@
 </PageCard>
 
 {#if onremove}
-	<p class="text-label-2 -mt-3 px-4 text-[0.75rem] md:px-0">
-		Changes here are saved with the page’s Save button.
-	</p>
-	<PageCard>
+	<PageCard footer="Changes here, removing included, take effect when you save the page.">
 		{#if confirmRemove}
 			<div class="pb-3">
 				<InlineConfirm

@@ -110,11 +110,25 @@
 		if (want === window.location.hash) return;
 		history.pushState({ immichFrameAdmin: true }, '', want || window.location.pathname);
 	});
-	function applyPlace() {
+	// Going back returns to where you were on that screen, as iOS does: each place remembers
+	// its scroll position (the browser's own restoring can't, since the page re-renders).
+	const scrollMemory: Record<string, number> = {};
+	$effect(() => {
+		history.scrollRestoration = 'manual';
+		const remember = () => (scrollMemory[window.location.hash] = window.scrollY);
+		window.addEventListener('scroll', remember, { passive: true });
+		return () => window.removeEventListener('scroll', remember);
+	});
+	async function applyPlace() {
 		const p = readPlace();
 		hashPage = p.page;
 		photosAccount = p.account;
 		lookCaptions = p.captions;
+		const y = scrollMemory[window.location.hash] ?? 0;
+		await tick();
+		// Twice: once now, and once after anything the screen lays out on its first frame.
+		window.scrollTo({ top: y });
+		requestAnimationFrame(() => window.scrollTo({ top: y }));
 	}
 
 	function go(id: PageId | null) {
@@ -139,17 +153,21 @@
 	let backLabel = $derived(drill?.back ?? 'ImmichFrame');
 	function back() {
 		// Opened straight at a deep link there's nothing of ours to go back to: go up instead.
+		// history.back() lands in applyPlace, which restores the parent's scroll position.
 		if (history.state?.immichFrameAdmin) history.back();
-		else if (drill) {
-			if (page === 'photos') photosAccount = null;
-			else lookCaptions = false;
-		} else go(null);
-		window.scrollTo({ top: 0 });
+		else {
+			if (drill) {
+				if (page === 'photos') photosAccount = null;
+				else lookCaptions = false;
+			} else go(null);
+			window.scrollTo({ top: 0 });
+		}
 	}
 
 	// Search: switch page, then scroll to the row and highlight it, like System Settings.
 	async function jumpTo(hit: SearchHit) {
 		go(hit.page as PageId);
+		lookCaptions = hit.sub === 'captions';
 		await tick();
 		window.dispatchEvent(new CustomEvent('if-reveal', { detail: hit.title }));
 		await new Promise((r) => setTimeout(r, 260));
@@ -311,7 +329,12 @@
 		{#if hashPage === null}
 			<div class="px-4 pt-10 pb-28" in:fade={{ duration: 150 }}>
 				<h1 class="mb-4 text-[2.125rem] leading-tight font-bold tracking-[-0.02em]">ImmichFrame</h1>
-				<SettingsSearch onpick={jumpTo} variant="list" bind:searching={phoneSearching} />
+				<SettingsSearch
+					onpick={jumpTo}
+					general={editor.settings.General ?? {}}
+					variant="list"
+					bind:searching={phoneSearching}
+				/>
 				{#if !phoneSearching}
 					<nav class="bg-group rounded-group mt-5 px-4" aria-label="Sections">
 						{#each pages as p (p.id)}
@@ -361,13 +384,13 @@
 			<!-- Transparent at the top; the small title, material and hairline fade in once the
 			     large title scrolls under the bar, as in iOS. -->
 			<header
-				class="sticky top-0 z-30 grid grid-cols-[1fr_minmax(0,auto)_1fr] items-center border-b px-2 py-2.5 transition-[background-color,border-color] duration-200 {scrolled
+				class="sticky top-0 z-30 grid min-h-11 grid-cols-[1fr_minmax(0,auto)_1fr] items-center border-b px-2 transition-[background-color,border-color] duration-200 {scrolled
 					? 'border-sep bg-[rgb(249_249_249/0.92)] backdrop-blur-[20px] backdrop-saturate-[180%] dark:bg-[rgb(22_22_22/0.92)]'
 					: 'border-transparent'}"
 			>
 				<button
 					type="button"
-					class="flex min-w-0 items-center gap-0.5 justify-self-start rounded-md px-1 text-[1.0625rem] whitespace-nowrap text-primary"
+					class="flex min-h-11 min-w-11 items-center gap-0.5 justify-self-start rounded-md px-1 text-[1.0625rem] whitespace-nowrap text-primary"
 					onclick={back}
 				>
 					<Glyph name="chevronLeft" size={22} stroke={2.2} />
@@ -398,7 +421,11 @@
 						<img src="/logo.svg" alt="" class="h-7 w-7" />
 						<span class="text-[0.9375rem] font-semibold tracking-tight">ImmichFrame</span>
 					</div>
-					<SettingsSearch onpick={jumpTo} bind:searching={sidebarSearching} />
+					<SettingsSearch
+						onpick={jumpTo}
+						general={editor.settings.General ?? {}}
+						bind:searching={sidebarSearching}
+					/>
 					{#if !sidebarSearching}
 						<nav class="mt-3 flex flex-col gap-0.5" aria-label="Sections">
 							{#each pages as p (p.id)}
